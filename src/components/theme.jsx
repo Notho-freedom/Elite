@@ -1,0 +1,53 @@
+// theme.js
+const light = {
+    w: 'w-1/5',
+    bgColor: 'bg-white',
+    textColor: 'text-gray-800',
+    secondaryText: 'text-gray-500',
+    borderColor: 'border-gray-200',
+    hoverBg: 'hover:bg-blue-300',
+    headerBg: 'bg-gray-50',
+    inputBg: 'bg-gray-100 text-gray-800',
+    emptyStateText: 'text-gray-500',
+    searchHover: 'hover:bg-gray-200',
+    filterHover: 'hover:text-gray-700',
+    clearAllText: 'text-red-500 hover:text-red-700',
+    successText: 'text-green-600',
+    missedText: 'text-red-600',
+    accentColor: 'blue-500',
+    accentBg: 'bg-blue-500',
+    accentText: 'text-white',
+    accentShadow: 'shadow-[0_0_8px_rgba(59,130,246,0.7)]',
+    focusRing: 'focus:ring-blue-500',
+    baccentText: 'text-blue-600',
+    bfilterHover: 'hover:bg-blue-50 hover:text-blue-700',
+    messageBg: 'bg-gray-50',
+  };
+  
+  const dark = {
+    w: 'w-1/5',
+    bgColor: 'bg-gray-900',
+    textColor: 'text-gray-100',
+    secondaryText: 'text-gray-300',
+    borderColor: 'border-gray-700',
+    hoverBg: 'hover:bg-gray-700',
+    headerBg: 'bg-gray-900',
+    inputBg: 'bg-gray-700 text-white',
+    emptyStateText: 'text-gray-400',
+    searchHover: 'hover:bg-gray-700',
+    filterHover: 'hover:text-gray-200',
+    clearAllText: 'text-red-500 hover:text-red-700',
+    successText: 'text-green-400',
+    missedText: 'text-red-400',
+    accentColor: 'blue-400',
+    accentBg: 'bg-blue-600',
+    accentText: 'text-white',
+    accentShadow: 'shadow-[0_0_8px_rgba(96,165,250,0.7)]',
+    focusRing: 'focus:ring-blue-800',
+    baccentText: 'text-blue-400',
+    bfilterHover: 'hover:bg-blue-700 hover:text-blue-300',
+    messageBg: 'bg-gray-900',
+  };
+  
+  export const theme = { light, dark };
+  
