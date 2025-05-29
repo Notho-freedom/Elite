@@ -1,0 +1,36 @@
+# Étape 1 : build l’app React
+FROM node:20-alpine AS builder
+
+# Crée un dossier de travail
+WORKDIR /app
+
+# Copie les fichiers de config et dépendances
+COPY package.json package-lock.json* ./
+
+# Installe les deps
+RUN npm install
+
+# Copie le reste du projet
+COPY . .
+
+# Build l'app React pour la production
+RUN npm run build
+
+
+# Étape 2 : image légère avec serveur web (nginx)
+FROM nginx:1.25-alpine
+
+# Supprime la config nginx par défaut
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copie les fichiers React buildés depuis l'étape 1
+COPY --from=builder /app/build /usr/share/nginx/html
+
+# Copie une config NGINX custom (optionnel)
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose le port HTTP
+EXPOSE 80
+
+# Lance nginx
+CMD ["nginx", "-g", "daemon off;"]
