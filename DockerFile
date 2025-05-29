@@ -1,33 +1,25 @@
-# Étape 1 : build l’app React
+# Étape 1 : build de l’app avec Vite
 FROM node:20-alpine AS builder
 
-# Crée un dossier de travail
 WORKDIR /app
 
-# Copie les fichiers de config et dépendances
 COPY package.json package-lock.json* ./
-
-# Installe les deps
 RUN npm install
 
-# Copie le reste du projet
 COPY . .
 
-# Build l'app React pour la production
+# Build Vite : génère le dossier "dist"
 RUN npm run build
 
 
-# Étape 2 : image légère avec serveur web (nginx)
+# Étape 2 : serveur NGINX pour servir les fichiers
 FROM nginx:1.25-alpine
 
-# Supprime la config nginx par défaut
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copie les fichiers React buildés depuis l'étape 1
-COPY --from=builder /app/build /usr/share/nginx/html
+# ⚠️ Attention ici : dist (et non build)
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose le port HTTP
 EXPOSE 80
 
-# Lance nginx
 CMD ["nginx", "-g", "daemon off;"]
