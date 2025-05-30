@@ -25,7 +25,7 @@ const light = {
   };
   
   const dark = {
-    w: 'w-[40%]',
+    w: '',
     bgColor: 'bg-gray-900',
     textColor: 'text-gray-100',
     secondaryText: 'text-gray-300',

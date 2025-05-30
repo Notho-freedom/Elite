@@ -198,7 +198,7 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
 
   return (
     <motion.div 
-      className={`flex-1 flex flex-col h-screen ${theme.bgColor} border-l border-r ${theme.borderColor} relative`}
+      className={`flex-1 flex flex-col h-screen ${theme.bgColor} lg:border-l lg:border-r ${theme.borderColor} relative`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -263,7 +263,7 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
         theme={theme}
       />
 
-      <footer className={`p-3 border-t ${theme.borderColor} ${theme.headerBg} sticky bottom-0`}>
+      <footer className={`p-1 border-t ${theme.borderColor} ${theme.headerBg} sticky bottom-0`}>
         <ChatInput 
           inputValue={inputValue}
           setInputValue={setInputValue}

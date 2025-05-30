@@ -11,7 +11,7 @@ const ChatSearch = ({
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      className={`px-4 py-2 border-b ${theme.borderColor} ${theme.headerBg} flex items-center`}
+      className={`px-4 py-1 border-b ${theme.borderColor} ${theme.headerBg} flex items-center text-xs md:text-md`}
     >
       <FiSearch className={`mr-2 ${theme.secondaryText}`} />
       <input

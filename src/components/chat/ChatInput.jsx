@@ -17,7 +17,7 @@ const ChatInput = ({
       <button 
         type="button" 
         onClick={() => setShowEmojiPicker(prev => !prev)}
-        className={`p-2 rounded-full ${theme.hoverBg} mr-2`}
+        className={`p-2 lg:p-3 rounded-full ${theme.hoverBg} mr-2`}
         aria-label="Emoji picker"
       >
         <BsEmojiSmile className={theme.textColor} />

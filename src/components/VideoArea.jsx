@@ -10,9 +10,9 @@ const VideoArea = ({ activeCall }) => {
   const [localStream, setLocalStream] = useState(null);
   const [isLocalMain, setIsLocalMain] = useState(true);
 
-  // Démarrer / arrêter le stream local selon activeCall.isVideoOn
+  // Démarrer / arrêter le stream local selon activeCall?.isVideoOn
   useEffect(() => {
-    if (!activeCall.isVideoOn) {
+    if (!activeCall?.isVideoOn) {
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         setLocalStream(null);
@@ -37,7 +37,7 @@ const VideoArea = ({ activeCall }) => {
         setLocalStream(null);
       }
     };
-  }, [activeCall.isVideoOn]);
+  }, [activeCall?.isVideoOn]);
 
   // On met à jour la vidéo principale et mini à chaque changement de stream ou toggle
   useEffect(() => {
@@ -108,7 +108,7 @@ const VideoArea = ({ activeCall }) => {
       </div>
 
       {/* Affichage fallback quand la vidéo locale n'est pas disponible */}
-      {!activeCall.isVideoOn && (
+      {!activeCall?.isVideoOn && (
         <div className="absolute inset-0 bg-black flex items-center justify-center">
           <FaVideoSlash className="text-gray-400 text-6xl" />
         </div>

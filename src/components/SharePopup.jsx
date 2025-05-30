@@ -50,11 +50,11 @@ const SharePopup = ({ activeCall, onClose }) => {
           <img
             alt="User avatar"
             className="w-8 h-8 rounded-full object-cover"
-            src={activeCall.avatar || 'https://randomuser.me/api/portraits/women/68.jpg'}
+            src={activeCall?.avatar || 'https://randomuser.me/api/portraits/women/68.jpg'}
           />
           <div>
             <p className="font-semibold text-xs">
-              Maybe: <span className="font-bold">{activeCall.name || 'Malinda'}</span>
+              Maybe: <span className="font-bold">{activeCall?.name || 'Malinda'}</span>
             </p>
             <p className="text-[10px]">FaceTime Video</p>
           </div>
