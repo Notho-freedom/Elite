@@ -113,6 +113,7 @@ const App = () => {
                     activeChat={activeChat}
                     setActiveChat={setActiveChat}
                     activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                     sortedDiscussions={sortedDiscussions}
                     activeCall={activeCall}
                     isSilenced={isSilenced}
@@ -126,6 +127,7 @@ const App = () => {
                     showPopup={showPopup}
                     setShowPopup={setShowPopup}
                     setActiveCall={setActiveCall}
+                    setIsLogin={setIsLogin}
                   />
                 </motion.div>
               </AnimatePresence>

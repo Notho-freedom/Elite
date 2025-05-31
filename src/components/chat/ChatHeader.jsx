@@ -1,5 +1,5 @@
 import { FiArrowLeft, FiVideo, FiPhone, FiSearch, FiMoreHorizontal } from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const ChatHeader = ({
   activeChat,
@@ -10,8 +10,15 @@ const ChatHeader = ({
   setShowMenu,
   theme,
   chatHeaderRef,
-  isTyping
+  isTyping,
+  setActiveTab,
+  setProfile,
 }) => {
+  const handleProfileClick = () => {
+    setActiveTab('profile');
+    setProfile(true);
+  };
+
   return (
     <motion.header
       ref={chatHeaderRef}
@@ -33,10 +40,10 @@ const ChatHeader = ({
       {/* Avatar + Info */}
       <motion.div
         className="flex items-center flex-1 min-w-0 cursor-pointer overflow-hidden"
-        onClick={() => onStartCall({ ...activeChat, type: 'video' })}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
+        onClick={handleProfileClick}
       >
         <motion.div
           className="w-10 h-10 rounded-full bg-gray-300 mr-3 flex-shrink-0 relative"
@@ -90,22 +97,20 @@ const ChatHeader = ({
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowSearch(prev => !prev)}
-          className={`p-2 d-none md:flex lg:flex rounded-full ${theme.hoverBg}`}
+          className={`p-2 hidden md:flex rounded-full ${theme.hoverBg}`}
           aria-label="Search messages"
         >
           <FiSearch className={theme.textColor} />
         </motion.button>
 
-        <motion.div className="relative">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowMenu(!showMenu)}
-            className={`p-2 rounded-full ${theme.hoverBg}`}
-            aria-label="More options"
-          >
-            <FiMoreHorizontal className={theme.textColor} />
-          </motion.button>
-        </motion.div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowMenu(!showMenu)}
+          className={`p-2 rounded-full ${theme.hoverBg}`}
+          aria-label="More options"
+        >
+          <FiMoreHorizontal className={theme.textColor} />
+        </motion.button>
       </div>
     </motion.header>
   );

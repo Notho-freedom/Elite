@@ -43,7 +43,7 @@ const Spinner = () => (
   />
 );
 
-const SocialLogin = () => {
+const SocialLogin = ({setIsLogin, setActiveTab}) => {
   const { theme } = useTheme();
   const providers = useMemo(getProviders, []);
   const [loadingProvider, setLoadingProvider] = useState(null);
@@ -52,11 +52,11 @@ const SocialLogin = () => {
     setLoadingProvider(provider);
     console.log(`🔐 Auth with: ${provider}`);
     
-    // Simulate async auth process
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     setLoadingProvider(null);
-    // OAuth implementation here
+    setIsLogin(true);
+    setActiveTab('chats');
   };
 
   return (

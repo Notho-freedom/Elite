@@ -9,7 +9,7 @@ import ChatMenu from './chat/ChatMenu';
 import EmojiPickerWrapper from './chat/EmojiPickerWrapper';
 import TypingIndicator from './chat/TypingIndicator';
 
-const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStartCall }) => {
+const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStartCall, setActiveTab, setProfile }) => {
   const { theme } = useTheme();
   const [messages, setMessages] = useState(initialMessages || []);
   const [inputValue, setInputValue] = useState('');
@@ -214,6 +214,8 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
         theme={theme}
         chatHeaderRef={chatHeaderRef }
         isTyping={isTyping}
+        setActiveTab={setActiveTab}
+        setProfile={setProfile}
       />
 
       {showSearch && (
