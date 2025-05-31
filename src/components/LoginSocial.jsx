@@ -39,7 +39,7 @@ const itemVariants = {
 const SocialLogin = () => {
   const { theme } = useTheme();
   const providers = useMemo(getProviders, []);
-  const isDesktop = useMediaQuery({ minWidth: 924 });
+  const isDesktop = useMediaQuery({ minWidth: 300 });
 
   const handleAuth = (provider) => {
     console.log(`🔐 Auth with: ${provider}`);
