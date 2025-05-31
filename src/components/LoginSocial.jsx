@@ -1,5 +1,5 @@
 import { useTheme } from './ThemeContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaGithub, FaDiscord, FaTwitter,
   FaApple, FaMicrosoft, FaLinkedin
@@ -10,19 +10,68 @@ import clsx from 'clsx';
 import { FcGoogle } from 'react-icons/fc';
 
 const getProviders = () => ([
-  { name: 'Google', icon: <FcGoogle />, bg: 'bg-white', hover: 'hover:bg-gray-100', text: '' },
-  { name: 'GitHub', icon: <FaGithub />, bg: 'bg-gray-800', hover: 'hover:bg-gray-700', text: 'text-white' },
-  { name: 'Discord', icon: <FaDiscord />, bg: 'bg-indigo-600', hover: 'hover:bg-indigo-700', text: 'text-white' },
-  { name: 'Twitter', icon: <FaTwitter />, bg: 'bg-sky-500', hover: 'hover:bg-sky-600', text: 'text-white' },
-  { name: 'Apple', icon: <FaApple />, bg: 'bg-gray-100', hover: 'hover:bg-gray-200', text: 'text-black' },
-  { name: 'Microsoft', icon: <FaMicrosoft />, bg: 'bg-gray-100', hover: 'hover:bg-gray-200', text: 'text-blue-600' },
-  { name: 'LinkedIn', icon: <FaLinkedin />, bg: 'bg-blue-600', hover: 'hover:bg-blue-700', text: 'text-white' },
-  { name: 'Auth0', icon: <SiAuth0 />, bg: 'bg-orange-50', hover: 'hover:bg-orange-100', text: 'text-orange-700' },
+  { 
+    name: 'Google', 
+    icon: <FcGoogle className="text-xl sm:text-2xl" />, 
+    bg: 'bg-white', 
+    hover: 'hover:bg-gray-100', 
+    text: '' 
+  },
+  { 
+    name: 'GitHub', 
+    icon: <FaGithub className="text-xl sm:text-2xl" />, 
+    bg: 'bg-gray-800', 
+    hover: 'hover:bg-gray-700', 
+    text: 'text-white' 
+  },
+  { 
+    name: 'Discord', 
+    icon: <FaDiscord className="text-xl sm:text-2xl" />, 
+    bg: 'bg-indigo-600', 
+    hover: 'hover:bg-indigo-700', 
+    text: 'text-white' 
+  },
+  { 
+    name: 'Twitter', 
+    icon: <FaTwitter className="text-xl sm:text-2xl" />, 
+    bg: 'bg-sky-500', 
+    hover: 'hover:bg-sky-600', 
+    text: 'text-white' 
+  },
+  { 
+    name: 'Apple', 
+    icon: <FaApple className="text-xl sm:text-2xl" />, 
+    bg: 'bg-gray-100', 
+    hover: 'hover:bg-gray-200', 
+    text: 'text-black' 
+  },
+  { 
+    name: 'Microsoft', 
+    icon: <FaMicrosoft className="text-xl sm:text-2xl" />, 
+    bg: 'bg-gray-100', 
+    hover: 'hover:bg-gray-200', 
+    text: 'text-blue-600' 
+  },
+  { 
+    name: 'LinkedIn', 
+    icon: <FaLinkedin className="text-xl sm:text-2xl" />, 
+    bg: 'bg-blue-600', 
+    hover: 'hover:bg-blue-700', 
+    text: 'text-white' 
+  },
+  { 
+    name: 'Auth0', 
+    icon: <SiAuth0 className="text-xl sm:text-2xl" />, 
+    bg: 'bg-orange-50', 
+    hover: 'hover:bg-orange-100', 
+    text: 'text-orange-700' 
+  },
 ]);
 
 const containerVariants = {
-  hidden: {},
+  hidden: { opacity: 0 },
   visible: {
+    opacity: 1,
     transition: {
       staggerChildren: 0.1,
       delayChildren: 0.3,
@@ -32,18 +81,30 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 25 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 12 } }
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      type: "spring", 
+      stiffness: 120, 
+      damping: 12 
+    } 
+  }
 };
 
 const Spinner = () => (
   <motion.div
     animate={{ rotate: 360 }}
-    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-    className="h-5 w-5 border-2 border-t-transparent rounded-full"
+    transition={{ 
+      repeat: Infinity, 
+      duration: 0.8, 
+      ease: "linear" 
+    }}
+    className="h-5 w-5 border-2 border-t-transparent border-white rounded-full"
   />
 );
 
-const SocialLogin = ({setIsLogin, setActiveTab}) => {
+const SocialLogin = ({ setIsLogin, setActiveTab }) => {
   const { theme } = useTheme();
   const providers = useMemo(getProviders, []);
   const [loadingProvider, setLoadingProvider] = useState(null);
@@ -52,6 +113,7 @@ const SocialLogin = ({setIsLogin, setActiveTab}) => {
     setLoadingProvider(provider);
     console.log(`🔐 Auth with: ${provider}`);
     
+    // Simulate async auth process
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     setLoadingProvider(null);
@@ -64,31 +126,54 @@ const SocialLogin = ({setIsLogin, setActiveTab}) => {
       "relative min-h-screen flex items-center justify-center p-4 sm:p-6",
       theme.bgColor
     )}>
-      {/* Logo and Halo */}
+      {/* Animated Logo and Halo */}
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 150, damping: 15 }}
+        animate={{ 
+          scale: 1, 
+          opacity: 1,
+          boxShadow: "0 0 7px 7px rgba(139, 92, 246, 0.6)"
+        }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 150, 
+          damping: 15,
+          boxShadow: {
+            duration: 2,
+            repeat: Infinity,
+            repeatType: "mirror"
+          }
+        }}
         className={clsx(
           "absolute top-[2%] sm:top-[10%] transform -translate-x-1/2",
           "rounded-full flex items-center justify-center",
-          "w-[180px] h-[180px] sm:w-[200px] sm:h-[200px] md:w-[250px] md:h-[250px]",
-          "bg-gradient-to-tr from-indigo-500 via-purple-600 to-pink-500",
-          "shadow-[0_0_20px_5px_rgba(139,92,246,0.6)] sm:shadow-[0_0_30px_10px_rgba(139,92,246,0.6)]",
-          "z-10"
+          "w-[25vh] h-[25vh]",
+          "bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600",
+          "z-10",
+          "ring-4 ring-purple-400/30"
         )}
       >
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+          transition={{ 
+            repeat: Infinity, 
+            duration: 20, 
+            ease: "linear" 
+          }}
           className="absolute inset-0 rounded-full border-4 border-white/30"
         />
+
+
         <motion.div
           animate={{ rotate: -360 }}
-          transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+          transition={{ 
+            repeat: Infinity, 
+            duration: 25, 
+            ease: "linear" 
+          }}
           className="absolute inset-0 rounded-full border-2 border-white/20"
         />
-        <div className="rounded-full flex items-center justify-center shadow-lg w-full h-full z-20">
+        <div className="rounded-full flex items-center justify-center w-full h-full z-20">
           <svg 
             className="w-full h-full text-white drop-shadow-lg" 
             fill="none" 
@@ -103,56 +188,106 @@ const SocialLogin = ({setIsLogin, setActiveTab}) => {
             />
           </svg>
         </div>
-        <div
-          aria-hidden="true"
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ 
+            opacity: [0.3, 0.5, 0.3],
+            scale: [0.9, 1.1, 0.9]
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
           className={clsx(
-            "absolute -top-20 left-1/2 transform -translate-x-1/2 rounded-full pointer-events-none",
-            "w-[180px] h-[180px] sm:w-[200px] sm:h-[200px] md:w-[250px] md:h-[250px]",
-            "bg-gradient-to-tr from-purple-400 via-pink-500 to-pink-400 opacity-40",
-            "filter blur-[60px] sm:blur-[80px] saturate-150"
+            "absolute -top-20 transform -translate-x-1/2 rounded-full pointer-events-none",
+            "w-[25vh] h-[25vh]",
+            "bg-gradient-to-tr from-purple-500 via-pink-500 to-rose-500",
+            "filter blur-[70px] sm:blur-[90px] saturate-200",
+            "z-0"
           )}
-          style={{ zIndex: 0 }}
         />
       </motion.div>
 
+  {/* Floating particles */}
+  {[...Array(8)].map((_, i) => (
+    <motion.div
+      key={i}
+      initial={{
+        opacity: 0,
+        scale: 0,
+        x: Math.random() * 100 - 50,
+        y: Math.random() * 100 - 50
+      }}
+      animate={{
+        opacity: [0, 0.6, 0],
+        scale: [0, 1, 0],
+        x: Math.random() * 200 - 100,
+        y: Math.random() * 200 - 100
+      }}
+      transition={{
+        duration: Math.random() * 10 + 10,
+        repeat: Infinity,
+        repeatType: "reverse",
+        delay: Math.random() * 5
+      }}
+      className={clsx(
+        "absolute rounded-full",
+        i % 3 === 0 ? "bg-purple-400" : 
+        i % 3 === 1 ? "bg-pink-400" : "bg-indigo-400",
+        "w-2 h-2 sm:w-3 sm:h-3",
+        "blur-[1px]"
+      )}
+      style={{
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`
+      }}
+    />
+  ))}
+      {/* Main Content */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.94 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="relative w-full max-w-4xl z-30 mt-32 sm:mt-40 md:mt-48"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative w-full max-w-2xl z-30 mt-[27%]"
       >
-        <div className="pt-16 pb-8 sm:pt-20 sm:pb-12 px-4 sm:px-6">
+        <div className="pt-12 pb-8 sm:pt-16 sm:pb-12 px-4 sm:px-6">
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-            className="text-center mb-6"
+            className="text-center mb-8"
           >
-            <h2 className={clsx(
-              "text-[5vh] font-bold tracking-widest drop-shadow-lg", 
-              theme.textColor
-            )}>
+            <motion.h2 
+              className={clsx(
+                "text-[6vh] font-bold tracking-wider",
+                "bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-500",
+                "mb-3"
+              )}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
               ELITE
-            </h2>
-            <p className={clsx(
-              "text-sm sm:text-base mt-2 max-w-xs mx-auto",
-              theme.secondaryText
-            )}>
+            </motion.h2>
+            <motion.p 
+              className={clsx(
+                "text-sm sm:text-base mt-2 max-w-md mx-auto",
+                theme.secondaryText
+              )}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
               Sign in to unlock your premium experience
-            </p>
-            <p className={clsx(
-              "text-xs sm:text-sm mt-2 max-w-xs mx-auto",
-              theme.secondaryText
-            )}>
-              Enjoy exclusive features and personalized content
-            </p>
+            </motion.p>
           </motion.div>
 
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3 sm:gap-4"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-clos-4 gap-3 sm:gap-4"
           >
             {providers.map(({ name, icon, bg, hover, text }) => {
               const isLoading = loadingProvider === name.toLowerCase();
@@ -160,33 +295,49 @@ const SocialLogin = ({setIsLogin, setActiveTab}) => {
                 <motion.button
                   key={name}
                   variants={itemVariants}
-                  whileHover={{ scale: isLoading ? 1 : 1.05 }}
-                  whileTap={{ scale: isLoading ? 1 : 0.95 }}
+                  whileHover={{ 
+                    scale: isLoading ? 1 : 1.05,
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
+                  }}
+                  whileTap={{ scale: isLoading ? 1 : 0.98 }}
                   onClick={() => handleAuth(name.toLowerCase())}
                   disabled={loadingProvider !== null}
                   className={clsx(
                     "flex items-center justify-center",
-                    "py-2 px-3 sm:py-3 sm:px-4 rounded-xl sm:rounded-2xl",
-                    "transition-all duration-300 shadow-sm hover:shadow-md",
-                    "border border-transparent text-sm sm:text-base",
-                    "relative overflow-hidden",
+                    "p-2 rounded-xl",
+                    "transition-all duration-200",
+                    "border border-opacity-20",
+                    isLoading ? "cursor-not-allowed" : "cursor-pointer",
                     bg, hover, text,
-                    isLoading ? "cursor-not-allowed" : "cursor-pointer"
+                    theme.borderColor
                   )}
                 >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center w-full">
-                      <Spinner />
-                      <span className="ml-2 hidden sm:inline">Connecting...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-xl sm:text-2xl sm:mr-2">{icon}</span>
-                      <span className="hidden sm:inline font-medium">
-                        {name}
-                      </span>
-                    </>
-                  )}
+                  <AnimatePresence mode="wait">
+                    {isLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center justify-center w-full"
+                      >
+                        <Spinner />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="content"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center justify-center w-full"
+                      >
+                        <span className="mr-2">{icon}</span>
+                        <span className="hidden sm:inline font-medium text-sm">
+                          {name}
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.button>
               );
             })}
@@ -196,21 +347,21 @@ const SocialLogin = ({setIsLogin, setActiveTab}) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
-            className="mt-8 sm:mt-10 text-center border-t border-gray-300 dark:border-gray-700 pt-4 sm:pt-6"
+            className="mt-10 text-center border-t pt-6"
           >
             <p className={clsx(
               "text-xs sm:text-sm max-w-md mx-auto",
               theme.secondaryText
             )}>
               By continuing, you agree to our{' '}
-              <a href="#" className={clsx(theme.accentText, "hover:underline")}>Terms</a> and{' '}
-              <a href="#" className={clsx(theme.accentText, "hover:underline")}>Privacy Policy</a>.
-            </p>
-            <p className={clsx(
-              "text-xs sm:text-sm mt-2",
-              theme.secondaryText
-            )}>
-              Need help? <a href="#" className={clsx(theme.accentText, "hover:underline")}>Contact Support</a>
+              <a href="#" className={clsx(
+                theme.accentText, 
+                "hover:underline font-medium"
+              )}>Terms</a> and{' '}
+              <a href="#" className={clsx(
+                theme.accentText, 
+                "hover:underline font-medium"
+              )}>Privacy Policy</a>.
             </p>
           </motion.div>
         </div>

@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { FaCheck, FaCheckDouble } from 'react-icons/fa';
 import { useTheme } from './ThemeContext';
+import { BsCheck, BsCheck2, BsCheck2All } from 'react-icons/bs';
 
 const CHECK_ICONS = {
-  read: <FaCheckDouble className="text-xs text-blue-400 ml-2 shrink-0" />,
-  online: <FaCheckDouble className="text-xs text-gray-400 ml-2 shrink-0" />,
-  received: <FaCheck className="text-xs text-gray-400 ml-2 shrink-0" />,
+  read: <BsCheck2All className="text-xs text-blue-400 ml-2 shrink-0" />,
+  online: <BsCheck2All className="text-xs text-gray-400 ml-2 shrink-0" />,
+  received: <BsCheck2 className="text-xs text-gray-400 ml-2 shrink-0" />,
 };
 
 const DiscussionItem = ({ discussion, onClick }) => {

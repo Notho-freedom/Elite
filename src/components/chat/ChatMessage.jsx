@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { IoCheckmarkDone, IoClose } from 'react-icons/io5';
 import { motion, AnimatePresence } from 'framer-motion';
 import MediaViewer from './MediaViewer';
+import { BsCheck2All } from 'react-icons/bs';
+import clsx from 'clsx';
 
 const ChatMessage = ({ 
   message, 
@@ -115,9 +117,10 @@ const ChatMessage = ({
           }`}>
             <span>{message.time}</span>
             {message.sender === 'me' && (
-              <IoCheckmarkDone className={`ml-1 ${
-                message.status === 'read' ? 'text-blue-300' : 'text-white/60'
-              }`} />
+              <BsCheck2All className={clsx(
+                      "text-xs",
+                      message.isRead ? "text-blue-600 dark:text-blue-300" : theme.secondaryText
+                    )} />
             )}
           </div>
         </div>

@@ -80,7 +80,7 @@ const App = () => {
             isLogin? (
               !activeChat?.name && (
               <motion.div
-                className="flex flex-col flex-0"
+                className="flex flex-col flex-0 "
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -100, opacity: 0 }}
@@ -128,6 +128,7 @@ const App = () => {
                     setShowPopup={setShowPopup}
                     setActiveCall={setActiveCall}
                     setIsLogin={setIsLogin}
+                    isLogin={isLogin}
                   />
                 </motion.div>
               </AnimatePresence>
