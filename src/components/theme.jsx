@@ -1,11 +1,11 @@
 // theme.js
 const light = {
-    w: 'w-1/5',
+    w: '',
     bgColor: 'bg-white',
     textColor: 'text-gray-800',
     secondaryText: 'text-gray-500',
     borderColor: 'border-gray-200',
-    hoverBg: 'hover:bg-blue-300',
+    hoverBg: 'hover:purple-600',
     headerBg: 'bg-gray-50',
     inputBg: 'bg-gray-100 text-gray-800',
     emptyStateText: 'text-gray-500',

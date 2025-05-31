@@ -78,9 +78,8 @@ const App = () => {
 
           {
             isLogin? (
-              !activeChat?.name && (
               <motion.div
-                className="flex flex-col flex-0 "
+                className="hidden md:flex md:flex-col md:flex-0 "
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -100, opacity: 0 }}
@@ -93,7 +92,6 @@ const App = () => {
                   setActiveChat={setActiveChat}
                 />
               </motion.div>
-            )
             ):(
               <></>
             )
@@ -103,10 +101,10 @@ const App = () => {
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`${activeChat?.name || activeCall?.name || activeTab}`}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 1}}
+                  exit={{ opacity: 1}}
+                  transition={{ duration: 0.1 }}
                   className="w-full h-full"
                 >
                   <MainView

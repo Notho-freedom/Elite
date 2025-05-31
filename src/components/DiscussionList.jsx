@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import DiscussionItem from './DiscussionItem';
 import { FaPlusCircle, FaFilter } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -128,4 +128,4 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
   );
 };
 
-export default DiscussionList;
+export default React.memo(DiscussionList);

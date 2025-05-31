@@ -133,24 +133,50 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
   }, []);
 
   // Gestion de l'envoi de message
-  const handleSend = (e) => {
+  const handleSend = (e, mediaToSend = []) => {
     e.preventDefault();
-    if (inputValue.trim() === '') return;
+    
+    // Ne pas envoyer de message vide s'il n'y a ni texte ni média
+    if (!inputValue.trim() && mediaToSend.length === 0) return;
 
+    // Créer le nouveau message
     const newMessage = {
       id: Date.now(),
       text: inputValue,
+      media: mediaToSend.map(media => ({
+        type: media.type,
+        url: media.url // Dans une vraie app, vous enverriez le fichier au serveur
+      })),
       sender: 'me',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'sent',
-      reactions: []
+      reactions: [],
+      isRead: false
     };
 
+    // Ajouter le message à la liste
     setMessages(prev => [...prev, newMessage]);
+    
+    // Réinitialiser l'input
     setInputValue('');
     setShowEmojiPicker(false);
+    
+    // Dans une vraie application, vous enverriez le message au serveur ici
+    // await sendMessageToServer(newMessage);
+    
+    // Simuler l'envoi et la lecture
+    setTimeout(() => {
+      setMessages(prev => prev.map(msg => 
+        msg.id === newMessage.id ? { ...msg, status: 'delivered' } : msg
+      ));
+    }, 1000);
+    
+    setTimeout(() => {
+      setMessages(prev => prev.map(msg => 
+        msg.id === newMessage.id ? { ...msg, status: 'read', isRead: true } : msg
+      ));
+    }, 2000);
   };
-
   // Gestion des emojis
   const onEmojiClick = (emojiData) => {
     setInputValue(prev => prev + emojiData.emoji);
@@ -199,10 +225,7 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
   return (
     <motion.div 
       className={`flex-1 flex flex-col h-screen ${theme.bgColor} lg:border-l lg:border-r ${theme.borderColor} relative`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+
     >
       <ChatHeader 
         activeChat={activeChat}
