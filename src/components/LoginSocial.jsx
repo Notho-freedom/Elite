@@ -46,8 +46,8 @@ const SocialLogin = () => {
     // OAuth implementation here
   };
 
-  const haloSize = isDesktop ? 'w-[20rem] h-[20rem]' : 'w-20vw h-20vw'; // Adjusted size for halo
-  const svgSize = isDesktop ? 'w-[15rem] h-[15rem]' : 'w-32 h-32'; // Adjusted size for logo
+  const haloSize = isDesktop ? 'w-[25vh] h-[25vh]' : 'w-20vw h-20vw'; // Adjusted size for halo
+  const svgSize = isDesktop ? 'w-[25vh] h-[25vh]' : 'w-32 h-32'; // Adjusted size for logo
 
   return (
     <div className={clsx("relative min-h-screen flex items-center justify-center p-6", theme.bgColor)}>
