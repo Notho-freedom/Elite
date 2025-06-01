@@ -33,11 +33,10 @@ const ChatMessage = ({
       >
         <div 
           className={`relative group ${message.sender === 'me' ? 'ml-10' : 'mr-10'} ${
-            message.media?.length === 1 && !message.text ? 'flex justify-end' : ''
+            message.media?.length === 1 && !message.text ? 'flex justify-end' : 'lg:max-w-[40%] md:max-w-[75%] sm:max-w-[85%]'
           }`}
           style={{ 
             minWidth: '120px',
-            maxWidth: (message.media?.length === 1 && !message.text) ? 'none' : '30vw'
           }}
         >
           <MessageBubble 

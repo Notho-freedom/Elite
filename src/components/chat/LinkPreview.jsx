@@ -177,93 +177,86 @@ const LinkPreview = ({ url, theme, sender }) => {
             ? 'border-blue-300/30 bg-gradient-to-br from-blue-500/10 to-blue-600/10'
             : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
         )}>
-          {/* Conteneur principal flex en row (md+) et column (sm-) */}
-          <div className="flex flex-col md:flex-row">
-            {/* Colonne Image (pleine largeur sur mobile, 40% sur desktop) */}
-            {(preview.image || preview.favicon) && (
-              <div className="relative w-full md:w-2/5 h-40 md:h-auto bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                {preview.image ? (
-                  <>
-                    <img 
-                      src={preview.image} 
-                      alt={preview.title} 
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                      onError={(e) => {
-                        const img = e.target;
-                        img.style.display = 'none';
-                        const fallback = img.nextElementSibling;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                    <div 
-                      className="absolute inset-0 hidden items-center justify-center bg-gray-200/50 dark:bg-gray-700/50"
-                    >
-                      <img 
-                        src={preview.favicon} 
-                        alt="Favicon" 
-                        className="w-16 h-16 object-contain opacity-70"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 dark:bg-gray-700/50">
+          {(preview.image || preview.favicon) && (
+            <div className="relative w-full h-40 bg-gray-100 dark:bg-gray-700 overflow-hidden">
+              {preview.image ? (
+                <>
+                  <img 
+                    src={preview.image} 
+                    alt={preview.title} 
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      const fallback = e.target.nextElementSibling;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                  <div 
+                    className="absolute inset-0 hidden items-center justify-center bg-gray-200/50 dark:bg-gray-700/50"
+                  >
                     <img 
                       src={preview.favicon} 
                       alt="Favicon" 
                       className="w-16 h-16 object-contain opacity-70"
                     />
                   </div>
-                )}
-                {loading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-800/70">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Chargement...</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Colonne Données (pleine largeur sur mobile, 60% sur desktop) */}
-            <div className={clsx(
-              "p-3 transition-colors w-full md:w-3/5",
-              sender === 'me' ? 'text-white' : 'text-gray-900 dark:text-white'
-            )}>
-              <div className="flex items-start gap-2">
-                {/* Favicon seulement visible sur mobile si pas d'image */}
-                {(!preview.image && preview.favicon) && (
+                </>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 dark:bg-gray-700/50">
                   <img 
                     src={preview.favicon} 
                     alt="Favicon" 
-                    className="w-5 h-5 mt-0.5 flex-shrink-0 md:hidden"
+                    className="w-16 h-16 object-contain opacity-70"
                   />
-                )}
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm mb-1 truncate">
-                    {preview.title}
-                  </h4>
-                  {preview.description && (
-                    <p className={clsx(
-                      "text-xs line-clamp-3 md:line-clamp-4",
-                      sender === 'me' ? 'text-blue-100/80' : 'text-gray-500 dark:text-gray-400'
-                    )}>
-                      {preview.description}
-                    </p>
-                  )}
                 </div>
+              )}
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-800/70">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Chargement...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className={clsx(
+            "p-3 transition-colors",
+            sender === 'me' ? 'text-white' : 'text-gray-900 dark:text-white'
+          )}>
+            <div className="flex items-start gap-2">
+              {preview.favicon && (
+                <img 
+                  src={preview.favicon} 
+                  alt="Favicon" 
+                  className="w-5 h-5 mt-0.5 flex-shrink-0"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-sm mb-1 truncate">
+                  {preview.title}
+                </h4>
+                {preview.description && (
+                  <p className={clsx(
+                    "text-xs line-clamp-2",
+                    sender === 'me' ? 'text-blue-100/80' : 'text-gray-500 dark:text-gray-400'
+                  )}>
+                    {preview.description}
+                  </p>
+                )}
               </div>
-              
-              <div className={clsx(
-                "text-xs mt-2 truncate flex items-center",
-                sender === 'me' ? 'text-blue-200/70' : 'text-gray-400 dark:text-gray-500'
-              )}>
-                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
-                {new URL(preview.url).hostname.replace('www.', '')}
-              </div>
+            </div>
+            
+            <div className={clsx(
+              "text-xs mt-2 truncate flex items-center",
+              sender === 'me' ? 'text-blue-200/70' : 'text-gray-400 dark:text-gray-500'
+            )}>
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              {new URL(preview.url).hostname.replace('www.', '')}
             </div>
           </div>
         </div>

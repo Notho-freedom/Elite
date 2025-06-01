@@ -114,7 +114,7 @@ const MainView = ({
         case 'profile':
             return <Profile user={activeChat} onClose={() => setProfile(false)} />;
         default:
-            return <SocialLogin setIsLogin={setIsLogin} setActiveTab={setActiveTab} />;
+            return <LoadingChat />;
     }
 };
 

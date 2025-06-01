@@ -49,9 +49,9 @@ const MessageBubble = ({ message, theme, currentUserId, openMediaViewer }) => {
         : isSingleMedia
           ? 'p-0 rounded-xl overflow-hidden max-w-[320px]'
           : [
-              'px-3 py-2 rounded-2xl max-w-[40vw]',
+              'px-3 py-2 rounded-2xl',
               message.sender === 'me'
-                ? `${theme.accentBg} ${theme.textColor} rounded-br-none shadow-md shadow-blue-500/20`
+                ? `${theme.accentBg} ${theme.textColor} ${theme.accentShadow} rounded-br-none shadow-md`
                 : `${theme.messageBg} rounded-bl-none ${theme.textColor} shadow-md shadow-gray-400/20 backdrop-blur-sm`
             ]
     )}>
@@ -73,7 +73,7 @@ const MessageBubble = ({ message, theme, currentUserId, openMediaViewer }) => {
         isSingleMedia ? '' : 'w-full'
       )}>
         {!isSingleMedia && message.text && (
-          <div className="text-sm leading-relaxed break-words">
+          <div className="text-sm leading-relaxed break-words w-auto">
             {formatText}
           </div>
         )}
