@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import DiscussionItem from './DiscussionItem';
 import { FaPlusCircle, FaFilter } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from './ThemeContext';
+import { useTheme } from './Context/ThemeContext';
+
 
 const FILTERS = {
   ALL: 'all',

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
-import { useTheme } from './components/ThemeContext';
 import useFetchDiscussions from './components/hooks/useFetchDiscussions';
 import MainView from './components/MainView';
+import { useTheme } from './components/Context/ThemeContext';
 
 const Spinner = () => (
   <motion.div

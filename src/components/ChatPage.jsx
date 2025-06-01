@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useTheme } from './ThemeContext';
+import { useTheme } from './Context/ThemeContext';
 import {motion, AnimatePresence } from 'framer-motion';
 import ChatHeader from './chat/ChatHeader';
 import ChatMessage from './chat/ChatMessage';

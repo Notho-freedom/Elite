@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
-import { FaCheck, FaCheckDouble } from 'react-icons/fa';
-import { useTheme } from './ThemeContext';
-import { BsCheck, BsCheck2, BsCheck2All } from 'react-icons/bs';
+import { useTheme } from './Context/ThemeContext';
+import { BsCheck2, BsCheck2All } from 'react-icons/bs';
 
 const CHECK_ICONS = {
   read: <BsCheck2All className="text-xs text-blue-400 ml-2 shrink-0" />,

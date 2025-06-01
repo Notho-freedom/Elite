@@ -5,11 +5,11 @@ import CallPanel from './CallPanel';
 import SharePopup from './SharePopup';
 import VideoArea from './VideoArea';
 import VerticalControls from './VerticalControls';
-import SocialLogin from "./LoginSocial";
 import { useEffect, useState } from "react";
 import Profile from "./chat/Profile";
-import { useTheme } from "./ThemeContext";
 import LoadingChat from "./LoadingChat";
+import { useTheme } from "./Context/ThemeContext";
+import { SocialLogin } from "./Auth/SocialLogin";
 
 const MainView = ({
     activeChat,

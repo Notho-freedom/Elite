@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTheme } from './../ThemeContext';
 import clsx from 'clsx';
 import { 
   FiSearch,
@@ -27,6 +26,7 @@ import {
 } from 'react-icons/bs';
 import { RiVipCrownLine } from 'react-icons/ri';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../Context/ThemeContext';
 
 const Profile = ({ user, onClose }) => {
   const { theme, mode } = useTheme();

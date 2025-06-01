@@ -1,5 +1,5 @@
 import EmojiPicker from 'emoji-picker-react';
-import { useTheme } from '../ThemeContext';
+import { useTheme } from '../Context/ThemeContext';
 
 const EmojiPickerWrapper = ({
   showEmojiPicker,

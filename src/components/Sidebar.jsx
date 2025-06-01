@@ -1,6 +1,6 @@
 import { FaComments, FaCircleNotch, FaPhoneAlt, FaCog } from 'react-icons/fa';
-import { useTheme } from './ThemeContext';
 import { motion } from 'framer-motion';
+import { useTheme } from './Context/ThemeContext';
 
 const Sidebar = ({ activeTab, setActiveTab, activeChat, setActiveChat }) => {
   const { theme } = useTheme();

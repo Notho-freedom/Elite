@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FaLightbulb, FaStopwatch, FaUser } from 'react-icons/fa';
-import { useTheme } from './ThemeContext';
+import { useTheme } from './Context/ThemeContext';
 
 const VerticalControls = () => {
   const [active, setActive] = useState(null);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaVideo, FaMicrophone, FaDesktop, FaTimes, FaThLarge, FaPlusCircle } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { useTheme } from './ThemeContext'; // Ajustez le chemin selon votre structure
+import { useTheme } from './Context/ThemeContext';
 
 const AnimatedIconButton = ({
   active,
