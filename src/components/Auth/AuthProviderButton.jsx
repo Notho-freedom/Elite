@@ -33,7 +33,7 @@ export const AuthProviderButton = ({ provider, isLoading, onClick }) => {
       aria-busy={isLoading}
       className={clsx(
         "flex items-center justify-center",
-        "p-3 sm:p-4 rounded-xl",
+        "p-[1.8vh] rounded-xl",
         "transition-all duration-200 ease-in-out",
         isLoading 
           ? "cursor-not-allowed opacity-80" 
@@ -62,8 +62,8 @@ export const AuthProviderButton = ({ provider, isLoading, onClick }) => {
             exit={{ opacity: 0 }}
             className="flex items-center justify-center w-full"
           >
-            <span className="mr-2">{icon}</span>
-            <span className="inline font-medium text-sm whitespace-nowrap">
+            <span className="mr-1.5">{icon}</span>
+            <span className="inline font-medium text-xs md:text-sm whitespace-nowrap">
               {name}
             </span>
           </motion.div>

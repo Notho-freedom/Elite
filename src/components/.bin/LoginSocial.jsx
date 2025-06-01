@@ -1,4 +1,4 @@
-import { useTheme } from './Context/ThemeContext';
+import { useTheme } from '../Context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaGithub, FaDiscord, FaTwitter,

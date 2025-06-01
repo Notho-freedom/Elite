@@ -18,7 +18,7 @@ export const AuthProviders = ({ loadingProvider, onAuth }) => (
     variants={containerVariants}
     initial="hidden"
     animate="visible"
-    className="grid grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"
+    className="grid grid-cols-3 gap-[1.8vh] font-montserrat font-normal"
   >
     {PROVIDERS.map((provider) => (
       <AuthProviderButton

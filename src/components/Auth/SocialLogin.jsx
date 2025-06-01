@@ -39,7 +39,7 @@ export const SocialLogin = ({ setIsLogin, setActiveTab }) => {
 
 const Logo = () => (
   <motion.div 
-    className='top-[2vh] absolute fixed-top'
+    className='top-[3vh] absolute fixed-top'
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: 0.2 }}
@@ -47,7 +47,7 @@ const Logo = () => (
     <motion.img 
       src='/logoo.png' 
       alt="Logo"
-      className="w-[28vh] filter drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]"
+      className="w-[28vh] filter drop-shadow-[0_0_4px_rgba(212,175,55,0.6)]"
       whileHover={{ scale: 1.05 }}
     />
   </motion.div>
@@ -73,15 +73,15 @@ const Header = ({ theme }) => (
     initial={{ y: -20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-    className="text-center mb-[3vh]"
+    className="text-center mb-[2vh]"
   >
-    <div className="text-[5vh] flex items-center justify-center mt-[20vh]">
+    <div className="text-[5vh] flex items-center justify-center mt-[25vh]">
       <motion.span 
         className={clsx(
           "font-bold tracking-wider",
           "bg-clip-text text-transparent",
-          "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500",
-          "font-playfair"
+          "bg-gradient-to-r from-amber-400 via-amber-400 to-yellow-500",
+          "font-playfair drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]"
         )}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -104,7 +104,7 @@ const Header = ({ theme }) => (
     </div>
     <motion.p 
       className={clsx(
-        "text-sm sm:text-base max-w-md mx-auto font-montserrat font-normal mt-[5vh]", 
+        " text-xs md:text-sm max-w-md mx-auto font-montserrat font-normal mt-[5vh]", 
         theme.textColor
       )}
       initial={{ opacity: 0 }}
