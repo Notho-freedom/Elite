@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import DiscussionItem from './DiscussionItem';
-import { FaPlusCircle, FaFilter } from 'react-icons/fa';
+import { FaPlusCircle, FaFilter, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from './Context/ThemeContext';
-
+import { BsFilterCircleFill } from 'react-icons/bs';
 
 const FILTERS = {
   ALL: 'all',
@@ -25,39 +25,133 @@ const buttonVariants = {
 
 const DiscussionList = ({ discussions, setActiveChat }) => {
   const [filter, setFilter] = useState(FILTERS.ALL);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const { theme } = useTheme();
   const t = theme;
 
   const filteredDiscussions = useMemo(() => {
+    let result = discussions;
+    
+    // Appliquer le filtre sélectionné
     switch (filter) {
       case FILTERS.UNREAD:
-        return discussions.filter(d => d.unread);
+        result = result.filter(d => d.unread);
+        break;
       case FILTERS.ONLINE:
-        return discussions.filter(d => d.isOnline);
-      case FILTERS.ALL:
+        result = result.filter(d => d.isOnline);
+        break;
       default:
-        return discussions;
+        break;
     }
-  }, [filter, discussions]);
+    
+    // Appliquer la recherche si query existe
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(d => 
+        d.name.toLowerCase().includes(query) || 
+        (d.lastMessage && d.lastMessage.toLowerCase().includes(query))
+      );
+    }
+    
+    return result;
+  }, [filter, discussions, searchQuery]);
 
   const handleAddFilter = () => {
-    // À personnaliser plus tard avec un menu ou modal
     alert('Fonction "Ajouter un filtre" à implémenter 😎');
+  };
+
+  const toggleSearch = () => {
+    setIsSearching(!isSearching);
+    if (isSearching) setSearchQuery('');
   };
 
   return (
     <div className={`${theme.w} ${t.bgColor} h-screen flex flex-col`}>
-      <header className={`px-6 py-4 border-b ${t.borderColor} flex justify-between items-center ${t.headerBg}`}>
-        <h1 className={`${t.textColor} font-semibold text-lg`}>Discussions</h1>
-        <motion.button
-          whileHover={{ scale: 1.1, color: '#0a84ff' }}
-          whileTap={{ scale: 0.95 }}
-          className={`${t.secondaryText} ${t.hoverBg} rounded-md p-1`}
-          aria-label="Add new discussion"
-        >
-          <FaPlusCircle size={20} />
-        </motion.button>
-      </header>
+{/* Header principal */}
+<motion.div
+  className={`px-4 py-3 border-b ${theme.borderColor} flex justify-between items-center ${theme.headerBg}`}
+  variants={itemVariants}
+>
+  <motion.h2 className={`text-lg font-semibold ${theme.textColor}`} variants={itemVariants}>
+    Discussions
+  </motion.h2>
+
+  <div className="flex items-center space-x-2">
+    {/* Bouton recherche */}
+    <motion.button
+      className={`p-1 rounded-full ${theme.searchHover}`}
+      variants={buttonVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="tap"
+      onClick={toggleSearch}
+      aria-label="Rechercher"
+    >
+      <FaSearch className={theme.secondaryText} />
+    </motion.button>
+
+    {/* Bouton filtres */}
+    <motion.div className="relative" variants={itemVariants}>
+      <motion.button
+        className={`p-1 rounded-full flex items-center ${theme.searchHover}`}
+        variants={buttonVariants}
+        initial="rest"
+        whileHover="hover"
+        whileTap="tap"
+        aria-label="Filtres"
+      >
+        <BsFilterCircleFill className={theme.secondaryText} />
+        <FaChevronDown className={`text-xs ml-1 ${theme.secondaryText}`} />
+      </motion.button>
+    </motion.div>
+  </div>
+</motion.div>
+
+{/* Barre de recherche dépliable */}
+<AnimatePresence mode="wait">
+  {isSearching && (
+    <motion.div
+      className={`px-4 py-2 border-b ${theme.borderColor} ${theme.headerBg}`}
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+    >
+      <div className="relative">
+        {/* Icône recherche */}
+        <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText}`} />
+        
+        {/* Input de recherche */}
+        <motion.input
+          type="text"
+          placeholder="Rechercher..."
+          className={`w-full pl-9 pr-10 py-2 rounded-md focus:outline-none ${theme.inputBg} ${theme.textColor}`}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          autoFocus
+          whileFocus={{ scale: 1.01 }}
+        />
+
+        {/* Clear input */}
+        {searchQuery && (
+          <motion.button
+            onClick={() => setSearchQuery('')}
+            className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText} ${theme.filterHover}`}
+            variants={buttonVariants}
+            initial="rest"
+            whileHover="hover"
+            whileTap="tap"
+            aria-label="Effacer"
+          >
+            <FaTimes />
+          </motion.button>
+        )}
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
 
       <motion.div className={`flex border-b ${t.borderColor} px-4 items-center`} initial="rest" animate="rest">
         {Object.values(FILTERS).map((f) => (
@@ -90,7 +184,6 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
           title="Ajouter un filtre"
         >
           <FaFilter />
-          <span></span>
         </motion.button>
       </motion.div>
 
@@ -109,6 +202,8 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
                 <DiscussionItem 
                   discussion={discussion}
                   onClick={() => setActiveChat(discussion)}
+                  highlight={searchQuery && (discussion.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (discussion.lastMessage && discussion.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())))}
                 />
               </motion.div>
             ))
@@ -118,9 +213,21 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className={`flex items-center justify-center h-full italic ${t.emptyStateText}`}
+              className={`flex flex-col items-center justify-center h-full italic ${t.emptyStateText} p-4`}
             >
-              Aucun résultat
+              {searchQuery ? (
+                <>
+                  <div className="text-lg mb-2">Aucun résultat pour "{searchQuery}"</div>
+                  <div className="text-sm">Essayez un autre terme de recherche</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-lg mb-2">Aucune discussion</div>
+                  <div className="text-sm">{filter === FILTERS.UNREAD ? 'Aucun message non lu' : 
+                                         filter === FILTERS.ONLINE ? 'Aucun contact en ligne' : 
+                                         'Commencez une nouvelle discussion'}</div>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

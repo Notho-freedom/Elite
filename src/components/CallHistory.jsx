@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MdCallMade, MdCallReceived } from 'react-icons/md';
 import { useTheme } from './Context/ThemeContext';
 
-
 const FILTERS = ['all', 'audio', 'video', 'missed'];
 
 const iconsByType = {
@@ -46,15 +45,13 @@ const CallDirectionIcon = ({ type }) => {
   }
 };
 
-
-const CallHistory = ({ discussions, setActiveCall}) => {
+const CallHistory = ({ discussions, setActiveCall }) => {
   const [calls, setCalls] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(false);
-  const {theme} = useTheme();
-
-
+  const [showSearch, setShowSearch] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (discussions && discussions.length > 0) {
@@ -125,6 +122,11 @@ const CallHistory = ({ discussions, setActiveCall}) => {
     });
   };
 
+  const toggleSearch = () => {
+    setShowSearch(!showSearch);
+    if (showSearch) setSearchTerm('');
+  };
+
   return (
     <motion.div
       className={`${theme.w} flex flex-col h-full overflow-hidden shadow-lg border ${theme.borderColor} ${theme.bgColor} ${theme.textColor}`}
@@ -146,6 +148,7 @@ const CallHistory = ({ discussions, setActiveCall}) => {
             initial="rest"
             whileHover="hover"
             whileTap="tap"
+            onClick={toggleSearch}
           >
             <FaSearch className={theme.secondaryText} />
           </motion.button>
@@ -164,32 +167,43 @@ const CallHistory = ({ discussions, setActiveCall}) => {
         </div>
       </motion.div>
 
-      {/* Search Bar */}
-      <motion.div className={`px-4 py-2 border-b ${theme.borderColor}`} variants={itemVariants}>
-        <div className="relative">
-          <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText}`} />
-          <motion.input
-            type="text"
-            placeholder="Search"
-            className={`w-full pl-9 pr-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme.inputBg}`}
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            whileFocus={{ scale: 1.02 }}
-          />
-          {searchTerm && (
-            <motion.button
-              onClick={() => setSearchTerm('')}
-              className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText} ${theme.filterHover}`}
-              variants={buttonVariants}
-              initial="rest"
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <FaTimes />
-            </motion.button>
-          )}
-        </div>
-      </motion.div>
+      {/* Search Bar - Conditionally Rendered */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div 
+            className={`px-4 py-2 border-b ${theme.borderColor}`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative">
+              <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText}`} />
+              <motion.input
+                type="text"
+                placeholder="Search"
+                className={`w-full pl-9 pr-4 py-2 rounded-md focus:outline-none ${theme.inputBg}`}
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                whileFocus={{ scale: 1.02 }}
+                autoFocus
+              />
+              {searchTerm && (
+                <motion.button
+                  onClick={() => setSearchTerm('')}
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText} ${theme.filterHover}`}
+                  variants={buttonVariants}
+                  initial="rest"
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <FaTimes />
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Filter Tabs */}
       <motion.div className={`flex border-b ${theme.borderColor} px-4`} variants={itemVariants}>
@@ -237,11 +251,11 @@ const CallHistory = ({ discussions, setActiveCall}) => {
           </motion.div>
         ) : filteredCalls.length === 0 ? (
           <motion.div className={`p-4 text-center ${theme.emptyStateText}`} variants={itemVariants}>
-            No calls found.
+            {searchTerm ? 'No matching calls found' : 'No calls found'}
           </motion.div>
         ) : (
           <AnimatePresence mode="popLayout">
-            {filteredCalls.map((call, index)=> (
+            {filteredCalls.map((call, index) => (
               <motion.div
                 key={call.id}
                 className={`flex items-center px-4 py-3 cursor-pointer ${theme.hoverBg}`}
@@ -262,7 +276,7 @@ const CallHistory = ({ discussions, setActiveCall}) => {
                 />
                 <div className="flex-1">
                   <div className="flex justify-between items-center">
-                    <h6 className={`${call.type=='missed'? 'text-red-500': theme.textColor}`}>{call.name}</h6>
+                    <h6 className={`${call.type === 'missed' ? 'text-red-500' : theme.textColor}`}>{call.name}</h6>
                     <span className={`text-xs font-mono ${theme.secondaryText}`}>{formatDate(call.date)}</span>
                   </div>
                   <div className="flex justify-between items-center mt-0.5 text-sm">
@@ -270,7 +284,6 @@ const CallHistory = ({ discussions, setActiveCall}) => {
                       <CallDirectionIcon type={call.type} />
                       <span>{call.type === 'missed' ? 'Missed Call' : formatDuration(call.duration)}</span>                    
                     </div>
-
                     <span className="flex items-center space-x-1">
                       {getCallIcon(call.type)}
                     </span>

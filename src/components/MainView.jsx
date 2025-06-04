@@ -2,7 +2,7 @@ import { useMediaQuery } from 'react-responsive';
 import CallHistory from "./CallHistory";
 import DiscussionList from "./DiscussionList";
 import ChatPage from './ChatPage';
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import { useTheme } from "./Context/ThemeContext";
