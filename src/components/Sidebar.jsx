@@ -109,16 +109,16 @@ const Sidebar = ({ activeTab, setActiveTab, activeChat, setActiveChat, isLogin }
             {tab.icon}
             {/* Pastille de notification pour desktop */}
             {notifications[tab.id] > 0 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className={`absolute -top-1 -right-1 flex items-center justify-center 
-                  h-5 w-5 rounded-full ${theme.accentBg} text-white 
-                  text-[0.7rem] font-bold`}
-              >
-                {notifications[tab.id] > 9 ? '+9' : notifications[tab.id]}
-              </motion.div>
-            )}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className={`absolute -top-1 -right-1 flex items-center justify-center 
+                    h-5 w-5 rounded-full ${activeTab === tab.id ? 'text-white' : theme.baccentText} ${theme.accentShadow} 
+                    text-[0.75rem] font-extrabold`}
+                >
+                  {notifications[tab.id] > 9 ? '+9' : notifications[tab.id]}
+                </motion.div>
+              )}
           </motion.button>
         ))}
       </div>

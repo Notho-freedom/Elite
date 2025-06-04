@@ -1,6 +1,7 @@
 // theme.js
 const light = {
-  w: '',
+  w: 'w-full',
+  divw: ' w-1/3 lg:w-1/4',
   bgColor: 'bg-white',
   textColor: 'text-gray-900',
   secondaryText: 'text-gray-600',
@@ -40,7 +41,8 @@ const light = {
 };
 
 const dark = {
-  w: '',
+  w: 'w-full',
+  divw: ' w-2/5 lg:w-1/4',
   bgColor: 'bg-gray-900',
   textColor: 'text-gray-100',
   secondaryText: 'text-gray-400',

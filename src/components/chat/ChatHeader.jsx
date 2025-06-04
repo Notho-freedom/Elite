@@ -23,7 +23,7 @@ const ChatHeader = ({
       initial={{ opacity: 0, y: -15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`p-2 lg:p-3 border-b ${theme.borderColor} flex items-center justify-between ${theme.headerBg} sticky top-0 z-10`}
+      className={`p-2 lg:p-3 border-b ${theme.borderColor} flex items-center justify-between ${theme.headerBg} sticky top-0 z-auto`}
     >
       {/* Back Button */}
       <motion.button

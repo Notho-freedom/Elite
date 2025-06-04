@@ -8,6 +8,7 @@ import Entry from "./Entry";
 import { useTheme } from "./Context/ThemeContext";
 import { SocialLogin } from "./Auth/SocialLogin";
 import Loading from './Loading';
+import Status from './Status/Status';
 
 
 const MainView = ({
@@ -29,15 +30,18 @@ const MainView = ({
 
   // 2. Layout Desktop
   if (isDesktop) {
-    if (activeTab.includes('chats') || activeTab.includes('calls')){
+    if (activeTab.includes('chats') || activeTab.includes('calls') || activeTab.includes('status')){
         return (
             <div className="flex h-screen">
-              <div className={`w-1/3 border-r ${theme.borderColor}`}>
+              <div className={`${theme.divw} border-r ${theme.borderColor}`}>
                 {activeTab === 'chats' && (
                   <DiscussionList discussions={sortedDiscussions} setActiveChat={setActiveChat} />
                 )}
                 {activeTab === 'calls' && (
                   <CallHistory discussions={sortedDiscussions} setActiveCall={setActiveCall} />
+                )}
+                {activeTab === 'status' && (
+                  <Status users={sortedDiscussions} />
                 )}
               </div>
       
@@ -72,7 +76,7 @@ const MainView = ({
     <>
       {activeTab === 'chats' && <DiscussionList discussions={sortedDiscussions} setActiveChat={setActiveChat} />}
       {activeTab === 'calls' && <CallHistory discussions={sortedDiscussions} setActiveCall={setActiveCall} />}
-      {activeTab === 'status' && <EmptyState activeTab={activeTab} />}
+      {activeTab === 'status' && <Status users={sortedDiscussions} />}
       {activeTab === 'settings' && <EmptyState activeTab={activeTab} />}
     </>
   );
