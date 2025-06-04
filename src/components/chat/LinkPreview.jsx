@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import axios from 'axios';
+import { useTheme } from '../Context/ThemeContext';
 
 const PROXIES = [
   "https://cors-anywhere.herokuapp.com/",
@@ -26,6 +27,7 @@ const LinkPreview = ({ url, sender, compact = false }) => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const {theme} = useTheme();
 
   const fetchAppMetadata = useCallback(async (url) => {
     // Essayer d'abord Microlink
@@ -164,33 +166,65 @@ const LinkPreview = ({ url, sender, compact = false }) => {
 
   if (compact) {
     return (
-      <div className="my-1 max-w-full transition-all duration-200">
-        <a 
-          href={url} 
-          target="_blank" 
-          rel="noopener noreferrer nofollow"
-          className="flex items-center gap-2 no-underline group p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-        >
-          {preview.favicon && (
-            <img 
-              src={preview.favicon} 
-              alt="Favicon" 
-              className="w-5 h-5 flex-shrink-0"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-sm truncate">
-              {preview.title}
-            </h4>
-            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+      <div className="my-1 max-w-full transition-all duration-200 hover:scale-[1.01]">
+      <a 
+        href={preview.url} 
+        target="_blank" 
+        rel="noopener noreferrer nofollow"
+        className="block no-underline group"
+      >
+        <div className={clsx(
+          "rounded-xl overflow-hidden border transition-all duration-200",
+          "hover:shadow-lg hover:border-opacity-80",
+          sender === 'me' 
+            ? theme.accentBg
+            : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
+        )}>
+  
+          
+          <div className={clsx(
+            "p-3 transition-colors",
+            sender === 'me' ? 'text-white' : 'text-gray-900 dark:text-white'
+          )}>
+            <div className="flex items-start gap-2">
+              {preview.favicon && (
+                <img 
+                  src={preview.favicon} 
+                  alt="Favicon" 
+                  className="w-5 h-5 mt-0.5 flex-shrink-0"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-sm mb-1 truncate">
+                  {preview.title}
+                </h4>
+                {preview.description && (
+                  <p className={clsx(
+                    "text-xs line-clamp-2",
+                    sender === 'me' ? 'text-blue-100/80' : 'text-gray-500 dark:text-gray-400'
+                  )}>
+                    {preview.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <div className={clsx(
+              "text-xs mt-2 truncate flex items-center",
+              sender === 'me' ? 'text-blue-200/70' : 'text-gray-400 dark:text-gray-500'
+            )}>
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
               {new URL(preview.url).hostname.replace('www.', '')}
             </div>
           </div>
-        </a>
-      </div>
+        </div>
+      </a>
+    </div>
     );
   }
-  
+
   return (
     <div className="my-1 max-w-full transition-all duration-200 hover:scale-[1.01]">
       <a 
