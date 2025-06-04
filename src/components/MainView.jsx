@@ -1,121 +1,97 @@
+import { useMediaQuery } from 'react-responsive';
 import CallHistory from "./CallHistory";
 import DiscussionList from "./DiscussionList";
 import ChatPage from './ChatPage';
-import CallPanel from './CallPanel';
-import SharePopup from './SharePopup';
-import VideoArea from './VideoArea';
-import VerticalControls from './VerticalControls';
 import { useEffect, useState } from "react";
 import Profile from "./chat/Profile";
-import LoadingChat from "./LoadingChat";
+import Entry from "./Entry";
 import { useTheme } from "./Context/ThemeContext";
 import { SocialLogin } from "./Auth/SocialLogin";
+import Loading from './loading';
+
 
 const MainView = ({
-    activeChat,
-    setActiveChat,
-    activeTab,
-    setActiveTab,
-    sortedDiscussions,
-    activeCall,
-    isSilenced,
-    setIsSilenced,
-    shareLink,
-    setShareLink,
-    toggleMute,
-    toggleVideo,
-    toggleScreenShare,
-    endCall,
-    showPopup,
-    setShowPopup,
-    setActiveCall,
-    setIsLogin,
-    isLogin,
+  activeTab, setActiveTab,
+  activeChat, setActiveChat,
+  sortedDiscussions, activeCall,
+  isLogin, setIsLogin,
+  callHandlers, setActiveCall,
 }) => {
-    const [profile, setProfile] = useState(false);
-    const {theme}=useTheme();
+  const { theme } = useTheme();
+  const isDesktop = useMediaQuery({ minWidth: 780 });
+  const [showProfile, setShowProfile] = useState(false);
 
-    useEffect(() => {
-        if (!activeChat && !profile && isLogin) {
-            setActiveTab('chats');
-        }
-    }, [activeChat, profile, setActiveTab, isLogin]);
 
-    // View 2: Active call (prioritaire, prend tout l'écran)
-    if (activeCall?.name) {
-        return (
-            <>
-                <CallPanel
-                    activeCall={activeCall} isSilenced={isSilenced}
-                    setIsSilenced={setIsSilenced} shareLink={shareLink}
-                    setShareLink={setShareLink} toggleMute={toggleMute}
-                    toggleVideo={toggleVideo} toggleScreenShare={toggleScreenShare}
-                    endCall={endCall}
-                />
-                {showPopup && (
-                    <SharePopup activeCall={activeCall} onClose={() => setShowPopup(false)} />
-                )}
-                <VideoArea activeCall={activeCall} />
-                <VerticalControls />
-            </>
-        );
-    }
+  // 1. Gestion prioritaire des états
+  if (!isLogin) return <SocialLogin setIsLogin={setIsLogin} setActiveTab={setActiveTab} />;
+  if (activeCall) return <CallScreen activeCall={activeCall} callHandlers={callHandlers} />;
+  if (showProfile) return <Profile user={activeChat} onClose={() => setShowProfile(false)} />;
 
-    // Disposition pour grands écrans (lg: 1024px et plus)
-    if (window.innerWidth >= 720 && isLogin && activeTab === 'chats') {
+  // 2. Layout Desktop
+  if (isDesktop) {
+    if (activeTab.includes('chats') || activeTab.includes('calls')){
         return (
             <div className="flex h-screen">
-
-                {/* Liste des discussions (1/4 de l'écran) */}
-                <div className={`flex flex-shrink border-r ${theme.borderColor}`}>
-                    <DiscussionList 
-                        discussions={sortedDiscussions} 
-                        setActiveChat={setActiveChat}
-                        isWideLayout={true}
-                    />
-                </div>
-                
-                {/* Zone de chat (reste de l'écran) */}
-                <div className="flex-1">
-                    {activeChat?.name ? (
-                        <ChatPage 
-                            activeChat={activeChat} 
-                            setActiveChat={setActiveChat} 
-                            messages={[]} 
-                            setActiveTab={setActiveTab} 
-                            setProfile={setProfile}
-                            isWideLayout={true}
-                        />
-                    ) : (
-                        <LoadingChat />
-                    )}
-                    </div>
-                </div>
-            );
+              <div className={`w-1/3 border-r ${theme.borderColor}`}>
+                {activeTab === 'chats' && (
+                  <DiscussionList discussions={sortedDiscussions} setActiveChat={setActiveChat} />
+                )}
+                {activeTab === 'calls' && (
+                  <CallHistory discussions={sortedDiscussions} setActiveCall={setActiveCall} />
+                )}
+              </div>
+      
+              <div className="flex-1">
+                {activeChat ? (
+                  <ChatPage 
+                    activeChat={activeChat} 
+                    setActiveChat={setActiveChat}
+                    onProfileOpen={() => setShowProfile(true)}
+                  />
+                ) : (
+                  <EmptyState activeTab={activeTab} />
+                )}
+              </div>
+            </div>
+          );
     }
+  }
 
-    // View 1: Active chat (affichage mobile/tablette)
-    if (activeChat?.name && !profile) {
-        return <ChatPage activeChat={activeChat} setActiveChat={setActiveChat} messages={[]} setActiveTab={setActiveTab} setProfile={setProfile} />;
-    }
+  // 3. Layout Mobile
+  if (activeChat) {
+    return (
+      <ChatPage 
+        activeChat={activeChat}
+        setActiveChat={setActiveChat}
+        onProfileOpen={() => setShowProfile(true)}
+      />
+    );
+  }
 
-    // View 3: Tab navigation (affichage mobile/tablette)
-    switch (activeTab) {
-        case 'chats':
-            return <DiscussionList discussions={sortedDiscussions} setActiveChat={setActiveChat} />;
-        case 'calls':
-            return <CallHistory discussions={sortedDiscussions} setActiveCall={setActiveCall} />;
-        case 'status':
-            return <div className="flex flex-col items-center justify-center flex-1 text-white">🟢 Status - En cours de dev</div>;
-        case 'settings':
-            return <div className="flex flex-col items-center justify-center flex-1 text-white">⚙️ Settings - À venir</div>;
-        case 'login':
-            return <SocialLogin setIsLogin={setIsLogin} setActiveTab={setActiveTab} />;
-        case 'profile':
-            return <Profile user={activeChat} onClose={() => setProfile(false)} />;
-        default:
-            return <LoadingChat />;
-    }
+  return (
+    <>
+      {activeTab === 'chats' && <DiscussionList discussions={sortedDiscussions} setActiveChat={setActiveChat} />}
+      {activeTab === 'calls' && <CallHistory discussions={sortedDiscussions} setActiveCall={setActiveCall} />}
+      {activeTab === 'status' && <EmptyState activeTab={activeTab} />}
+      {activeTab === 'settings' && <EmptyState activeTab={activeTab} />}
+    </>
+  );
 };
+
+const CallScreen = ({ activeCall, callHandlers }) => (
+  <div className="relative h-screen w-screen bg-black">
+    {/* VideoArea, CallPanel, etc. */}
+    <button onClick={callHandlers.endCall}>End Call</button>
+  </div>
+);
+
+const EmptyState = ({ activeTab }) => (
+  <div className="flex-1 flex items-center justify-center">
+    {activeTab === 'chats' && <Entry />}
+    {activeTab === 'calls' && <Loading />}
+    {activeTab === 'status' && <Loading />}
+    {activeTab === 'settings' && <Loading />}
+  </div>
+);
 
 export default MainView;

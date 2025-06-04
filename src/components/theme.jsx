@@ -58,7 +58,7 @@ const dark = {
   // Couleurs dorées
   accentText: 'text-white',
   accentColor: 'amber-500',
-  accentBg: 'bg-gradient-to-r from-amber-600 to-yellow-600',
+  accentBg: 'bg-gradient-to-r from-amber-600 to-yellow-500',
   accentShadow: 'shadow-[0_0_15px_rgba(245,158,11,0.6)]',
   focusRing: 'focus:ring-amber-500',
   baccentText: 'text-amber-400',
@@ -69,6 +69,7 @@ const dark = {
   goldBg: 'bg-amber-600',
   goldBorder: 'border-amber-500',
   darkText: 'text-gray-100',
+  vdarkText: 'text-gray-900',
   darkBg: 'bg-gray-800',
   lightText: 'text-gray-900',
   lightBg: 'bg-gray-100',

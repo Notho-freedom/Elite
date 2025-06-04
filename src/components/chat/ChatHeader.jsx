@@ -11,12 +11,10 @@ const ChatHeader = ({
   theme,
   chatHeaderRef,
   isTyping,
-  setActiveTab,
-  setProfile,
+  onProfileOpen,
 }) => {
   const handleProfileClick = () => {
-    setActiveTab('profile');
-    setProfile(true);
+    onProfileOpen();
   };
 
   return (

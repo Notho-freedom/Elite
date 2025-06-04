@@ -172,3 +172,9 @@ img, video {
   0%, 100% { opacity: 0.8; transform: scaleY(1); }
   50% { opacity: 1; transform: scaleY(1.2); }
 }
+/* Pour éviter les débordements sur iOS */
+@supports (-webkit-touch-callout: none) {
+  .h-screen {
+    height: -webkit-fill-available;
+  }
+}
