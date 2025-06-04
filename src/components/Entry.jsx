@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { motion } from 'framer-motion';
 import { GoldenParticles } from './Particles/GoldenParticles';
 import { useTheme } from './Context/ThemeContext';
-import Loading from './loading';
+import Loading from './Loading';
 import Logo from './Logo';
 
 const Entry = () => {
