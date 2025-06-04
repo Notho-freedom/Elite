@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import DiscussionItem from './DiscussionItem';
-import { FaPlusCircle, FaFilter, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
+import { FaFilter, FaSearch, FaTimes, FaChevronCircleDown, FaCamera } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from './Context/ThemeContext';
-import { BsFilterCircleFill } from 'react-icons/bs';
 
 const FILTERS = {
   ALL: 'all',
@@ -70,7 +69,7 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
     <div className={`${theme.w} ${t.bgColor} h-screen flex flex-col`}>
 {/* Header principal */}
 <motion.div
-  className={`px-4 py-3 border-b ${theme.borderColor} flex justify-between items-center ${theme.headerBg}`}
+  className={`px-4 py-3   ${theme.borderColor} flex justify-between items-center ${theme.headerBg}`}
   variants={itemVariants}
 >
   <motion.h2 className={`text-lg font-semibold ${theme.textColor}`} variants={itemVariants}>
@@ -78,6 +77,10 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
   </motion.h2>
 
   <div className="flex items-center space-x-2">
+
+    {/* Bouton filtres */}
+    <motion.div className="relative flex gap-4" variants={itemVariants}>
+
     {/* Bouton recherche */}
     <motion.button
       className={`p-1 rounded-full ${theme.searchHover}`}
@@ -88,21 +91,30 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
       onClick={toggleSearch}
       aria-label="Rechercher"
     >
-      <FaSearch className={theme.secondaryText} />
+      <FaSearch className={theme.textColor} />
     </motion.button>
 
-    {/* Bouton filtres */}
-    <motion.div className="relative" variants={itemVariants}>
+
       <motion.button
-        className={`p-1 rounded-full flex items-center ${theme.searchHover}`}
+        className={`p-1 rounded-full relative ${theme.searchHover}`}
         variants={buttonVariants}
         initial="rest"
         whileHover="hover"
         whileTap="tap"
         aria-label="Filtres"
       >
-        <BsFilterCircleFill className={theme.secondaryText} />
-        <FaChevronDown className={`text-xs ml-1 ${theme.secondaryText}`} />
+        <FaCamera  className={`text-xs ${theme.textColor} w-4 h-4`} />
+      </motion.button>
+
+      <motion.button
+        className={`p-1 rounded-full relative ${theme.searchHover}`}
+        variants={buttonVariants}
+        initial="rest"
+        whileHover="hover"
+        whileTap="tap"
+        aria-label="Filtres"
+      >
+        <FaChevronCircleDown className={`text-xs ${theme.textColor} w-4 h-4`} />
       </motion.button>
     </motion.div>
   </div>
@@ -112,7 +124,7 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
 <AnimatePresence mode="wait">
   {isSearching && (
     <motion.div
-      className={`px-4 py-2 border-b ${theme.borderColor} ${theme.headerBg}`}
+      className={`px-4 py-2   ${theme.borderColor} ${theme.headerBg}`}
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
@@ -126,7 +138,7 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
         <motion.input
           type="text"
           placeholder="Rechercher..."
-          className={`w-full pl-9 pr-10 py-2 rounded-md focus:outline-none ${theme.inputBg} ${theme.textColor}`}
+          className={`w-full pl-9 pr-10 py-2 rounded-full focus:outline-none ${theme.inputBg} ${theme.textColor}`}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           autoFocus
@@ -153,12 +165,12 @@ const DiscussionList = ({ discussions, setActiveChat }) => {
 </AnimatePresence>
 
 
-      <motion.div className={`flex border-b ${t.borderColor} px-4 items-center`} initial="rest" animate="rest">
+      <motion.div className={`flex ${t.borderColor} px-4 items-center`} initial="rest" animate="rest">
         {Object.values(FILTERS).map((f) => (
           <motion.button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 text-sm font-medium relative ${
+            className={`px-3 py-2 text-sm font-medium relative ${
               filter === f ? 'text-blue-500' : `${t.secondaryText} ${t.filterHover}`
             }`}
             variants={buttonVariants}

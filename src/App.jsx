@@ -5,6 +5,7 @@ import useFetchDiscussions from './components/hooks/useFetchDiscussions';
 import MainView from './components/MainView';
 import { useTheme } from './components/Context/ThemeContext';
 import clsx from 'clsx';
+import MainTopbar from './components/MainTopbar';
 
 const App = () => {
   const { theme } = useTheme();
@@ -36,6 +37,18 @@ const App = () => {
           <div className="flex w-full h-full">
             {/* Sidebar conditionnelle */}
             {isLogin && (
+
+              <>
+              <MainTopbar
+                appName="ELITE"
+                theme={theme}
+                onSettings={() => console.log("Open settings")}
+                onUser={() => console.log("Open profile")}
+                onAI={() => console.log("Summon SkyOS AI")}
+              />
+
+
+
               <Sidebar 
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -43,6 +56,8 @@ const App = () => {
                 setActiveChat={setActiveChat}
                 isLogin={isLogin}
               />
+
+          </>
             )}
 
             {/* Main Content Area */}

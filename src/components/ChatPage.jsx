@@ -255,7 +255,7 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
     setShowMenu(false);
   }}
   style={{
-    backgroundImage: 'url("https://v1.ora-app.genesis-company.net/private/feb2e70fc34f45ffa03b73d9112cb73c/2024-10-10/67080dbd43dd83.21388693__i0.webp")',
+    backgroundImage: 'url("https://images5.alphacoders.com/133/thumb-1920-1339662.jpeg")',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'

@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { FaPhone, FaVideo, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FaPhone, FaVideo, FaSearch, FaTimes, FaChevronDown, FaCamera, FaChevronCircleDown } from 'react-icons/fa';
 import { IoMdCall } from 'react-icons/io';
 import { BsFilterCircleFill } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,6 +52,8 @@ const CallHistory = ({ discussions, setActiveCall }) => {
   const [loading, setLoading] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const { theme } = useTheme();
+  const [expandedGroups, setExpandedGroups] = useState({});
+
 
   useEffect(() => {
     if (discussions && discussions.length > 0) {
@@ -127,6 +129,48 @@ const CallHistory = ({ discussions, setActiveCall }) => {
     if (showSearch) setSearchTerm('');
   };
 
+  const groupCallsByDate = (calls) => {
+    const groups = calls.reduce((acc, call) => {
+      const date = new Date(call.date).toDateString();
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(call);
+      return acc;
+    }, {});
+    return Object.entries(groups).sort(([a], [b]) => new Date(b) - new Date(a));
+  };
+
+
+  const formatSectionDate = (dateString) => {
+    const today = new Date().toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (dateString === today) return 'Today';
+    if (dateString === yesterday.toDateString()) return 'Yesterday';
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+  
+  const formatTime = (dateString) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+
+  // Développer le premier groupe par défaut
+  useEffect(() => {
+    if (filteredCalls.length > 0 && Object.keys(expandedGroups).length === 0) {
+      for (const [date] of groupCallsByDate(filteredCalls)) {
+        toggleGroup(date);
+      }
+    }
+  }, [filteredCalls, expandedGroups]);
+
+  const toggleGroup = (date) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  };
+
   return (
     <motion.div
       className={`${theme.w} flex flex-col h-full overflow-hidden shadow-lg border ${theme.borderColor} ${theme.bgColor} ${theme.textColor}`}
@@ -135,13 +179,18 @@ const CallHistory = ({ discussions, setActiveCall }) => {
     >
       {/* Header */}
       <motion.div
-        className={`${theme.headerBg} px-4 py-3 border-b ${theme.borderColor} flex justify-between items-center`}
+        className={`${theme.headerBg} px-4 py-3   ${theme.borderColor} flex justify-between items-center`}
         variants={itemVariants}
       >
         <motion.h2 className={`text-lg font-semibold ${theme.textColor}`} variants={itemVariants}>
-          Recents
+          Appels
         </motion.h2>
-        <div className="flex space-x-2">
+        <div className="flex items-center space-x-2">
+
+          {/* Bouton filtres */}
+          <motion.div className="relative flex gap-4" variants={itemVariants}>
+
+          {/* Bouton recherche */}
           <motion.button
             className={`p-1 rounded-full ${theme.searchHover}`}
             variants={buttonVariants}
@@ -149,19 +198,20 @@ const CallHistory = ({ discussions, setActiveCall }) => {
             whileHover="hover"
             whileTap="tap"
             onClick={toggleSearch}
+            aria-label="Rechercher"
           >
-            <FaSearch className={theme.secondaryText} />
+            <FaSearch className={theme.textColor} />
           </motion.button>
-          <motion.div className="relative" variants={itemVariants}>
+
             <motion.button
-              className={`p-1 rounded-full ${theme.searchHover} flex items-center`}
+              className={`p-1 rounded-full relative ${theme.searchHover}`}
               variants={buttonVariants}
               initial="rest"
               whileHover="hover"
               whileTap="tap"
+              aria-label="Filtres"
             >
-              <BsFilterCircleFill className={theme.secondaryText} />
-              <FaChevronDown className={`text-xs ml-1 ${theme.secondaryText}`} />
+              <FaChevronCircleDown className={`text-xs ${theme.textColor} w-4 h-4`} />
             </motion.button>
           </motion.div>
         </div>
@@ -171,7 +221,7 @@ const CallHistory = ({ discussions, setActiveCall }) => {
       <AnimatePresence>
         {showSearch && (
           <motion.div 
-            className={`px-4 py-2 border-b ${theme.borderColor}`}
+            className={`px-4 py-2   ${theme.borderColor}`}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -182,7 +232,7 @@ const CallHistory = ({ discussions, setActiveCall }) => {
               <motion.input
                 type="text"
                 placeholder="Search"
-                className={`w-full pl-9 pr-4 py-2 rounded-md focus:outline-none ${theme.inputBg}`}
+                className={`w-full pl-9 pr-4 py-2 rounded-full focus:outline-none ${theme.inputBg}`}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 whileFocus={{ scale: 1.02 }}
@@ -206,11 +256,11 @@ const CallHistory = ({ discussions, setActiveCall }) => {
       </AnimatePresence>
 
       {/* Filter Tabs */}
-      <motion.div className={`flex border-b ${theme.borderColor} px-4`} variants={itemVariants}>
+      <motion.div className={`flex   ${theme.borderColor} px-4`} variants={itemVariants}>
         {FILTERS.map(filter => (
           <motion.button
             key={filter}
-            className={`px-4 py-2 text-sm font-medium relative ${
+            className={`px-3 py-2 text-sm font-medium relative ${
               selectedFilter === filter
                 ? 'text-blue-500'
                 : `${theme.secondaryText} ${theme.filterHover}`
@@ -232,7 +282,7 @@ const CallHistory = ({ discussions, setActiveCall }) => {
         ))}
         <motion.button
           onClick={() => setCalls([])}
-          className={theme.clearAllText + ' ml-auto text-sm'}
+          className={theme.clearAllText + ' ml-auto text-sm truncate'}
           title="Clear All"
           variants={buttonVariants}
           initial="rest"
@@ -243,57 +293,118 @@ const CallHistory = ({ discussions, setActiveCall }) => {
         </motion.button>
       </motion.div>
 
-      {/* Call List */}
-      <motion.div className="flex-1 overflow-y-auto overflow-x-hidden" variants={itemVariants}>
-        {loading ? (
-          <motion.div className={`p-4 text-center ${theme.secondaryText}`} variants={itemVariants}>
-            Loading calls...
-          </motion.div>
-        ) : filteredCalls.length === 0 ? (
-          <motion.div className={`p-4 text-center ${theme.emptyStateText}`} variants={itemVariants}>
-            {searchTerm ? 'No matching calls found' : 'No calls found'}
-          </motion.div>
-        ) : (
-          <AnimatePresence mode="popLayout">
-            {filteredCalls.map((call, index) => (
+{/* Call List */}
+<motion.div className="flex-1 overflow-y-auto overflow-x-hidden" variants={itemVariants}>
+  {loading ? (
+    <motion.div className={`p-4 text-center ${theme.secondaryText}`} variants={itemVariants}>
+      Loading calls...
+    </motion.div>
+  ) : filteredCalls.length === 0 ? (
+    <motion.div className={`p-4 text-center ${theme.emptyStateText}`} variants={itemVariants}>
+      {searchTerm ? 'No matching calls found' : 'No calls found'}
+    </motion.div>
+  ) : (
+    <AnimatePresence mode="popLayout">
+      {/* Group calls by date */}
+      {groupCallsByDate(filteredCalls).map(([date, calls], groupIndex) => {
+        const isExpanded = expandedGroups[date] || false;
+
+        return (
+          <motion.div 
+            key={date}
+            layout
+            className="relative"
+          >
+            {/* Connector line */}
+            {groupIndex > 0 && (
+              <div className={`absolute left-6 top-0 w-0.5 h-full ${theme.borderColor}`} 
+                   style={{ transform: 'translateX(24px)' }} />
+            )}
+
+            {/* Date Header with Toggle */}
+            <motion.div
+              className={`flex justify-between items-center px-4 py-3 ${theme.headerBg} ${theme.borderColor} sticky top-0 z-10`}
+              onClick={() => toggleGroup(date)}
+            >
+              <div className="flex items-center">
+                <motion.h4 className={`text-base ${theme.textColor}`} variants={itemVariants}>
+                  {formatSectionDate(date)}
+                </motion.h4>
+              </div>
+              
               <motion.div
-                key={call.id}
-                className={`flex items-center px-4 py-3 cursor-pointer ${theme.hoverBg}`}
-                onClick={() => handleCallClick(call)}
-                variants={itemVariants}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-                layout
-                whileHover={{ scale: 1.03 }}
+                animate={{ rotate: isExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                className={`text-lg ${theme.secondaryText}`}
               >
-                <img
-                  src={call.avatar}
-                  alt={call.name}
-                  className="w-12 h-12 rounded-full object-cover mr-3"
-                  loading="lazy"
-                />
-                <div className="flex-1">
-                  <div className="flex justify-between items-center">
-                    <h6 className={`${call.type === 'missed' ? 'text-red-500' : theme.textColor}`}>{call.name}</h6>
-                    <span className={`text-xs font-mono ${theme.secondaryText}`}>{formatDate(call.date)}</span>
-                  </div>
-                  <div className="flex justify-between items-center mt-0.5 text-sm">
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <CallDirectionIcon type={call.type} />
-                      <span>{call.type === 'missed' ? 'Missed Call' : formatDuration(call.duration)}</span>                    
-                    </div>
-                    <span className="flex items-center space-x-1">
-                      {getCallIcon(call.type)}
-                    </span>
-                  </div>
-                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2"/>
+                </svg>
               </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
-      </motion.div>
+            </motion.div>
+
+            {/* Calls List - Animated collapse */}
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {calls.map((call) => (
+                    <motion.div
+                      key={call.id}
+                      className={`flex items-center px-3 py-3 cursor-pointer ${theme.hoverBg} pl-5`}
+                      onClick={() => handleCallClick(call)}
+                      variants={itemVariants}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3 }}
+                      layout
+                      whileHover={{ scale: 1.01 }}
+                    >
+                      <img
+                        src={call.avatar}
+                        alt={call.name}
+                        className="w-10 h-10 rounded-full object-cover mr-3"
+                        loading="lazy"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center">
+                          <h6 className={`truncate ${call.type === 'missed' ? 'text-red-500' : theme.textColor}`}>
+                            {call.name}
+                          </h6>
+                          <span className={`text-xs font-mono ${theme.secondaryText} whitespace-nowrap ml-2`}>
+                            {formatTime(call.date)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mt-0.5">
+                          <div className="flex items-center space-x-2 text-sm text-gray-500 truncate">
+                            <CallDirectionIcon type={call.type} />
+                            <span className="truncate">
+                              {call.type === 'missed' ? 'Missed Call' : formatDuration(call.duration)}
+                            </span>
+                          </div>
+                          <div className="flex-shrink-0">
+                            {getCallIcon(call.type)}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        );
+      })}
+    </AnimatePresence>
+  )}
+</motion.div>
+
+
     </motion.div>
   );
 };

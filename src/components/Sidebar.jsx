@@ -41,7 +41,7 @@ const Sidebar = ({ activeTab, setActiveTab, activeChat, setActiveChat, isLogin }
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className={`fixed -bottom-1 left-0 right-0 flex justify-center items-stretch h-[80px] sm:h-[14vh] p-0 gap-2
+        className={`fixed -bottom-1 left-0 right-0 ${activeChat?.name ? 'hidden' : 'flex'} justify-center items-stretch h-[80px] sm:h-[14vh] p-0 gap-2
           ${theme.headerBg} ${theme.textColor} border-t ${theme.borderColor} z-50`}
       >
         {tabs.slice(0, 4).map((tab) => (
@@ -90,7 +90,7 @@ const Sidebar = ({ activeTab, setActiveTab, activeChat, setActiveChat, isLogin }
       transition={{ duration: 0.3 }}
       className={`flex flex-col justify-between items-center h-screen w-16 border-r ${theme.borderColor}
         p-3 gap-5 ${theme.headerBg} ${theme.textColor} shadow-md
-        flex-shrink-0`}
+        flex-shrink-0 `}
     >
       <div className="flex flex-col items-center gap-5">
         {tabs.map((tab) => (
@@ -114,7 +114,7 @@ const Sidebar = ({ activeTab, setActiveTab, activeChat, setActiveChat, isLogin }
                 animate={{ scale: 1 }}
                 className={`absolute -top-1 -right-1 flex items-center justify-center 
                   h-5 w-5 rounded-full ${theme.accentBg} text-white 
-                  text-[1.8vh] font-bold`}
+                  text-[0.7rem] font-bold`}
               >
                 {notifications[tab.id] > 9 ? '+9' : notifications[tab.id]}
               </motion.div>
