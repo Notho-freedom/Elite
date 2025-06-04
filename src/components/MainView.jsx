@@ -7,7 +7,7 @@ import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import { useTheme } from "./Context/ThemeContext";
 import { SocialLogin } from "./Auth/SocialLogin";
-import Loading from './loading';
+import Loading from './Loading';
 
 
 const MainView = ({
