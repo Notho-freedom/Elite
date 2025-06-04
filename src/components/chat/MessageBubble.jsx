@@ -4,7 +4,7 @@ import MediaDisplay from './MediaDisplay';
 import { useMemo } from 'react';
 import LinkPreview from './LinkPreview';
 
-const MessageBubble = ({ message, theme, currentUserId, openMediaViewer }) => {
+const MessageBubble = ({ message, theme, openMediaViewer }) => {
   const isSingleEmoji = useMemo(() => 
     message.text?.match(/^\p{Emoji}$/u) && !message.media?.length,
     [message.text, message.media]

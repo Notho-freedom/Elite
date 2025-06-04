@@ -57,8 +57,8 @@ const MediaItem = ({ item, idx, displayedMedia, isSingleMedia, openMediaViewer }
       }
     )}
     style={{
-      aspectRatio: item.type === 'video' ? '16/9' : 
-                  (isSingleMedia && item.type === 'image') ? '1/1' : '1/1'
+      aspectRatio: item.type === 'video' ? '' : 
+                  (isSingleMedia && item.type === 'image') ? '1/1' : '16/9'
     }}
     onClick={() => openMediaViewer(idx)}
   >

@@ -1,3 +1,4 @@
+import { PlayIcon, PlusIcon } from 'lucide-react';
 import { FiX, FiEdit2 } from 'react-icons/fi';
 
 const MediaThumbnails = ({ mediaList, onAddMore, onEdit, onRemove }) => {

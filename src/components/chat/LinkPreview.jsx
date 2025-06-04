@@ -22,7 +22,7 @@ const PROXIES = [
 
 const API_KEY = '82159ce3ac0da6bed5b7c9f9aeb7f3ce';
 
-const LinkPreview = ({ url, theme, sender }) => {
+const LinkPreview = ({ url, sender, compact = false }) => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -162,6 +162,35 @@ const LinkPreview = ({ url, theme, sender }) => {
     );
   }
 
+  if (compact) {
+    return (
+      <div className="my-1 max-w-full transition-all duration-200">
+        <a 
+          href={url} 
+          target="_blank" 
+          rel="noopener noreferrer nofollow"
+          className="flex items-center gap-2 no-underline group p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+        >
+          {preview.favicon && (
+            <img 
+              src={preview.favicon} 
+              alt="Favicon" 
+              className="w-5 h-5 flex-shrink-0"
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-sm truncate">
+              {preview.title}
+            </h4>
+            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {new URL(preview.url).hostname.replace('www.', '')}
+            </div>
+          </div>
+        </a>
+      </div>
+    );
+  }
+  
   return (
     <div className="my-1 max-w-full transition-all duration-200 hover:scale-[1.01]">
       <a 
