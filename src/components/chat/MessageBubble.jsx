@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import LinkPreview from './LinkPreview';
 import { motion } from 'framer-motion';
 import { renderEmoji } from './renderEmoji';
+import LottieEmoji from './LottieEmoji';
 
 
 const MessageBubble = ({ message, theme, openMediaViewer }) => {
@@ -80,8 +81,10 @@ const MessageBubble = ({ message, theme, openMediaViewer }) => {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="text-[80px] sm:text-[100px] p-4 leading-none flex justify-center items-center"
-        dangerouslySetInnerHTML={renderEmoji(message.text)}
+        //dangerouslySetInnerHTML={renderEmoji(message.text)}
       >
+      <LottieEmoji emoji={message.text} size={64} />
+
       </motion.div>
     ) : (
       <div className="text-sm leading-relaxed break-words w-auto">
