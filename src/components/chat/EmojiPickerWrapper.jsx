@@ -5,7 +5,6 @@ const EmojiPickerWrapper = ({
   showEmojiPicker,
   onEmojiClick,
   onEmojiHover,
-  onSearch,
   emojiVersion = '5.0',
   themeMode = 'auto',
   pickerWidth = 350,
@@ -34,7 +33,6 @@ const EmojiPickerWrapper = ({
       <EmojiPicker
         onEmojiClick={onEmojiClick}
         onEmojiHover={onEmojiHover}
-        onSearch={onSearch}
 
         width={pickerWidth}
         height={pickerHeight}
@@ -52,11 +50,9 @@ const EmojiPickerWrapper = ({
 
         previewConfig={{
           showPreview: true,
-          defaultEmoji: "1f44b", // 👋
-          defaultCaption: "Hey, Welcome to ELITE !",
         }}
 
-        searchDisabled={false}
+        searchDisabled={true}
         skinTonePickerLocation="PREVIEW" // or "SEARCH", "HEADER"
 
         suggestedEmojisMode="recent" // or "frequent", "disabled"

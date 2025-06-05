@@ -1,62 +1,101 @@
-import { Player } from '@lottiefiles/react-lottie-player';
-import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Spinner } from './../UI/Spinner';
 
-// Cache local avec expiration pour éviter des requêtes répétées
-const emojiCache = new Map();
+const EMOJI_API_BASE = 'https://emojiapi.dev/api/v1';
 const CACHE_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 heures
+const MAX_CACHE_SIZE = 100;
 
-// Liste de sources possibles pour les animations Lottie
-const LOTTIE_SOURCES = [
-  'https://assets8.lottiefiles.com/packages/',
-  'https://assets9.lottiefiles.com/packages/',
-  'https://assets.lottiefiles.com/render/',
-  'https://lottie.host/',
+// Liste de proxies CORS fiables
+const CORS_PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+  'https://thingproxy.freeboard.io/fetch/',
+  'https://cors-anywhere.herokuapp.com/'
 ];
 
-// Proxy options similar to the LinkPreview component
-const PROXIES = [
-  "https://cors-anywhere.herokuapp.com/",
-  "https://api.allorigins.win/raw?url=",
-  "https://thingproxy.freeboard.io/fetch/",
-];
+// Cache pour les emojis
+const emojiCache = new Map();
 
-const LottieEmoji = ({ 
+const cleanCache = () => {
+  if (emojiCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(emojiCache.entries());
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    entries.slice(0, Math.floor(MAX_CACHE_SIZE / 2)).forEach(([key]) => {
+      emojiCache.delete(key);
+    });
+  }
+};
+
+const EmojiImage = ({ 
   emoji, 
-  size = 48,
+  size = 100,
+  format = 'webp',
   fallback = null,
-  autoplay = true,
-  loop = true,
-  hoverPlay = false,
-  speed = 1,
-  backgroundColor = 'transparent'
+  className = '',
+  style = {},
+  onLoad,
+  onError
 }) => {
-  const [animationData, setAnimationData] = useState(null);
+  const [imgUrl, setImgUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchWithProxy = useCallback(async (url) => {
-    for (const proxy of PROXIES) {
+  const emojiCode = useMemo(() => {
+    if (!emoji) return null;
+    // Convertit l'emoji en son code point (support des emojis combinés)
+    return [...emoji].map(c => c.codePointAt(0).toString(16)).join('-');
+  }, [emoji]);
+
+  const fetchWithProxy = async (url) => {
+    // Essayer d'abord sans proxy
+    try {
+      const response = await fetch(url, { mode: 'no-cors' });
+      if (response.ok || response.type === 'opaque') {
+        return url; // Si la réponse est opaque (CORS) mais réussie
+      }
+    } catch (e) {
+      console.debug('Direct fetch failed, trying proxies...');
+    }
+
+    // Essayer chaque proxy
+    for (const proxy of CORS_PROXIES) {
       try {
         const proxyUrl = proxy + encodeURIComponent(url);
-        const response = await axios.get(proxyUrl, {
-          timeout: 5000,
-          responseType: 'json'
+        const response = await fetch(proxyUrl, { 
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
         });
-        return response.data;
+        
+        if (response.ok) {
+          // Pour les proxies qui retournent l'image directement
+          if (response.headers.get('content-type')?.startsWith('image/')) {
+            return URL.createObjectURL(await response.blob());
+          }
+          // Pour les proxies qui retournent une réponse JSON
+          const data = await response.json();
+          return data.contents || url;
+        }
       } catch (err) {
-        console.warn(`Proxy ${proxy} failed: ${err.message}`);
+        console.debug(`Proxy ${proxy} failed:`, err.message);
       }
     }
     return null;
-  }, []);
+  };
 
-  const fetchEmojiAnimation = useCallback(async () => {
-    // Vérifier le cache d'abord
-    const cached = emojiCache.get(emoji);
-    if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
-      setAnimationData(cached.data);
+  const fetchEmoji = useCallback(async () => {
+    if (!emojiCode) {
       setLoading(false);
+      return;
+    }
+
+    // Vérifier le cache
+    const cacheKey = `${emojiCode}-${size}-${format}`;
+    const cached = emojiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
+      setImgUrl(cached.url);
+      setLoading(false);
+      if (onLoad) onLoad();
       return;
     }
 
@@ -64,123 +103,86 @@ const LottieEmoji = ({
     setError(null);
 
     try {
-      // Convertir l'emoji en code point hexadécimal
-      const codePoint = emoji.codePointAt(0).toString(16).padStart(4, '0');
+      const directUrl = `${EMOJI_API_BASE}/${emojiCode}/${size}.${format}`;
+      const url = await fetchWithProxy(directUrl);
       
-      // Essayer différents formats de noms de fichiers courants
-      const possibleFiles = [
-        `lf20_${codePoint}.json`,
-        `lf30_${codePoint}.json`,
-        `emoji_${codePoint}.json`,
-        `emoji-${codePoint}.json`,
-        `${codePoint}.json`
-      ];
-
-      let animationFound = null;
-
-      // Essayer chaque source possible
-      for (const source of LOTTIE_SOURCES) {
-        for (const file of possibleFiles) {
-          const url = `${source}${file}`;
-          
-          try {
-            // Essayer d'abord une requête HEAD pour vérifier l'existence
-            const headResponse = await fetch(url, { method: 'HEAD' });
-            
-            if (headResponse.ok) {
-              // Si le HEAD réussit, récupérer les données
-              const data = await fetchWithProxy(url) || await axios.get(url).then(res => res.data);
-              
-              if (data) {
-                animationFound = { data, url };
-                break;
-              }
-            }
-          } catch (err) {
-            console.warn(`Failed to fetch ${url}:`, err.message);
-          }
-        }
-        if (animationFound) break;
-      }
-
-      if (animationFound) {
-        // Mettre en cache avec timestamp
-        emojiCache.set(emoji, {
-          data: animationFound.data,
+      if (url) {
+        cleanCache();
+        emojiCache.set(cacheKey, {
+          url,
           timestamp: Date.now()
         });
-        setAnimationData(animationFound.data);
+        
+        setImgUrl(url);
+        if (onLoad) onLoad();
       } else {
-        setError('Animation not found');
+        throw new Error('Emoji non trouvé ou erreur de chargement');
       }
-    } catch (error) {
-      console.error("Error fetching emoji animation:", error);
-      setError(error.message);
+    } catch (err) {
+      console.error("Erreur de chargement de l'emoji:", err);
+      setError(err.message);
+      if (onError) onError(err);
     } finally {
       setLoading(false);
     }
-  }, [emoji, fetchWithProxy]);
+  }, [emojiCode, size, format, onLoad, onError]);
 
   useEffect(() => {
-    let isMounted = true;
-    
-    if (emoji) {
-      fetchEmojiAnimation().then(() => {
-        if (!isMounted) return;
-      });
-    }
+    fetchEmoji();
+  }, [fetchEmoji]);
 
+  // Nettoyer les URLs créées avec createObjectURL
+  useEffect(() => {
     return () => {
-      isMounted = false;
+      if (imgUrl && imgUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imgUrl);
+      }
     };
-  }, [emoji, fetchEmojiAnimation]);
+  }, [imgUrl]);
+
+  const containerStyle = useMemo(() => ({
+    width: size,
+    height: size,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...style
+  }), [size, style]);
 
   if (loading) {
     return (
-      <div style={{ 
-        width: size, 
-        height: size, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor
-      }}>
-        {fallback || <span>...</span>}
+      <div style={containerStyle} className={className}>
+        {fallback || <Spinner />}
       </div>
     );
   }
 
-  if (error || !animationData) {
+  if (error || !imgUrl) {
     return (
-      <div style={{ 
-        width: size, 
-        height: size, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor
-      }}>
-        {fallback || <span>{emoji}</span>}
+      <div style={containerStyle} className={className}>
+        {fallback || <span style={{ fontSize: size * 0.6 }}>{emoji || '❌'}</span>}
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor, borderRadius: '50%' }}>
-      <Player
-        autoplay={autoplay}
-        loop={loop}
-        hover={hoverPlay}
-        speed={speed}
-        src={animationData}
+    <div style={containerStyle} className={className}>
+      <img 
+        src={imgUrl} 
+        alt={emoji} 
         style={{ 
-          height: size, 
-          width: size,
-          cursor: hoverPlay ? 'pointer' : 'default'
+          width: '100%', 
+          height: '100%',
+          objectFit: 'contain'
+        }}
+        onError={(e) => {
+          setError('Failed to load image');
+          if (onError) onError(new Error('Image load error'));
+          e.target.style.display = 'none';
         }}
       />
     </div>
   );
 };
 
-export default LottieEmoji;
+export default React.memo(EmojiImage);
