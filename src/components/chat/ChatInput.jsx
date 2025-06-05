@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import { FiPaperclip, FiMic, FiX, FiEdit2 } from 'react-icons/fi';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { FiPaperclip, FiMic } from 'react-icons/fi';
 import { BsEmojiSmile, BsSendFill } from 'react-icons/bs';
 import MediaPreviewModal from './Input/MediaPreview';
-import LinkPreview from './LinkPreview'; // Importez votre composant LinkPreview
+import LinkPreview from './LinkPreview';
 
-const ChatInput = ({ 
+const ChatInput = memo(({ 
   inputValue, 
   setInputValue, 
   handleSend, 
@@ -12,68 +12,84 @@ const ChatInput = ({
   theme,
   recipient 
 }) => {
+  // Refs
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
+  const formRef = useRef(null);
+  
+  // States
   const [previewMedia, setPreviewMedia] = useState([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [detectedUrl, setDetectedUrl] = useState(null);
-  const [isComposing, setIsComposing] = useState(false); // Pour gérer les IME
+  const [isComposing, setIsComposing] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // Détection des URLs dans le texte
-  useEffect(() => {
-    if (isComposing) return; // Ne pas détecter pendant la composition IME
-    
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const urls = inputValue.match(urlRegex);
-    
-    if (urls && urls.length > 0) {
-      // Prendre la dernière URL détectée
-      const lastUrl = urls[urls.length - 1];
-      
-      // Vérifier que c'est une URL valide
-      try {
-        new URL(lastUrl);
-        setDetectedUrl(lastUrl);
-      } catch {
-        setDetectedUrl(null);
-      }
-    } else {
-      setDetectedUrl(null);
+  // Calcul de la hauteur de la textarea
+  const resizeTextarea = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '36px';
+      textareaRef.current.style.height = `${Math.min(
+        textareaRef.current.scrollHeight,
+        120
+      )}px`;
     }
-  }, [inputValue, isComposing]);
+  }, []);
 
-  const handleFileChange = (e) => {
+  // Auto-resize de la textarea avec debounce
+  useEffect(() => {
+    const debouncedResize = debounce(resizeTextarea, 50);
+    debouncedResize();
+    return () => debouncedResize.cancel();
+  }, [inputValue, resizeTextarea]);
+
+  // Gestion des fichiers
+  const handleFileChange = useCallback((e) => {
     const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
     const mediaPreviews = files.map(file => ({
       url: URL.createObjectURL(file),
       type: file.type.startsWith('image') ? 'image' : 'video',
       file,
       id: Math.random().toString(36).substring(2, 9)
     }));
+
     setPreviewMedia(prev => [...prev, ...mediaPreviews]);
     setShowMediaModal(true);
-  };
+    e.target.value = '';
+  }, []);
 
-  const handleSubmit = (e, message = '') => {
+  const resetTextareaHeight = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '36px';
+    }
+  }, []);
+
+  // Gestion de la soumission
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     
-    // Si on a des médias en preview, ouvrir la modal
     if (previewMedia.length > 0) {
       setShowMediaModal(true);
       return;
     }
     
-    // Sinon envoyer directement
-    handleSend(e, {
-      message: inputValue.trim() || message,
-      media: []
-    });
-    setInputValue('');
-    setDetectedUrl(null); // Reset la prévisualisation après envoi
-  };
+    const trimmedValue = inputValue.trim();
+    if (trimmedValue) {
+      handleSend(e, {
+        message: trimmedValue,
+        media: []
+      });
+      setInputValue('');
+      setDetectedUrl(null);
+      resetTextareaHeight();
+    }
+  }, [inputValue, previewMedia, handleSend, setInputValue, resetTextareaHeight]);
 
-  const handleMediaSend = ({ message, media }) => {
+  // Gestion de l'envoi des médias
+  const handleMediaSend = useCallback(({ message, media }) => {
     handleSend(
-      { preventDefault: () => {} }, // mock event
+      { preventDefault: () => {} },
       { 
         message: message || inputValue.trim(),
         media: media || previewMedia 
@@ -82,22 +98,55 @@ const ChatInput = ({
     setPreviewMedia([]);
     setInputValue('');
     setShowMediaModal(false);
-    setDetectedUrl(null); // Reset la prévisualisation après envoi
-  };
+    setDetectedUrl(null);
+    resetTextareaHeight();
+  }, [inputValue, previewMedia, handleSend, setInputValue, resetTextareaHeight]);
 
-  const handleAddMoreMedia = (files) => {
-    const mediaPreviews = files.map(file => ({
-      url: file.url || URL.createObjectURL(file),
-      type: file.type?.startsWith('image') ? 'image' : 'video',
-      file,
-      id: Math.random().toString(36).substring(2, 9)
-    }));
-    setPreviewMedia(prev => [...prev, ...mediaPreviews]);
-  };
+  // Détection d'URL avec debounce
+  useEffect(() => {
+    if (isComposing) return;
+    
+    const detectUrl = () => {
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const urls = inputValue.match(urlRegex);
+      
+      if (urls?.length > 0) {
+        try {
+          new URL(urls[urls.length - 1]);
+          setDetectedUrl(urls[urls.length - 1]);
+        } catch {
+          setDetectedUrl(null);
+        }
+      } else {
+        setDetectedUrl(null);
+      }
+    };
 
-  // Gestion des événements de composition IME (pour les langues asiatiques)
-  const handleCompositionStart = () => setIsComposing(true);
-  const handleCompositionEnd = () => setIsComposing(false);
+    const debouncedDetection = debounce(detectUrl, 300);
+    debouncedDetection();
+
+    return () => debouncedDetection.cancel();
+  }, [inputValue, isComposing]);
+
+  // Gestion des touches
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
+      e.preventDefault();
+      formRef.current?.requestSubmit();
+    }
+  }, [isComposing]);
+
+  // Nettoyage des URLs créées
+  useEffect(() => {
+    return () => {
+      previewMedia.forEach(media => URL.revokeObjectURL(media.url));
+    };
+  }, [previewMedia]);
+
+  // Calcul du nombre de lignes pour le style
+  const lineCount = textareaRef.current 
+    ? Math.floor(textareaRef.current.scrollHeight / parseInt(getComputedStyle(textareaRef.current).lineHeight))
+    : 1;
 
   return (
     <div className="relative">
@@ -107,76 +156,105 @@ const ChatInput = ({
           recipient={recipient}
           onClose={() => setShowMediaModal(false)}
           onSend={handleMediaSend}
-          onAddMore={handleAddMoreMedia}
           fmessage={inputValue}
         />
       )}
 
-      {/* Afficher la prévisualisation du lien si détecté */}
       {detectedUrl && (
-        <div className="mb-2 p-2 bg-trensparent absolute bottom-[3vh] left-1/4 w-1/2">
+        <div className="mb-1 p-1 bg-transparent absolute bottom-full left-2 right-2">
           <LinkPreview url={detectedUrl} sender="me" compact={true} />
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex items-center">
-        {/* Emoji picker */}
+      <form 
+        ref={formRef}
+        onSubmit={handleSubmit} 
+        className="flex items-center gap-1"
+      >
         <button 
           type="button" 
           onClick={() => setShowEmojiPicker(prev => !prev)}
-          className={`p-2 lg:p-3 rounded-full ${theme.hoverBg} mr-2`}
+          className={`
+            p-1.5 rounded-full text-lg
+            ${theme.buttonSecondary}
+            transition-colors duration-200
+          `}
           aria-label="Emoji picker"
         >
-          <BsEmojiSmile className={theme.textColor} />
+          <BsEmojiSmile />
         </button>
 
-        {/* Input caché pour fichiers */}
         <input
           type="file"
           accept="image/*,video/*"
           multiple
-          style={{ display: 'none' }}
+          hidden
           ref={fileInputRef}
           onChange={handleFileChange}
         />
 
-        {/* Bouton pièce jointe */}
         <button 
           type="button" 
-          className={`p-2 rounded-full ${theme.hoverBg} mr-2`}
+          className={`
+            p-1.5 rounded-full text-lg
+            ${theme.buttonSecondary}
+            transition-colors duration-200
+          `}
           aria-label="Attach file"
           onClick={() => fileInputRef.current.click()}
         >
-          <FiPaperclip className={theme.textColor} />
+          <FiPaperclip />
         </button>
 
-        {/* Champ texte */}
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onCompositionStart={handleCompositionStart}
-          onCompositionEnd={handleCompositionEnd}
-          className={`flex-1 py-2 px-4 rounded-full ${theme.inputBg} focus:outline-none`}
-          placeholder="Type a message..."
-          onFocus={() => setShowEmojiPicker(false)}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={() => setIsComposing(false)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className={`
+            flex-1 py-1.5 px-3
+            ${lineCount === 1 ? 'rounded-full' : 'rounded-2xl'}
+            ${theme.inputBg}
+            ${theme.textColor}
+            focus:outline-none resize-none
+            max-h-[120px] overflow-y-auto
+            text-sm
+            transition-all duration-200
+          `}
+          placeholder="Message..."
+          rows={1}
+          style={{ minHeight: '36px' }}
         />
 
-        {/* Envoi / micro */}
         <button 
           type={inputValue.trim() || previewMedia.length > 0 ? 'submit' : 'button'} 
-          className={`p-2 rounded-full ml-2 ${theme.accentBg} ${theme.accentText} ${theme.accentShadow}`}
-          aria-label={inputValue.trim() ? 'Send message' : 'Start recording'}
+          className={`
+            p-1.5 rounded-full text-lg
+            ${theme.accentBg} ${theme.accentText}
+            transition-colors duration-200
+            flex-shrink-0
+          `}
+          aria-label={inputValue.trim() || previewMedia.length > 0 ? 'Send message' : 'Start recording'}
         >
-          {inputValue.trim() || previewMedia.length > 0 ? (
-            <BsSendFill className={theme.textColor} />
-          ) : (
-            <FiMic className={theme.textColor} />
-          )}
+          {inputValue.trim() || previewMedia.length > 0 ? <BsSendFill /> : <FiMic />}
         </button>
       </form>
     </div>
   );
-};
+});
+
+function debounce(func, wait) {
+  let timeout;
+  const debounced = (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+  debounced.cancel = () => clearTimeout(timeout);
+  return debounced;
+}
 
 export default ChatInput;
