@@ -11,7 +11,8 @@ const MediaPreviewModal = ({
   onClose,
   onSend,
   onAddMore,
-  fmessage
+  fmessage,
+  preview=true
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [message, setMessage] = useState(fmessage);
@@ -65,20 +66,24 @@ const handleSend = () => {
         onSelect={setCurrentIndex}
         onAddMore={onAddMore}
       />
-      
-      <EditingTools
-        showOptions={showOptions}
-        onToggleOptions={() => setShowOptions(!showOptions)}
-        onEdit={() => setIsEditing(true)}
-        onRemove={removeCurrentMedia}
-      />
-      
-      <MessageInput
-        message={message}
-        onMessageChange={setMessage}
-        onSend={handleSend}
-        hasMedia={mediaList.length > 0}
-      />
+      {preview ? (
+        <>
+          <EditingTools
+            showOptions={showOptions}
+            onToggleOptions={() => setShowOptions(!showOptions)}
+            onEdit={() => setIsEditing(true)}
+            onRemove={removeCurrentMedia}
+          />
+          
+          <MessageInput
+            message={message}
+            onMessageChange={setMessage}
+            onSend={handleSend}
+            hasMedia={mediaList.length > 0}
+          />
+        </>
+      ):(<></>)}
+
     </div>
   );
 };

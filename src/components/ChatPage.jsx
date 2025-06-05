@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from './Context/ThemeContext';
-import {motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import useSound from 'use-sound';
+import { useLocalStorage } from 'usehooks-ts';
 import ChatHeader from './chat/ChatHeader';
 import ChatMessage from './chat/ChatMessage';
 import ChatInput from './chat/ChatInput';
@@ -10,8 +12,16 @@ import EmojiPickerWrapper from './chat/EmojiPickerWrapper';
 import TypingIndicator from './chat/TypingIndicator';
 import { askGroq } from './IA/AIResponse';
 
-const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStartCall, setActiveTab, onProfileOpen }) => {
+// Sons (à placer dans public/sounds/)
+const SOUNDS = {
+  SEND: '/Sounds/pop.mp3',
+  RECEIVE: '/Sounds/recieve.mp3',
+  TYPING: ''
+};
+
+const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStartCall, onProfileOpen }) => {
   const { theme } = useTheme();
+  // États
   const [messages, setMessages] = useState(initialMessages || []);
   const [inputValue, setInputValue] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -19,35 +29,34 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useLocalStorage('chatSoundsEnabled', true);
   
+  // Réfs
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const chatHeaderRef = useRef(null);
   const fileInputRef = useRef(null);
+  
+  // Sons optimisés
+  const [playSendSound] = useSound(SOUNDS.SEND, { 
+    volume: 0.3,
+    soundEnabled,
+    interrupt: true
+  });
+  
+  const [playReceiveSound] = useSound(SOUNDS.RECEIVE, {
+    volume: 0.6,
+    soundEnabled,
+    interrupt: true
+  });
 
-  const handleMediaUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const media = files.map(file => {
-      const url = URL.createObjectURL(file);
-      const type = file.type.startsWith('video') ? 'video' : 'image';
-      return { type, url };
-    });
-  
-    const newMessage = {
-      id: Date.now(),
-      text: '',
-      sender: 'me',
-      media,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent',
-      reactions: []
-    };
-  
-    setMessages(prev => [...prev, newMessage]);
-    e.target.value = ''; // Reset input
-  };
-  
-  // Messages initiaux avec gestion des messages existants
+  const [playTypingSound, { stop: stopTypingSound }] = useSound(SOUNDS.TYPING, {
+    volume: 0.2,
+    soundEnabled,
+    loop: true
+  });
+
+  // Initialisation des messages
   useEffect(() => {
     if (!initialMessages || initialMessages.length === 0) {
       const defaultMessages = [
@@ -84,111 +93,158 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
     }
   }, [initialMessages, activeChat]);
 
-  // Auto-réponse et effet "typing"
-// Dans l'effet de réponse automatique
-useEffect(() => {
-  const lastMessage = messages[messages.length - 1];
+  // Auto-réponse avec effets sonores
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    let typingTimeout;
 
-  if (lastMessage && lastMessage.sender === 'me' && lastMessage.text && activeChat.isOnline) {
-    setIsTyping(true);
+    if (lastMessage?.sender === 'me' && lastMessage?.text && activeChat.isOnline) {
+      setIsTyping(true);
+      //if (soundEnabled) playTypingSound();
 
-    const simulateResponse = async () => {
-      try {
-        const aiReply = await askGroq(lastMessage.text, activeChat); // Passez activeChat
+      const simulateResponse = async () => {
+        try {
+          // Délai avant début de réponse (plus naturel)
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          const aiReply = await askGroq(lastMessage.text, activeChat);
+          
+          stopTypingSound();
+          setIsTyping(false);
 
-        const replyMessage = {
-          id: Date.now(),
-          text: aiReply,
-          sender: 'them',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          status: 'read',
-          reactions: []
-        };
+          const replyMessage = {
+            id: Date.now(),
+            text: aiReply,
+            sender: 'them',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: 'read',
+            reactions: []
+          };
 
-        setMessages(prev => [...prev, replyMessage]);
-      } catch (err) {
-        console.error('Erreur de réponse IA :', err);
-      } finally {
-        setIsTyping(false);
-      }
+          setMessages(prev => [...prev, replyMessage]);
+          if (soundEnabled) playReceiveSound();
+          
+        } catch (err) {
+          console.error('Erreur réponse IA:', err);
+          stopTypingSound();
+          setIsTyping(false);
+        }
+      };
+
+      typingTimeout = setTimeout(simulateResponse, 1500 + Math.random() * 2000);
+    }
+
+    return () => {
+      clearTimeout(typingTimeout);
+      //stopTypingSound();
+    };
+  }, [messages, activeChat, soundEnabled, playTypingSound, stopTypingSound, playReceiveSound]);
+
+  // Gestion de l'envoi de message avec sons
+  const handleSend = useCallback((e, { message, media = [] }) => {
+    e?.preventDefault();
+    
+    if (!message?.trim() && media.length === 0) return;
+
+    // Feedback sonore
+    if (soundEnabled) playSendSound();
+
+    const newMessage = {
+      id: Date.now(),
+      text: message || '',
+      media,
+      sender: 'me',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'sent',
+      reactions: [],
+      isRead: false
     };
 
-    const timer = setTimeout(simulateResponse, 2000 + Math.random() * 3000);
-    return () => clearTimeout(timer);
-  }
-}, [messages, activeChat]); // Ajoutez activeChat aux dépendances
+    setMessages(prev => [...prev, newMessage]);
+    setInputValue('');
+    setShowEmojiPicker(false);
+    
+    // Simulation progression envoi
+    const deliveryTimeline = [
+      { delay: 800, status: 'delivered' },
+      { delay: 1600, status: 'read', isRead: true }
+    ];
 
-  // Scroll automatique
+    deliveryTimeline.forEach(({ delay, status, isRead }) => {
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg => 
+          msg.id === newMessage.id 
+            ? { ...msg, status, ...(isRead && { isRead }) } 
+            : msg
+        ));
+
+      }, delay);
+    });
+  }, [soundEnabled, playSendSound]);
+
+  // Gestion des médias
+  const handleMediaUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const media = files.map(file => {
+      const url = URL.createObjectURL(file);
+      const type = file.type.startsWith('video') ? 'video' : 'image';
+      return { type, url };
+    });
+  
+    const newMessage = {
+      id: Date.now(),
+      text: '',
+      sender: 'me',
+      media,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'sent',
+      reactions: []
+    };
+  
+    setMessages(prev => [...prev, newMessage]);
+    if (soundEnabled) playSendSound();
+    e.target.value = '';
+  };
+
+  // Scroll automatique optimisé
   useEffect(() => {
-    scrollToBottom();
+    const scroll = () => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    };
+    
+    const scrollTimeout = setTimeout(scroll, 50);
+    return () => clearTimeout(scrollTimeout);
   }, [messages]);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
-// Dans ChatPage.js
-const handleSend = useCallback((e, { message, media = [] }) => {
-  e?.preventDefault(); // e peut être undefined quand appelé depuis MediaPreviewModal
-  
-  // Ne pas envoyer de message vide s'il n'y a ni texte ni média
-  if (!message?.trim() && media.length === 0) return;
-
-  const newMessage = {
-    id: Date.now(),
-    text: message || '',
-    media: media,
-    sender: 'me',
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    status: 'sent',
-    reactions: [],
-    isRead: false
+  // Toggle des sons
+  const toggleSounds = () => {
+    const newState = !soundEnabled;
+    setSoundEnabled(newState);
+    if (newState) playReceiveSound(); // Feedback audio
   };
 
-  setMessages(prev => [...prev, newMessage]);
-  
-  // Réinitialiser l'input
-  setInputValue('');
-  setShowEmojiPicker(false);
-  
-  // Simuler l'envoi et la lecture
-  setTimeout(() => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === newMessage.id ? { ...msg, status: 'delivered' } : msg
-    ));
-  }, 1000);
-  
-  setTimeout(() => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === newMessage.id ? { ...msg, status: 'read', isRead: true } : msg
-    ));
-  }, 2000);
-}, []);
-
-  // Gestion des emojis
+  // Autres fonctions
   const onEmojiClick = (emojiData) => {
     setInputValue(prev => prev + emojiData.emoji);
+    inputRef.current?.focus();
   };
 
-  // Ajouter une réaction à un message
   const addReaction = (messageId, reaction) => {
     setMessages(prev => prev.map(msg => {
       if (msg.id === messageId) {
         const existingReactionIndex = msg.reactions.findIndex(r => r.emoji === reaction);
         
         if (existingReactionIndex >= 0) {
-          // Retirer la réaction si elle existe déjà
           const updatedReactions = [...msg.reactions];
           updatedReactions.splice(existingReactionIndex, 1);
           return { ...msg, reactions: updatedReactions };
         } else {
-          // Ajouter la réaction
           return { 
             ...msg, 
-            reactions: [...msg.reactions, { 
-              emoji: reaction, 
-              count: 1 
-            }]
+            reactions: [...msg.reactions, { emoji: reaction, count: 1 }]
           };
         }
       }
@@ -196,18 +252,16 @@ const handleSend = useCallback((e, { message, media = [] }) => {
     }));
   };
 
-  // Animation des messages
+  // Animations
   const messageVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
     exit: { opacity: 0, x: 50 },
   };
 
-  // Messages filtrés pour la recherche
   const filteredMessages = messages.filter(msg => 
     msg.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
 
   return (
     <motion.div 
@@ -217,10 +271,8 @@ const handleSend = useCallback((e, { message, media = [] }) => {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Header fixe en haut */}
       <ChatHeader 
         activeChat={activeChat}
         setActiveChat={setActiveChat}
@@ -232,9 +284,10 @@ const handleSend = useCallback((e, { message, media = [] }) => {
         chatHeaderRef={chatHeaderRef}
         isTyping={isTyping}
         onProfileOpen={onProfileOpen}
+        soundEnabled={soundEnabled}
+        toggleSounds={toggleSounds}
       />
   
-      {/* Zone de recherche (conditionnelle) */}
       {showSearch && (
         <ChatSearch 
           searchQuery={searchQuery}
@@ -243,7 +296,6 @@ const handleSend = useCallback((e, { message, media = [] }) => {
         />
       )}
   
-      {/* Zone des messages avec défilement */}
       <div 
         className={`flex-1 overflow-y-auto ${showSearch ? 'pt-2' : 'p-[0.8rem]'} relative`}
         onClick={() => {
@@ -252,31 +304,29 @@ const handleSend = useCallback((e, { message, media = [] }) => {
         }}
       >
         <AnimatePresence>
-          {(searchQuery ? filteredMessages : messages).map((message) => (
-            <ChatMessage 
-              key={message.id}
-              message={message}
-              addReaction={addReaction}
-              theme={theme}
-              variants={messageVariants}
-            />
-          ))}
+        {(searchQuery ? filteredMessages : messages).map((message) => (
+          <ChatMessage 
+            key={`msg-${message.id}-${message.time}`}
+            message={message}
+            addReaction={addReaction}
+            theme={theme}
+            variants={messageVariants}
+            activeChat={activeChat}
+          />
+        ))}
           
-          {isTyping? <TypingIndicator theme={theme} /> : <div ref={messagesEndRef} className="h-4" />}
+          {isTyping? <TypingIndicator key="typing-indicator" theme={theme} />:<div key="messages-end" ref={messagesEndRef} className="h-4" />}
           
         </AnimatePresence>
       </div>
   
-      {/* Picker d'emojis flottant */}
       <EmojiPickerWrapper 
         showEmojiPicker={showEmojiPicker}
         onEmojiClick={onEmojiClick}
         theme={theme}
       />
   
-      {/* Footer fixe en bas */}
-      <footer className={`
-        sticky bottom-0 p-2 px-4 shadow-lg`}>
+      <footer className="sticky bottom-0 p-2 px-4 shadow-lg">
         <ChatInput 
           inputValue={inputValue}
           setInputValue={setInputValue}
@@ -286,14 +336,18 @@ const handleSend = useCallback((e, { message, media = [] }) => {
           theme={theme}
           fileInputRef={fileInputRef}
           recipient={activeChat}
+          inputRef={inputRef}
+          soundEnabled={soundEnabled}
+          toggleSounds={toggleSounds}
         />
       </footer>
   
-      {/* Menu flottant (conditionnel) */}
       {showMenu && (
         <ChatMenu 
           showMenu={showMenu}
           theme={theme}
+          soundEnabled={soundEnabled}
+          toggleSounds={toggleSounds}
         />
       )}
     </motion.div>

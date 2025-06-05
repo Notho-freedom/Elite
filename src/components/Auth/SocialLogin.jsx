@@ -13,7 +13,7 @@ export const SocialLogin = ({ setIsLogin, setActiveTab }) => {
     setLoadingProvider(provider);
     console.log(`🔐 Auth with: ${provider}`);
     
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 2));
     
     setLoadingProvider(null);
     setIsLogin(true);
