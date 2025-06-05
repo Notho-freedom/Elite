@@ -168,7 +168,6 @@ const handleSend = useCallback((e, { message, media = [] }) => {
   // Gestion des emojis
   const onEmojiClick = (emojiData) => {
     setInputValue(prev => prev + emojiData.emoji);
-    inputRef.current.focus();
   };
 
   // Ajouter une réaction à un message

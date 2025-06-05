@@ -22,7 +22,7 @@ const ChatInput = memo(({
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [detectedUrl, setDetectedUrl] = useState(null);
   const [isComposing, setIsComposing] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  const [isFocused, setIsFocused] = useState(true);
 
   // Calcul de la hauteur de la textarea
   const resizeTextarea = useCallback(() => {
@@ -100,6 +100,12 @@ const ChatInput = memo(({
     setShowMediaModal(false);
     setDetectedUrl(null);
     resetTextareaHeight();
+    setIsFocused(true);
+
+    setTimeout(() => {
+      textareaRef.current?.focus({ preventScroll: true });
+    }, 50);
+
   }, [inputValue, previewMedia, handleSend, setInputValue, resetTextareaHeight]);
 
   // Détection d'URL avec debounce
@@ -143,13 +149,20 @@ const ChatInput = memo(({
     };
   }, [previewMedia]);
 
+  useEffect(() => {
+    if (isFocused && textareaRef.current) {
+      textareaRef.current?.focus({ preventScroll: true });
+    }
+  }, [isFocused]);
+  
+
   // Calcul du nombre de lignes pour le style
   const lineCount = textareaRef.current 
     ? Math.floor(textareaRef.current.scrollHeight / parseInt(getComputedStyle(textareaRef.current).lineHeight))
     : 1;
 
   return (
-    <div className="relative">
+    <div className="relative -mx-2">
       {showMediaModal && (
         <MediaPreviewModal
           mediaList={previewMedia}
@@ -169,13 +182,13 @@ const ChatInput = memo(({
       <form 
         ref={formRef}
         onSubmit={handleSubmit} 
-        className="flex items-center gap-1"
+        className="flex items-center gap-2"
       >
         <button 
           type="button" 
           onClick={() => setShowEmojiPicker(prev => !prev)}
           className={`
-            p-1.5 rounded-full text-lg
+            p-1.5  rounded-full text-lg
             ${theme.buttonSecondary}
             transition-colors duration-200
           `}
@@ -209,12 +222,18 @@ const ChatInput = memo(({
         <textarea
           ref={textareaRef}
           value={inputValue}
+          autoFocus={isFocused}
+          spellCheck
+          autoComplete='on'
+          autoCorrect='on'
+          autoCapitalize='on'
+          autoSave='on'
           onChange={(e) => setInputValue(e.target.value)}
           onCompositionStart={() => setIsComposing(true)}
           onCompositionEnd={() => setIsComposing(false)}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onBlur={() => setIsFocused(true)}
           className={`
             flex-1 py-1.5 px-3
             ${lineCount === 1 ? 'rounded-full' : 'rounded-2xl'}
@@ -225,9 +244,9 @@ const ChatInput = memo(({
             text-sm
             transition-all duration-200
           `}
-          placeholder="Message..."
+          placeholder="Type a message..."
           rows={1}
-          style={{ minHeight: '36px' }}
+          style={{ minHeight: '36px'}}
         />
 
         <button 
