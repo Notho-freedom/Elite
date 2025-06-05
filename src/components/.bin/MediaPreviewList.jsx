@@ -1,4 +1,4 @@
-import MediaPreview from './MediaPreview';
+import MediaPreview from '../chat/Input/MediaPreview';
 
 const MediaPreviewList = ({ mediaList, onRemoveMedia, onEditMedia, recipient }) => {
   if (mediaList.length === 0) return null;

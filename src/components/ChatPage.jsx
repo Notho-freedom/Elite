@@ -8,6 +8,7 @@ import ChatSearch from './chat/ChatSearch';
 import ChatMenu from './chat/ChatMenu';
 import EmojiPickerWrapper from './chat/EmojiPickerWrapper';
 import TypingIndicator from './chat/TypingIndicator';
+import { askGroq } from './IA/AIResponse';
 
 const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStartCall, setActiveTab, onProfileOpen }) => {
   const { theme } = useTheme();
@@ -84,44 +85,38 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
   }, [initialMessages, activeChat]);
 
   // Auto-réponse et effet "typing"
-  useEffect(() => {
-    if (messages.length > 0 && messages[messages.length - 1].sender === 'me') {
-      setIsTyping(true);
-      
-      const timer = setTimeout(() => {
-        setIsTyping(false);
-        
+// Dans l'effet de réponse automatique
+useEffect(() => {
+  const lastMessage = messages[messages.length - 1];
+
+  if (lastMessage && lastMessage.sender === 'me' && lastMessage.text && activeChat) {
+    setIsTyping(true);
+
+    const simulateResponse = async () => {
+      try {
+        const aiReply = await askGroq(lastMessage.text, activeChat); // Passez activeChat
+
         const replyMessage = {
-          id: messages.length + 1,
-          text: getRandomResponse(),
+          id: Date.now(),
+          text: aiReply,
           sender: 'them',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           status: 'read',
           reactions: []
         };
-        
-        setIsTyping(false);
+
         setMessages(prev => [...prev, replyMessage]);
+      } catch (err) {
+        console.error('Erreur de réponse IA :', err);
+      } finally {
+        setIsTyping(false);
+      }
+    };
 
-      }, 2000 + Math.random() * 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [messages]);
-
-  const getRandomResponse = () => {
-    const responses = [
-      "Interesting! Tell me more.",
-      "I'll get back to you on that.",
-      "Thanks for letting me know!",
-      "Can we discuss this later?",
-      "I appreciate your message!",
-      "Let me think about it...",
-      "That's a good point!",
-      "I'm currently busy, will reply properly later."
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
+    const timer = setTimeout(simulateResponse, 2000 + Math.random() * 3000);
+    return () => clearTimeout(timer);
+  }
+}, [messages, activeChat]); // Ajoutez activeChat aux dépendances
 
   // Scroll automatique
   useEffect(() => {
@@ -169,6 +164,7 @@ const handleSend = useCallback((e, { message, media = [] }) => {
     ));
   }, 2000);
 }, []);
+
   // Gestion des emojis
   const onEmojiClick = (emojiData) => {
     setInputValue(prev => prev + emojiData.emoji);
