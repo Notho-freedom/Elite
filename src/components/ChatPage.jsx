@@ -89,7 +89,7 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
 useEffect(() => {
   const lastMessage = messages[messages.length - 1];
 
-  if (lastMessage && lastMessage.sender === 'me' && lastMessage.text && activeChat) {
+  if (lastMessage && lastMessage.sender === 'me' && lastMessage.text && activeChat.isOnline) {
     setIsTyping(true);
 
     const simulateResponse = async () => {
