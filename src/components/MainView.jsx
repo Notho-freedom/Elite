@@ -94,6 +94,7 @@ const EmptyState = ({ activeTab }) => (
     {activeTab === 'chats' && <Entry />}
     {activeTab === 'calls' && <Loading />}
     {activeTab === 'status' && <Loading />}
+    {activeTab === 'groups' && <Loading />}
     {activeTab === 'settings' && <Loading />}
   </div>
 );
