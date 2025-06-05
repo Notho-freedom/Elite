@@ -212,9 +212,16 @@ const handleSend = useCallback((e, { message, media = [] }) => {
 
   return (
     <motion.div 
-      className={`flex-1 flex flex-col h-screen ${theme.bgColor} lg:border-l lg:border-r ${theme.borderColor} relative`}
-
+      className={`flex flex-col h-screen lg:border-l lg:border-r ${theme.borderColor} relative`}
+      style={{
+        backgroundImage: 'url("https://images5.alphacoders.com/133/thumb-1920-1339662.jpeg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+      }}
     >
+      {/* Header fixe en haut */}
       <ChatHeader 
         activeChat={activeChat}
         setActiveChat={setActiveChat}
@@ -223,11 +230,12 @@ const handleSend = useCallback((e, { message, media = [] }) => {
         showMenu={showMenu}
         setShowMenu={setShowMenu}
         theme={theme}
-        chatHeaderRef={chatHeaderRef }
+        chatHeaderRef={chatHeaderRef}
         isTyping={isTyping}
         onProfileOpen={onProfileOpen}
       />
-
+  
+      {/* Zone de recherche (conditionnelle) */}
       {showSearch && (
         <ChatSearch 
           searchQuery={searchQuery}
@@ -235,47 +243,41 @@ const handleSend = useCallback((e, { message, media = [] }) => {
           theme={theme}
         />
       )}
-
+  
+      {/* Zone des messages avec défilement */}
       <div 
-  className={`flex-1 overflow-y-auto p-4 ${theme.bgColor} ${showSearch ? 'pt-2' : ''}`}
-  onClick={() => {
-    setShowEmojiPicker(false);
-    setShowMenu(false);
-  }}
-  style={{
-    backgroundImage: 'url("https://images5.alphacoders.com/133/thumb-1920-1339662.jpeg")',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat'
-  }}
->
-  <AnimatePresence>
-    {(searchQuery ? filteredMessages : messages).map((message) => (
-      <ChatMessage 
-        key={message.id}
-        message={message}
-        addReaction={addReaction}
-        theme={theme}
-        variants={messageVariants}
-      />
-    ))}
-    
-    {isTyping ? (
-      <TypingIndicator theme={theme} />
-    ) : (
-      <div ref={messagesEndRef} />
-    )}
-  </AnimatePresence>
-</div>
-
-
+        className={`flex-1 overflow-y-auto ${showSearch ? 'pt-2' : 'p-[0.8rem]'} relative`}
+        onClick={() => {
+          setShowEmojiPicker(false);
+          setShowMenu(false);
+        }}
+      >
+        <AnimatePresence>
+          {(searchQuery ? filteredMessages : messages).map((message) => (
+            <ChatMessage 
+              key={message.id}
+              message={message}
+              addReaction={addReaction}
+              theme={theme}
+              variants={messageVariants}
+            />
+          ))}
+          
+          {isTyping? <TypingIndicator theme={theme} /> : <div ref={messagesEndRef} className="h-4" />}
+          
+        </AnimatePresence>
+      </div>
+  
+      {/* Picker d'emojis flottant */}
       <EmojiPickerWrapper 
         showEmojiPicker={showEmojiPicker}
         onEmojiClick={onEmojiClick}
         theme={theme}
       />
-
-      <footer className={`p-1 border-t ${theme.borderColor} ${theme.headerBg} sticky bottom-0`}>
+  
+      {/* Footer fixe en bas */}
+      <footer className={`
+        sticky bottom-0 p-2 px-4 shadow-lg`}>
         <ChatInput 
           inputValue={inputValue}
           setInputValue={setInputValue}
@@ -287,11 +289,14 @@ const handleSend = useCallback((e, { message, media = [] }) => {
           recipient={activeChat}
         />
       </footer>
-
-      <ChatMenu 
-        showMenu={showMenu}
-        theme={theme}
-      />
+  
+      {/* Menu flottant (conditionnel) */}
+      {showMenu && (
+        <ChatMenu 
+          showMenu={showMenu}
+          theme={theme}
+        />
+      )}
     </motion.div>
   );
 };
