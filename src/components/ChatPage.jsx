@@ -35,7 +35,6 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const chatHeaderRef = useRef(null);
-  const fileInputRef = useRef(null);
   
   // Sons optimisés
   const [playSendSound] = useSound(SOUNDS.SEND, { 
@@ -182,29 +181,7 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
     });
   }, [soundEnabled, playSendSound]);
 
-  // Gestion des médias
-  const handleMediaUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const media = files.map(file => {
-      const url = URL.createObjectURL(file);
-      const type = file.type.startsWith('video') ? 'video' : 'image';
-      return { type, url };
-    });
-  
-    const newMessage = {
-      id: Date.now(),
-      text: '',
-      sender: 'me',
-      media,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent',
-      reactions: []
-    };
-  
-    setMessages(prev => [...prev, newMessage]);
-    if (soundEnabled) playSendSound();
-    e.target.value = '';
-  };
+
 
   // Scroll automatique optimisé
   useEffect(() => {
@@ -332,13 +309,8 @@ const ChatPage = ({ activeChat, setActiveChat, messages: initialMessages, onStar
           setInputValue={setInputValue}
           handleSend={handleSend}
           setShowEmojiPicker={setShowEmojiPicker}
-          handleMediaUpload={handleMediaUpload}
           theme={theme}
-          fileInputRef={fileInputRef}
           recipient={activeChat}
-          inputRef={inputRef}
-          soundEnabled={soundEnabled}
-          toggleSounds={toggleSounds}
         />
       </footer>
   
