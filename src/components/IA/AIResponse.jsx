@@ -1,7 +1,7 @@
 import { Groq } from 'groq-sdk';
 
 const groq = new Groq({
-  apiKey: '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',
+  apiKey: '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',
   dangerouslyAllowBrowser: true,
 });
 
@@ -27,7 +27,7 @@ export async function askGroq(userInput, activeChat) {
     history.push({ role: 'user', content: userInput });
 
     const response = await groq.chat.completions.create({
-      model: 'llama3-70b-8192',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       messages: history,
       temperature: 0.7,
       max_tokens: 1024,
