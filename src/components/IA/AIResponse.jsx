@@ -1,8 +1,8 @@
 import { Groq } from 'groq-sdk';
 
 const groq = new Groq({
-  apiKey: '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',
-  dangerouslyAllowBrowser: true,
+  apiKey: import.meta.env.VITE_API_KEY,
+  //dangerouslyAllowBrowser: true,
 });
 
 // Historique par conversation (stocké dans un Map)
@@ -16,7 +16,7 @@ export async function askGroq(userInput, activeChat) {
       chatHistories.set(activeChat.id, [
         {
           role: 'system',
-          content: systemPrompt,
+          content: systemPrompt
         },
       ]);
     }

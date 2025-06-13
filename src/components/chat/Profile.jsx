@@ -18,18 +18,17 @@ import {
   IoMdCheckmarkCircleOutline
 } from 'react-icons/io';
 import { 
-  BsCheck2All, 
-  BsThreeDots,
   BsEmojiSmile,
   BsCamera,
   BsFileEarmark
 } from 'react-icons/bs';
 import { RiVipCrownLine } from 'react-icons/ri';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../Context/ThemeContext';
+import { useApp } from '../Context/AppContext';
 
-const Profile = ({ user, onClose }) => {
-  const { theme, mode } = useTheme();
+const Profile = () => {
+  const {theme, mode, activeChat, setShowProfile } = useApp();
+
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('media');
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,33 +37,42 @@ const Profile = ({ user, onClose }) => {
 
   // Fermer le menu quand on clique à l'extérieur
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isMenuOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMenuOpen]);
+  
 
   // Gestion du scroll
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(contentRef.current.scrollTop > 50);
-    };
-    contentRef.current?.addEventListener('scroll', handleScroll);
-    return () => contentRef.current?.removeEventListener('scroll', handleScroll);
+    const el = contentRef.current;
+    if (!el) return;
+  
+    const handleScroll = () => setIsScrolled(el.scrollTop > 50);
+  
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
   }, []);
+  
 
   // Données du profil
   const profileData = {
     info: [
       { icon: <FiUser />, label: "Bio", value: "Digital designer & photographer" },
-      { icon: <FiMail />, label: "Email", value: `${user?.name?.toLowerCase().replace(/\s/g, '')}@eliteapp.com` },
+      { icon: <FiMail />, label: "Email", value: `${activeChat?.name?.toLowerCase().replace(/\s/g, '')}@eliteapp.com` },
       { icon: <FiClock />, label: "Member since", value: "January 2020" },
       { icon: <RiVipCrownLine />, label: "Status", value: "Premium Member" }
     ],
-    media: Array(9).fill(null).map((_, i) => ({ id: i+1, type: Math.random() > 0.5 ? 'photo' : 'video' })),
+    media: Array(9).fill(null).map((_, i) => ({
+        id: i + 1,
+        type: Math.random() > 0.5 ? 'photo' : 'video',
+        src: `https://picsum.photos/seed/${i + 1}/300/300`
+      }))
+      ,
     links: [
       { title: "Portfolio", url: "portfolio.design", icon: <FiLink /> },
       { title: "Dribbble", url: "dribbble.com/me", icon: <FiStar /> }
@@ -95,7 +103,7 @@ const Profile = ({ user, onClose }) => {
       >
         <div className="flex items-center space-x-4">
           <motion.button 
-            onClick={onClose}
+            onClick={()=>setShowProfile(false)}
             whileTap={{ scale: 0.9 }}
             className={clsx(
               "p-2 rounded-full",
@@ -120,8 +128,8 @@ const Profile = ({ user, onClose }) => {
               >
 
 <img 
-              src={user?.avatar || 'https://via.placeholder.com/150'} 
-              alt={user?.name}
+              src={activeChat?.avatar || 'https://via.placeholder.com/150'} 
+              alt={activeChat?.name}
               className={clsx(
                 "w-12 h-12 flex flex-col rounded-full object-cover shadow-lg border-4",
                 mode === 'dark' ? "border-gray-800" : "border-white",
@@ -137,7 +145,7 @@ const Profile = ({ user, onClose }) => {
                 exit={{ opacity: 0, y: -10 }}
               >
 
-                {user?.name}
+                {activeChat?.name}
               </motion.h1>
               </motion.div>
             )}
@@ -180,15 +188,15 @@ const Profile = ({ user, onClose }) => {
             className="relative mb-4 group"
           >
             <img 
-              src={user?.avatar || 'https://via.placeholder.com/150'} 
-              alt={user?.name}
+              src={activeChat?.avatar || 'https://via.placeholder.com/150'} 
+              alt={activeChat?.name}
               className={clsx(
                 "w-32 h-32 rounded-full object-cover shadow-lg border-4",
                 mode === 'dark' ? "border-gray-800" : "border-white",
                 theme.accentShadow
               )}
             />
-            {user?.isOnline && (
+            {activeChat?.isOnline && (
               <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
             )}
             <div className="absolute inset-0 rounded-full bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -198,19 +206,19 @@ const Profile = ({ user, onClose }) => {
           
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-1 flex items-center justify-center">
-              {user?.name}
+              {activeChat?.name}
               <IoMdCheckmarkCircleOutline className={clsx(
                 "ml-1",
                 mode === 'dark' ? "text-purple-400" : "text-purple-600"
               )} />
             </h2>
             <p className={clsx("text-sm", theme.secondaryText)}>
-              {user?.isOnline ? (
+              {activeChat?.isOnline ? (
                 <span className="flex items-center justify-center">
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                   Online
                 </span>
-              ) : `last seen ${user?.timeDisplay}`}
+              ) : `last seen ${activeChat?.timeDisplay}`}
             </p>
           </div>
         </div>
