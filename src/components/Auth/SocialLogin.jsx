@@ -3,21 +3,21 @@ import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { GoldenParticles } from '../Particles/GoldenParticles';
 import { AuthProviders } from './Providers';
-import { useTheme } from '../Context/ThemeContext';
+import { TABS, useApp } from '../Context/AppContext'; // Chemin à adapter
 
-export const SocialLogin = ({ setIsLogin, setActiveTab }) => {
-  const { theme } = useTheme();
+export const SocialLogin = () => {
+  const { setIsLogin, switchTab, theme } = useApp();
   const [loadingProvider, setLoadingProvider] = useState(null);
 
   const handleAuth = async (provider) => {
     setLoadingProvider(provider);
     console.log(`🔐 Auth with: ${provider}`);
-    
+
     await new Promise(resolve => setTimeout(resolve, 2));
-    
+
     setLoadingProvider(null);
     setIsLogin(true);
-    setActiveTab('chats');
+    switchTab(TABS.CHATS);
   };
 
   return (

@@ -7,10 +7,11 @@ import { AppProvider } from './components/Context/AppContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AppProvider>
-      <ThemeProvider>
-          <App />
-      </ThemeProvider>
-    </AppProvider>
-  </StrictMode>,
+          
+    <ThemeProvider>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </ThemeProvider>
+  </StrictMode>
 )
