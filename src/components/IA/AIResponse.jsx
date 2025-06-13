@@ -2,7 +2,7 @@ import { Groq } from 'groq-sdk';
 
 const groq = new Groq({
   apiKey: import.meta.env.VITE_API_KEY,
-  //dangerouslyAllowBrowser: true,
+  dangerouslyAllowBrowser: true,
 });
 
 // Historique par conversation (stocké dans un Map)
