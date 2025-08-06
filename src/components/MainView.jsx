@@ -6,6 +6,7 @@ import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
 import Status from './Status/Status';
+import NativeFeatures from './NativeFeatures';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
 import CallScreen from './CallScreen';
@@ -58,6 +59,7 @@ const MainView = () => {
             {activeTab === TABS.CALLS && <CallHistory />}
             {activeTab === TABS.STATUS && <Status />}
             {activeTab === TABS.SETTINGS && <EmptyState />}
+            {activeTab === TABS.NATIVE && <NativeFeatures />}
           </div>
           <div className="flex-1">
             {activeChat ? (
@@ -76,6 +78,7 @@ const MainView = () => {
             {activeTab === TABS.CALLS && <CallHistory />}
             {activeTab === TABS.STATUS && <Status />}
             {activeTab === TABS.SETTINGS && <EmptyState />}
+            {activeTab === TABS.NATIVE && <NativeFeatures />}
           </>
         )
       )}
@@ -89,7 +92,7 @@ const EmptyState = () => {
   return (
     <div className="flex-1 flex items-center justify-center text-gray-500">
       {activeTab === TABS.CHATS && <Entry />}
-      {[TABS.CALLS, TABS.STATUS, TABS.GROUPS, TABS.SETTINGS].includes(activeTab) && <Loading />}
+      {[TABS.CALLS, TABS.STATUS, TABS.GROUPS, TABS.SETTINGS, TABS.NATIVE].includes(activeTab) && <Loading />}
     </div>
   );
 }

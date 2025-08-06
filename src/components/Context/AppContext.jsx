@@ -10,6 +10,7 @@ export const TABS = {
   GROUPS: 'groups',
   CALLS: 'calls',
   SETTINGS: 'settings',
+  NATIVE: 'native',
 };
 
 const AppContext = createContext();
@@ -50,6 +51,7 @@ export const AppProvider = ({ children }) => {
     [TABS.GROUPS]: 12,
     [TABS.CALLS]: 1,
     [TABS.SETTINGS]: 0,
+    [TABS.NATIVE]: 0,
   });
 
   // Gestion appels

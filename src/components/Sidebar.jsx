@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaComments, FaCircleNotch, FaPhoneAlt, FaCog, FaUsers } from 'react-icons/fa';
+import { FaComments, FaCircleNotch, FaPhoneAlt, FaCog, FaUsers, FaMobile } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useApp, TABS } from './Context/AppContext';
 
@@ -49,6 +49,7 @@ const Sidebar = () => {
     { id: TABS.GROUPS, icon: <FaUsers size={20} />, label: 'Groupes' },
     { id: TABS.CALLS, icon: <FaPhoneAlt size={20} />, label: 'Appels' },
     { id: TABS.SETTINGS, icon: <FaCog size={20} />, label: 'Paramètres' },
+    { id: TABS.NATIVE, icon: <FaMobile size={20} />, label: 'Native' },
   ];
 
   const handleTabClick = (tabId) => {
