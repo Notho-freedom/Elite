@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true, // Accepte toutes les connexions
+    host: true,
     cors: {
-      origin: '*', // Permet toutes les origines
+      origin: '*',
       credentials: true
     }
   },
@@ -14,7 +14,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'esbuild',
+    minify: 'esbuild'
   },
   base: './'
 })
