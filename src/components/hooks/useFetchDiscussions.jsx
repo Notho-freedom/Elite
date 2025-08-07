@@ -49,12 +49,14 @@ const useFetchDiscussions = () => {
         const fullName = `${user.name?.first ?? 'Unknown'} ${user.name?.last ?? 'User'}`;
         const unread = Math.random() > 0.5;
         const time = generateRandomTime();
+        const lastMessage = generateRandomMessage();
 
         return {
           id: idx + 1,
           name: fullName,
           avatar: user.picture?.medium ?? '',
-          lastMessage: generateRandomMessage(),
+          lastMessage: lastMessage,
+          lastMessageTime: time,
           time,
           timeDisplay: formatDisplayTime(time),
           unread,

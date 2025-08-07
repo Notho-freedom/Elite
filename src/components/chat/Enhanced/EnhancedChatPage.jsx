@@ -148,7 +148,7 @@ const EnhancedChatPage = () => {
       setEditingMessage(null);
     } else {
       // Nouveau message
-      sendMessage(messageData);
+      sendMessage(messageData.text || messageData, messageData.type || 'text');
     }
 
     // Reset des états
@@ -287,6 +287,15 @@ const EnhancedChatPage = () => {
 
       {/* Zone des messages */}
       <div className={`flex-1 overflow-y-auto px-4 py-2 space-y-4 ${isMobile ? 'pb-[20vh]' : 'pb-4'}`}>
+        {/* Debug: Afficher le nombre de messages */}
+        {enrichedMessages.length === 0 && (
+          <div className={`text-center py-8 ${theme.secondaryText}`}>
+            <div className="text-4xl mb-4">💬</div>
+            <p>Aucun message dans cette conversation</p>
+            <p className="text-sm mt-2">Commencez à discuter !</p>
+          </div>
+        )}
+        
         <AnimatePresence mode="popLayout">
           {enrichedMessages.map((message) => (
             <motion.div

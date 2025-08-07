@@ -29,6 +29,9 @@ export const AppProvider = ({ children }) => {
   const [realCallHistory, setRealCallHistory] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [dataError, setDataError] = useState(null);
+  
+  // Messages mockés pour le mode démonstration
+  const [mockMessages, setMockMessages] = useState([]);
 
   const [activeCall, setActiveCall] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.CHATS);
@@ -138,25 +141,49 @@ export const AppProvider = ({ children }) => {
 
   // Envoyer un message
   const sendMessage = async (content, messageType = 'text') => {
-    if (!activeChat || !user) return;
+    if (!activeChat) return;
 
     try {
-      const { data, error } = await db.sendMessage(
-        activeChat.id,
-        user.id,
-        content,
-        messageType
-      );
+      if (isAuthenticated && user) {
+        // Mode Supabase
+        const { data, error } = await db.sendMessage(
+          activeChat.id,
+          user.id,
+          content,
+          messageType
+        );
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Ajouter le message à la liste locale
-      setRealMessages(prev => [data[0], ...prev]);
-      
-      // Recharger les discussions pour mettre à jour le dernier message
-      await loadUserData();
+        // Ajouter le message à la liste locale
+        setRealMessages(prev => [data[0], ...prev]);
+        
+        // Recharger les discussions pour mettre à jour le dernier message
+        await loadUserData();
 
-      return { success: true, data };
+        return { success: true, data };
+      } else {
+        // Mode démonstration
+        const newMessage = {
+          id: Date.now().toString(),
+          text: content.text || content,
+          sender: 'me',
+          senderId: 'me',
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          type: messageType || 'text',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+        };
+
+        // Ajouter le message à la liste locale
+        setMockMessages(prev => [newMessage, ...prev]);
+        
+        // Mettre à jour le dernier message dans les discussions mockées
+        // Note: Les discussions mockées sont gérées par useFetchDiscussions
+        // Cette mise à jour sera visible lors du prochain rechargement
+
+        return { success: true, data: [newMessage] };
+      }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
       return { success: false, error: error.message };
@@ -222,11 +249,75 @@ export const AppProvider = ({ children }) => {
   // Charger les messages quand une discussion est sélectionnée
   useEffect(() => {
     if (activeChat?.id) {
-      loadMessages(activeChat.id);
+      if (isAuthenticated && user) {
+        loadMessages(activeChat.id);
+      } else {
+        // Générer des messages mockés pour le mode démonstration
+        generateMockMessages(activeChat.id);
+      }
     } else {
       setRealMessages([]);
+      setMockMessages([]);
     }
-  }, [activeChat]);
+  }, [activeChat, isAuthenticated, user]);
+
+  // Générer des messages mockés pour une discussion
+  const generateMockMessages = (discussionId) => {
+    const mockMessagesData = [
+      {
+        id: '1',
+        text: 'Salut ! Comment ça va ?',
+        sender: 'other',
+        senderId: 'other',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        isRead: true,
+        type: 'text',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '2',
+        text: 'Très bien merci ! Et toi ?',
+        sender: 'me',
+        senderId: 'me',
+        timestamp: new Date(Date.now() - 3000000).toISOString(),
+        isRead: true,
+        type: 'text',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '3',
+        text: 'Parfait ! On se voit bientôt ?',
+        sender: 'other',
+        senderId: 'other',
+        timestamp: new Date(Date.now() - 2400000).toISOString(),
+        isRead: true,
+        type: 'text',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '4',
+        text: 'Oui, avec plaisir ! 😊',
+        sender: 'me',
+        senderId: 'me',
+        timestamp: new Date(Date.now() - 1800000).toISOString(),
+        isRead: true,
+        type: 'text',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '5',
+        text: 'Super ! À bientôt alors !',
+        sender: 'other',
+        senderId: 'other',
+        timestamp: new Date(Date.now() - 1200000).toISOString(),
+        isRead: false,
+        type: 'text',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      }
+    ];
+    
+    setMockMessages(mockMessagesData);
+  };
 
   const value = {
     // Authentification
@@ -249,6 +340,7 @@ export const AppProvider = ({ children }) => {
     
     // Données mockées (pour la transition)
     discussions: mockDiscussions, 
+    messages: realMessages.length > 0 ? realMessages : mockMessages,
     fetchRandomUsers, 
     sortedDiscussions,
     
