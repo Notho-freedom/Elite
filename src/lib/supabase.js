@@ -96,7 +96,29 @@ export const db = {
       .eq('participants.user_id', userId)
       .order('last_message.created_at', { ascending: false })
     
-    return { data, error }
+    if (error) {
+      console.error('Erreur lors de la récupération des discussions:', error);
+      return { data: [], error };
+    }
+
+    // Transformer les données pour correspondre au format attendu
+    const transformedData = data?.map(discussion => {
+      const participants = discussion.participants || [];
+      const otherParticipants = participants.filter(p => p.user_id !== userId);
+      
+      return {
+        id: discussion.id,
+        name: discussion.name || (otherParticipants.length > 0 ? otherParticipants[0].users?.name : 'Discussion'),
+        avatar: otherParticipants[0]?.users?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        lastMessage: discussion.last_message?.[0]?.content || 'Aucun message',
+        unread: false, // À implémenter avec un système de marquage
+        isOnline: otherParticipants.some(p => p.users?.status === 'online'),
+        type: discussion.type,
+        participants: participants.map(p => p.users).filter(Boolean)
+      };
+    }) || [];
+
+    return { data: transformedData, error: null };
   },
 
   // Récupérer les messages d'une discussion
@@ -111,7 +133,23 @@ export const db = {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
-    return { data, error }
+    if (error) {
+      console.error('Erreur lors de la récupération des messages:', error);
+      return { data: [], error };
+    }
+
+    // Transformer les données pour correspondre au format attendu
+    const transformedData = data?.map(message => ({
+      id: message.id,
+      content: message.content,
+      sender: message.sender?.name || 'Utilisateur',
+      senderId: message.sender_id,
+      avatar: message.sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      timestamp: message.created_at,
+      type: message.message_type || 'text'
+    })) || [];
+
+    return { data: transformedData, error: null };
   },
 
   // Envoyer un message
@@ -124,9 +162,28 @@ export const db = {
         content,
         message_type: messageType
       })
-      .select()
+      .select(`
+        *,
+        sender:users(id, name, avatar_url)
+      `)
     
-    return { data, error }
+    if (error) {
+      console.error('Erreur lors de l\'envoi du message:', error);
+      return { data: null, error };
+    }
+
+    // Transformer le message envoyé
+    const transformedMessage = {
+      id: data[0].id,
+      content: data[0].content,
+      sender: data[0].sender?.name || 'Utilisateur',
+      senderId: data[0].sender_id,
+      avatar: data[0].sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      timestamp: data[0].created_at,
+      type: data[0].message_type || 'text'
+    };
+
+    return { data: [transformedMessage], error: null };
   },
 
   // Créer une nouvelle discussion
@@ -140,7 +197,10 @@ export const db = {
       .select()
       .single()
 
-    if (discussionError) return { error: discussionError }
+    if (discussionError) {
+      console.error('Erreur lors de la création de la discussion:', discussionError);
+      return { data: null, error: discussionError };
+    }
 
     // Ajouter les participants
     const participants = participantIds.map(userId => ({
@@ -152,7 +212,12 @@ export const db = {
       .from('discussion_participants')
       .insert(participants)
 
-    return { data: discussion, error: participantsError }
+    if (participantsError) {
+      console.error('Erreur lors de l\'ajout des participants:', participantsError);
+      return { data: null, error: participantsError };
+    }
+
+    return { data: discussion, error: null };
   },
 
   // Mettre à jour le profil utilisateur
@@ -163,7 +228,27 @@ export const db = {
       .eq('id', userId)
       .select()
     
-    return { data, error }
+    if (error) {
+      console.error('Erreur lors de la mise à jour du profil:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  },
+
+  // Récupérer tous les utilisateurs (pour les suggestions)
+  getAllUsers: async () => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, avatar_url, status')
+      .order('name')
+    
+    if (error) {
+      console.error('Erreur lors de la récupération des utilisateurs:', error);
+      return { data: [], error };
+    }
+
+    return { data, error: null };
   }
 }
 
@@ -179,20 +264,39 @@ export const calls = {
         call_type: callType,
         status: 'active'
       })
-      .select()
+      .select(`
+        *,
+        discussion:discussions(name),
+        initiator:users(id, name, avatar_url)
+      `)
     
-    return { data, error }
+    if (error) {
+      console.error('Erreur lors de la création de l\'appel:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
   },
 
   // Mettre à jour le statut d'un appel
   updateCallStatus: async (callId, status) => {
     const { data, error } = await supabase
       .from('calls')
-      .update({ status, ended_at: status === 'ended' ? new Date().toISOString() : null })
+      .update({ 
+        status, 
+        ended_at: status === 'ended' ? new Date().toISOString() : null,
+        duration: status === 'ended' ? 
+          `EXTRACT(EPOCH FROM (NOW() - started_at))::integer` : null
+      })
       .eq('id', callId)
       .select()
     
-    return { data, error }
+    if (error) {
+      console.error('Erreur lors de la mise à jour de l\'appel:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
   },
 
   // Récupérer l'historique des appels
@@ -202,12 +306,33 @@ export const calls = {
       .select(`
         *,
         discussion:discussions(name),
-        initiator:users(id, name, avatar_url)
+        initiator:users(id, name, avatar_url),
+        participants:call_participants(
+          user_id,
+          users(id, name, avatar_url)
+        )
       `)
-      .or(`initiator_id.eq.${userId},participants.user_id.eq.${userId}`)
+      .or(`initiator_id.eq.${userId}`)
       .order('created_at', { ascending: false })
     
-    return { data, error }
+    if (error) {
+      console.error('Erreur lors de la récupération de l\'historique des appels:', error);
+      return { data: [], error };
+    }
+
+    // Transformer les données pour correspondre au format attendu
+    const transformedData = data?.map(call => ({
+      id: call.id,
+      name: call.discussion?.name || 'Appel',
+      avatar: call.initiator?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      type: call.call_type,
+      status: call.status,
+      duration: call.duration || 0,
+      timestamp: call.created_at,
+      initiator: call.initiator?.name || 'Utilisateur'
+    })) || [];
+
+    return { data: transformedData, error: null };
   }
 }
 

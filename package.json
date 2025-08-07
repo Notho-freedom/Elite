@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "setup:supabase": "node setup_supabase.js",
+    "test:supabase": "node -e \"import('./test_supabase.js').then(m => m.runTests())\"",
     "cap:sync": "npx cap sync",
     "cap:build": "npm run build && npx cap sync",
     "cap:android": "npx cap open android",
