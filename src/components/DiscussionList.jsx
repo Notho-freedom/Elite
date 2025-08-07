@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { FaFilter, FaSearch, FaTimes, FaChevronCircleDown, FaCamera } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import DiscussionItem from './DiscussionItem';
+import TabHeader from './UI/TabHeader';
 import { useApp } from './Context/AppContext';
 
 const FILTERS = { ALL: 'all', UNREAD: 'unread', ONLINE: 'online' };
@@ -95,72 +96,20 @@ const DiscussionList = () => {
 
   return (
     <div className={`${t.w} ${t.bgColor} h-screen flex flex-col`}>
-      {/* Header */}
-      <motion.div className={`px-4 py-3 ${t.borderColor} flex justify-between items-center ${t.headerBg}`} variants={itemVariants}>
-        <motion.h2 className={`text-lg font-semibold ${t.textColor}`} variants={itemVariants}>
-          Discussions
-        </motion.h2>
-
-        <div className="flex items-center gap-2">
-          <motion.button
-            className={`p-1 rounded-full ${t.searchHover}`}
-            variants={buttonVariants}
-            initial="rest"
-            whileHover="hover"
-            whileTap="tap"
-            onClick={toggleSearch}
-            aria-label="Rechercher"
-          >
-            <FaSearch className={t.textColor} />
-          </motion.button>
-
-          <motion.button className={`p-1 rounded-full ${t.searchHover}`} variants={buttonVariants} aria-label="Camera">
-            <FaCamera className={`w-4 h-4 ${t.textColor}`} />
-          </motion.button>
-
-          <motion.button className={`p-1 rounded-full ${t.searchHover}`} variants={buttonVariants} aria-label="Plus">
-            <FaChevronCircleDown className={`w-4 h-4 ${t.textColor}`} />
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* Barre de recherche */}
-      <AnimatePresence>
-        {isSearching && (
-          <motion.div
-            className={`px-4 py-2 ${t.borderColor} ${t.headerBg}`}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative">
-              <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 ${t.secondaryText}`} />
-              <motion.input
-                type="text"
-                placeholder="Rechercher..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-                className={`w-full pl-9 pr-10 py-2 rounded-full focus:outline-none ${t.inputBg} ${t.textColor}`}
-                whileFocus={{ scale: 1.01 }}
-              />
-              {searchQuery && (
-                <motion.button
-                  onClick={() => setSearchQuery('')}
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${t.secondaryText} ${t.filterHover}`}
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  aria-label="Effacer"
-                >
-                  <FaTimes />
-                </motion.button>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Header avec TabHeader */}
+      <TabHeader
+        title="Discussions"
+        theme={t}
+        showSearch={true}
+        showCamera={true}
+        showMore={true}
+        onSearch={setIsSearching}
+        onCamera={() => console.log('Camera clicked')}
+        onMore={() => console.log('More options clicked')}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Rechercher une discussion..."
+      />
 
       {/* Filtres */}
       <motion.div className={`flex px-4 items-center ${t.borderColor}`} initial="rest" animate="rest">
