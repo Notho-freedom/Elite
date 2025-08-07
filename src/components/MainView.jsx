@@ -8,7 +8,7 @@ import CallInterface from './Elite/Calls/CallInterface';
 import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
-import Status from './Status/Status';
+import StatusInterface from './Elite/Status/StatusInterface';
 import NativeFeatures from './NativeFeatures';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
@@ -17,6 +17,7 @@ import { useAuth } from './Context/AuthContext';
 import GroupList from './Groups/GroupList';
 import SettingsList from './Settings/SettingsList';
 import FeatureNotification from './Enhanced/FeatureNotification';
+import StatusList from './Status/StatusList';
 
 const MainView = () => {
   const {
@@ -108,7 +109,7 @@ const MainView = () => {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <DiscussionList />
+                  <EliteDiscussionList />
                 </motion.div>
               )}
               {activeTab === TABS.CALLS && (
@@ -130,7 +131,7 @@ const MainView = () => {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Status />
+                  <StatusInterface />
                 </motion.div>
               )}
               {activeTab === TABS.SETTINGS && (
@@ -227,7 +228,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <EliteDiscussionList />
+                      <DiscussionList />
                     </motion.div>
                   )}
                   {activeTab === TABS.CALLS && (
@@ -249,7 +250,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <Status />
+                      <StatusList />
                     </motion.div>
                   )}
                   {activeTab === TABS.SETTINGS && (
