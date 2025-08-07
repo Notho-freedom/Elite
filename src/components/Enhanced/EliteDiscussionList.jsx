@@ -19,6 +19,7 @@ import { useApp } from '../Context/AppContext';
 import { useDiscussionActions } from '../../lib/eliteStoreSimple';
 import { useActionNotifications } from '../Elite/Actions/ActionNotification';
 import CreateDiscussionModal from '../Elite/Creation/CreateDiscussionModal';
+import EliteWallet from '../Elite/Wallet/EliteWallet';
 
 // Composants de filtres avancés
 const FilterSection = ({ activeFilter, onFilterChange, theme, discussions }) => {
@@ -474,6 +475,7 @@ const EliteDiscussionList = () => {
   const [contextMenuData, setContextMenuData] = useState({ discussion: null, position: { x: 0, y: 0 } });
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
   
   const { 
     realDiscussions, 
@@ -679,6 +681,17 @@ const EliteDiscussionList = () => {
               <FaSearch className="w-4 h-4" />
             </motion.button>
             
+            {/* Bouton Elite-Coins */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowWallet(true)}
+              className="p-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white"
+              title="Elite Wallet"
+            >
+              <FaCoins className="w-4 h-4" />
+            </motion.button>
+            
             {/* Bouton de création */}
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -833,6 +846,12 @@ const EliteDiscussionList = () => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         theme={t}
+      />
+      
+      {/* Elite Wallet */}
+      <EliteWallet
+        isOpen={showWallet}
+        onClose={() => setShowWallet(false)}
       />
     </div>
   );
