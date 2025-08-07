@@ -20,6 +20,7 @@ import { useDiscussionActions } from '../../lib/eliteStoreSimple';
 import { useActionNotifications } from '../Elite/Actions/ActionNotification';
 import CreateDiscussionModal from '../Elite/Creation/CreateDiscussionModal';
 import EliteWallet from '../Elite/Wallet/EliteWallet';
+import CallButtons from '../Elite/Calls/CallButtons';
 
 // Composants de filtres avancés
 const FilterSection = ({ activeFilter, onFilterChange, theme, discussions }) => {
@@ -425,40 +426,13 @@ const EliteDiscussionItem = ({
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 10 }}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 rounded-full p-1 flex items-center gap-1"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2"
           >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onQuickAction('call', discussion);
-              }}
-              className="p-1 text-white hover:text-blue-400 transition-colors"
-              title="Appeler"
-            >
-              <FaPhone className="w-3 h-3" />
-            </button>
-            
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onQuickAction('video', discussion);
-              }}
-              className="p-1 text-white hover:text-green-400 transition-colors"
-              title="Appel vidéo"
-            >
-              <FaVideo className="w-3 h-3" />
-            </button>
-            
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onQuickAction('message', discussion);
-              }}
-              className="p-1 text-white hover:text-yellow-400 transition-colors"
-              title="Message rapide"
-            >
-              <FaPaperPlane className="w-3 h-3" />
-            </button>
+            <CallButtons 
+              discussion={discussion}
+              isHovered={showQuickActions}
+              showLabels={false}
+            />
           </motion.div>
         )}
       </AnimatePresence>

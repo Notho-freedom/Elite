@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 import { 
   FaCoins, FaCreditCard, FaPaypal, FaUniversity, FaApple, FaGoogle,
   FaCheck, FaTimes, FaExclamationTriangle, FaGift, FaStar,
-  FaArrowRight, FaShieldAlt, FaLock, FaUserFriends
+  FaArrowRight, FaShieldAlt, FaLock, FaUserFriends,
+  FaPlus, FaMinus
 } from 'react-icons/fa';
 import { SiBitcoin } from 'react-icons/si';
-import { PAYMENT_METHODS } from '../../lib/eliteCoinStore';
+import { PAYMENT_METHODS } from '../../../lib/eliteCoinStore';
 
 // Onglet d'achat de coins
 export const BuyTab = ({ packages, onPurchase, theme, loading, setLoading }) => {
@@ -254,8 +255,8 @@ export const BuyTab = ({ packages, onPurchase, theme, loading, setLoading }) => 
 
 // Carte de package
 const PackageCard = ({ package_, onSelect, theme }) => {
-  const totalCoins = package_.coins + package_.bonus;
-  const savings = package_.bonus > 0 ? Math.round((package_.bonus / package_.coins) * 100) : 0;
+  const totalCoins = package_?.coins + package_?.bonus;
+  const savings = package_?.bonus > 0 ? Math.round((package_?.bonus / package_?.coins) * 100) : 0;
   
   return (
     <motion.div
@@ -263,12 +264,12 @@ const PackageCard = ({ package_, onSelect, theme }) => {
       whileTap={{ scale: 0.98 }}
       onClick={() => onSelect(package_)}
       className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-        package_.popular
+        package_?.popular
           ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50'
           : `${theme.borderColor} ${theme.hoverBg}`
       }`}
     >
-      {package_.popular && (
+      {package_?.popular && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <span className="bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold">
             ⭐ POPULAIRE
@@ -278,7 +279,7 @@ const PackageCard = ({ package_, onSelect, theme }) => {
       
       <div className="text-center">
         <h4 className={`text-lg font-bold ${theme.textColor} mb-2`}>
-          {package_.name}
+          {package_?.name}
         </h4>
         
         <div className="mb-4">
@@ -289,20 +290,20 @@ const PackageCard = ({ package_, onSelect, theme }) => {
             </span>
           </div>
           
-          {package_.bonus > 0 && (
+          {package_?.bonus > 0 && (
             <div className="flex items-center justify-center gap-1 text-green-500 text-sm">
               <FaGift className="w-3 h-3" />
-              <span>+{package_.bonus} bonus ({savings}% gratuit)</span>
+              <span>+{package_?.bonus} bonus ({savings}% gratuit)</span>
             </div>
           )}
         </div>
         
         <div className="mb-4">
           <span className={`text-2xl font-bold ${theme.textColor}`}>
-            {package_.price}€
+            {package_?.price}€
           </span>
           <p className={`text-sm ${theme.secondaryText}`}>
-            {package_.description}
+            {package_?.description}
           </p>
         </div>
         
@@ -310,7 +311,7 @@ const PackageCard = ({ package_, onSelect, theme }) => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className={`w-full py-2 rounded-lg font-medium ${
-            package_.popular
+            package_?.popular
               ? 'bg-yellow-400 text-black hover:bg-yellow-500'
               : `${theme.accentBg} ${theme.accentText}`
           } transition-colors duration-200`}

@@ -2,14 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaCoins, FaPlus, FaMinus, FaExchangeAlt, FaHistory, 
-  FaCreditCard, FaPaypal, FaUniversity, FaApple, FaGoogle,
-  FaTimes, FaCheck, FaClock, FaExclamationTriangle,
-  FaCrown, FaStar, FaShield, FaGift, FaTrophy,
-  FaArrowUp, FaArrowDown, FaArrowRight, FaRefresh
+  FaTimes, FaClock, FaCrown, FaStar, FaShieldAlt, FaGift, FaTrophy,
+  FaArrowUp, FaArrowDown
 } from 'react-icons/fa';
-import { SiBitcoin } from 'react-icons/si';
-import { useEliteCoins, TRANSACTION_TYPES, TRANSACTION_STATUS, PAYMENT_METHODS } from '../../lib/eliteCoinStore';
-import { useApp } from '../Context/AppContext';
+import { useEliteCoins, TRANSACTION_TYPES, TRANSACTION_STATUS } from '../../../lib/eliteCoinStore';
+import {useApp} from '../../Context/AppContext'
 import { BuyTab, WithdrawTab, TransferTab, HistoryTab } from './WalletTabs';
 
 // Composant principal du portefeuille Elite
@@ -166,13 +163,13 @@ const WalletHeader = ({ wallet, theme, onClose }) => {
 
   const getLevelIcon = (level) => {
     const icons = {
-      Bronze: <FaShield className="w-4 h-4" />,
+      Bronze: <FaShieldAlt className="w-4 h-4" />,
       Silver: <FaStar className="w-4 h-4" />,
       Gold: <FaCrown className="w-4 h-4" />,
       Platinum: <FaTrophy className="w-4 h-4" />,
       Elite: <FaGift className="w-4 h-4" />
     };
-    return icons[level] || <FaShield className="w-4 h-4" />;
+    return icons[level] || <FaShieldAlt className="w-4 h-4" />;
   };
 
   return (

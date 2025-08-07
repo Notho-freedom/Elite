@@ -4,6 +4,7 @@ import DiscussionList from "./DiscussionList";
 import EliteDiscussionList from './Enhanced/EliteDiscussionList';
 import ChatPage from './ChatPage';
 import EnhancedChatPage from './chat/Enhanced/EnhancedChatPage';
+import CallInterface from './Elite/Calls/CallInterface';
 import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
@@ -280,6 +281,9 @@ const MainView = () => {
         </motion.div>
       )}
 
+      {/* Interface d'appel */}
+      <CallInterface />
+      
       {/* Notification des nouvelles fonctionnalités */}
       <FeatureNotification theme={theme} />
     </>
