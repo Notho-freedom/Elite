@@ -1,5 +1,6 @@
 // hooks/useFetchDiscussions.js
 import { useState, useCallback } from 'react';
+import { enrichDiscussionsWithEliteFeatures, createEliteDemoData } from '../Enhanced/EliteDataEnricher';
 
 const useFetchDiscussions = () => {
   const [discussions, setDiscussions] = useState([]);
@@ -66,7 +67,10 @@ const useFetchDiscussions = () => {
         };
       });
 
-      setDiscussions(users);
+      // Enrichir avec les fonctionnalités Elite
+      const enrichedUsers = enrichDiscussionsWithEliteFeatures(users);
+
+              setDiscussions(enrichedUsers);
       setError(null);
     } catch (err) {
       setError(err.message || 'Unexpected error');

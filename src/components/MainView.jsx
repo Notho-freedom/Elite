@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import CallHistory from "./CallHistory";
 import DiscussionList from "./DiscussionList";
+import EliteDiscussionList from './Enhanced/EliteDiscussionList';
 import ChatPage from './ChatPage';
 import EnhancedChatPage from './chat/Enhanced/EnhancedChatPage';
 import Profile from "./chat/Profile";
@@ -225,7 +226,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <DiscussionList />
+                      <EliteDiscussionList />
                     </motion.div>
                   )}
                   {activeTab === TABS.CALLS && (

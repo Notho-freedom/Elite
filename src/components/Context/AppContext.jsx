@@ -4,6 +4,7 @@ import { useTheme } from './ThemeContext';
 import { useMediaQuery } from 'react-responsive';
 import { useAuth } from './AuthContext';
 import { db, calls } from '../../lib/supabase';
+import { createEliteDemoMessages, enrichMessagesWithEliteFeatures } from '../Enhanced/EliteDataEnricher';
 
 // Enum pour éviter les strings magiques
 export const TABS = {
@@ -263,60 +264,9 @@ export const AppProvider = ({ children }) => {
 
   // Générer des messages mockés pour une discussion
   const generateMockMessages = (discussionId) => {
-    const mockMessagesData = [
-      {
-        id: '1',
-        text: 'Salut ! Comment ça va ?',
-        sender: 'other',
-        senderId: 'other',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        isRead: true,
-        type: 'text',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-      },
-      {
-        id: '2',
-        text: 'Très bien merci ! Et toi ?',
-        sender: 'me',
-        senderId: 'me',
-        timestamp: new Date(Date.now() - 3000000).toISOString(),
-        isRead: true,
-        type: 'text',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-      },
-      {
-        id: '3',
-        text: 'Parfait ! On se voit bientôt ?',
-        sender: 'other',
-        senderId: 'other',
-        timestamp: new Date(Date.now() - 2400000).toISOString(),
-        isRead: true,
-        type: 'text',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-      },
-      {
-        id: '4',
-        text: 'Oui, avec plaisir ! 😊',
-        sender: 'me',
-        senderId: 'me',
-        timestamp: new Date(Date.now() - 1800000).toISOString(),
-        isRead: true,
-        type: 'text',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-      },
-      {
-        id: '5',
-        text: 'Super ! À bientôt alors !',
-        sender: 'other',
-        senderId: 'other',
-        timestamp: new Date(Date.now() - 1200000).toISOString(),
-        isRead: false,
-        type: 'text',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-      }
-    ];
-    
-    setMockMessages(mockMessagesData);
+    // Utiliser les messages de démonstration Elite
+    const eliteMessages = createEliteDemoMessages();
+    setMockMessages(eliteMessages);
   };
 
   const value = {

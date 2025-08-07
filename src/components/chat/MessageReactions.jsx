@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
 const MessageReactions = ({ message, currentUserId, theme }) => {
-  const userReaction = message.reactions.find(r => r.userId === currentUserId);
-  const otherReactions = message.reactions.filter(r => r.userId !== currentUserId);
+  const userReaction = message.reactions?.find(r => r.userId === currentUserId) || null;
+  const otherReactions = message.reactions?.filter(r => r.userId !== currentUserId) || [];
   const allReactions = userReaction ? [userReaction, ...otherReactions] : otherReactions;
   const isSingleMedia = message.media?.length === 1 && !message.text;
 
