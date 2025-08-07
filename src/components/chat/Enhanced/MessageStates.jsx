@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FaStar, FaPin, FaLock, FaReply, FaForward } from 'react-icons/fa';
+import { FaStar, FaThumbtack, FaLock, FaReply, FaForward } from 'react-icons/fa';
 
 const MessageStates = ({ message, theme, className = '' }) => {
   const states = [];
@@ -18,7 +18,7 @@ const MessageStates = ({ message, theme, className = '' }) => {
   // État épinglé
   if (message.isPinned) {
     states.push({
-      icon: <FaPin />,
+      icon: <FaThumbtack />,
       color: 'text-red-500',
       bg: 'bg-red-50 dark:bg-red-900/20',
       label: 'Message épinglé'
@@ -97,7 +97,7 @@ export const DiscussionStates = ({ discussion, theme, className = '' }) => {
   // Discussion épinglée
   if (discussion.isPinned) {
     states.push({
-      icon: <FaPin />,
+      icon: <FaThumbtack />,
       bg: 'bg-red-50 dark:bg-red-900/20',
       color: 'text-red-500',
       label: 'Discussion épinglée'

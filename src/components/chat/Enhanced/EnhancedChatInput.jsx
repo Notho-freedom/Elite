@@ -6,7 +6,7 @@ import {
 import { 
   BsEmojiSmile, BsSendFill, BsRecordCircle, BsStopCircle 
 } from 'react-icons/bs';
-import { FaPlus, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaEdit } from 'react-icons/fa';
 import MediaPreviewModal from '../Input/MediaPreview';
 import LinkPreview from '../LinkPreview';
 import ReplyPreview from './ReplyPreview';
@@ -278,7 +278,7 @@ const EnhancedChatInput = memo(({
             `}
           >
             <div className="text-orange-500">
-              <FiEdit className="w-4 h-4" />
+              <FaEdit className="w-4 h-4" />
             </div>
             <div className="flex-1">
               <div className={`text-sm font-medium ${theme.textColor}`}>

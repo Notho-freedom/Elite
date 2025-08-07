@@ -175,7 +175,7 @@ const EnhancedChatPage = () => {
   };
 
   // Filtrer les messages selon la recherche
-  const filteredMessages = messages.filter(msg => {
+  const filteredMessages = (messages || []).filter(msg => {
     if (!searchQuery) return true;
     return msg.text?.toLowerCase().includes(searchQuery.toLowerCase());
   });

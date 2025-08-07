@@ -3,7 +3,7 @@ import {
   FaCog, FaUser, FaLock, FaBell, FaComments, FaEye, 
   FaImage, FaUsers, FaKeyboard, FaQuestionCircle, 
   FaSignOutAlt, FaInfoCircle, FaUserSlash, FaShieldAlt,
-  FaPalette, FaWallpaper, FaClock, FaLink
+  FaPalette, FaClock, FaLink
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import TabHeader from '../UI/TabHeader';
@@ -48,7 +48,7 @@ const SettingsList = () => {
       title: 'Apparence',
       items: [
         { icon: <FaPalette />, label: 'Thème (clair/sombre)', action: () => console.log('Theme') },
-        { icon: <FaWallpaper />, label: 'Fond d\'écran', action: () => console.log('Wallpaper') },
+        { icon: <FaImage />, label: 'Fond d\'écran', action: () => console.log('Wallpaper') },
       ]
     },
     {

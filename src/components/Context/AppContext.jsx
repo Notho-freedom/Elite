@@ -20,7 +20,7 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const { theme, mode, setMode, toggleTheme } = useTheme();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { discussions, loading, error, fetchRandomUsers, sortedDiscussions } = useFetchDiscussions();
+  const { discussions: mockDiscussions, loading, error, fetchRandomUsers, sortedDiscussions } = useFetchDiscussions();
   const isMobile = useMediaQuery({ maxWidth: 779 });
   
   // États pour les données réelles
@@ -64,6 +64,13 @@ export const AppProvider = ({ children }) => {
       });
     }
   }, [isAuthenticated, user]);
+
+  // Charger les données mockées au démarrage si pas d'utilisateur connecté
+  useEffect(() => {
+    if (!isAuthenticated && mockDiscussions.length === 0) {
+      fetchRandomUsers();
+    }
+  }, [isAuthenticated, mockDiscussions.length, fetchRandomUsers]);
 
   // Charger toutes les données de l'utilisateur
   const loadUserData = async () => {
@@ -241,7 +248,7 @@ export const AppProvider = ({ children }) => {
     dataError,
     
     // Données mockées (pour la transition)
-    discussions, 
+    discussions: mockDiscussions, 
     fetchRandomUsers, 
     sortedDiscussions,
     

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaReply, FaForward, FaEdit, FaCopy, FaTrash, FaStar, 
-  FaPin, FaLock, FaEyeSlash, FaDownload, FaInfo 
+  FaThumbtack, FaLock, FaEyeSlash, FaDownload, FaInfo 
 } from 'react-icons/fa';
 
 const MessageDropdown = ({ 
@@ -83,7 +83,7 @@ const MessageDropdown = ({
     },
     {
       id: 'pin',
-      icon: <FaPin />,
+      icon: <FaThumbtack />,
       label: message.isPinned ? 'Désépingler' : 'Épingler',
       action: () => onAction('pin', message),
       color: message.isPinned ? 'text-red-500' : theme.textColor

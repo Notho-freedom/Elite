@@ -2,7 +2,9 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { FaFilter, FaSearch, FaTimes, FaChevronCircleDown, FaCamera } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import DiscussionItem from './DiscussionItem';
+import EnhancedDiscussionItem from './Enhanced/EnhancedDiscussionItem';
 import TabHeader from './UI/TabHeader';
+import { DiscussionStates } from './chat/Enhanced/MessageStates';
 import { useApp } from './Context/AppContext';
 
 const FILTERS = { ALL: 'all', UNREAD: 'unread', ONLINE: 'online' };
@@ -71,7 +73,12 @@ const DiscussionList = () => {
   const [filter, setFilter] = useState(FILTERS.ALL);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const { sortedDiscussions: discussions, theme: t, setActiveChat, isMobile } = useApp();
+  const { realDiscussions, discussions: mockDiscussions, theme: t, setActiveChat, isMobile, activeChat, isAuthenticated, user } = useApp();
+  
+  // Utiliser les données réelles si disponibles, sinon les données mockées
+  const discussions = realDiscussions.length > 0 ? realDiscussions : mockDiscussions;
+  
+
 
   const toggleSearch = useCallback(() => {
     setIsSearching((prev) => !prev);
@@ -98,7 +105,7 @@ const DiscussionList = () => {
     <div className={`${t.w} ${t.bgColor} h-screen flex flex-col`}>
       {/* Header avec TabHeader */}
       <TabHeader
-        title="Discussions"
+        title={`Discussions ${realDiscussions.length === 0 ? '(Mode Demo)' : ''}`}
         theme={t}
         showSearch={true}
         showCamera={true}
@@ -110,6 +117,22 @@ const DiscussionList = () => {
         onSearchChange={setSearchQuery}
         searchPlaceholder="Rechercher une discussion..."
       />
+
+      {/* Message d'information si mode demo */}
+      {realDiscussions.length === 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`mx-4 mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800`}
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <p className={`text-sm ${t.textColor}`}>
+              Mode démonstration - Connectez-vous à Supabase pour voir vos vraies discussions
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Filtres */}
       <motion.div className={`flex px-4 items-center ${t.borderColor}`} initial="rest" animate="rest">
@@ -141,14 +164,11 @@ const DiscussionList = () => {
                 variants={itemVariants}
                 transition={{ delay: index * 0.05, duration: 0.3 }}
               >
-                <DiscussionItem
+                <EnhancedDiscussionItem
                   discussion={discussion}
                   onClick={() => setActiveChat(discussion)}
-                  highlight={
-                    !!searchQuery &&
-                    (discussion.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      discussion.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()))
-                  }
+                  theme={t}
+                  isActive={activeChat?.id === discussion.id}
                 />
               </motion.div>
             ))

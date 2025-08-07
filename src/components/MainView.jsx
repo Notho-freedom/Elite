@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CallHistory from "./CallHistory";
 import DiscussionList from "./DiscussionList";
 import ChatPage from './ChatPage';
+import EnhancedChatPage from './chat/Enhanced/EnhancedChatPage';
 import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
@@ -11,6 +12,9 @@ import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
 import CallScreen from './CallScreen';
 import { useAuth } from './Context/AuthContext';
+import GroupList from './Groups/GroupList';
+import SettingsList from './Settings/SettingsList';
+import FeatureNotification from './Enhanced/FeatureNotification';
 
 const MainView = () => {
   const {
@@ -167,7 +171,7 @@ const MainView = () => {
                   transition={{ duration: 0.3 }}
                   className="h-full"
                 >
-                  <ChatPage />
+                  <EnhancedChatPage />
                 </motion.div>
               ) : (
                 <motion.div
@@ -201,7 +205,7 @@ const MainView = () => {
                 transition={{ duration: 0.3 }}
                 className="h-full"
               >
-                <ChatPage />
+                <EnhancedChatPage />
               </motion.div>
             ) : (
               <motion.div
@@ -274,6 +278,9 @@ const MainView = () => {
           </AnimatePresence>
         </motion.div>
       )}
+
+      {/* Notification des nouvelles fonctionnalités */}
+      <FeatureNotification theme={theme} />
     </>
   );
 };
