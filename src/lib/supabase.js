@@ -87,14 +87,14 @@ export const db = {
           user_id,
           users(id, name, avatar_url, status)
         ),
-        last_message:messages(
+        messages(
           content,
           created_at,
           sender_id
         )
       `)
       .eq('participants.user_id', userId)
-      .order('last_message.created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
     
     if (error) {
       console.error('Erreur lors de la récupération des discussions:', error);
@@ -106,17 +106,27 @@ export const db = {
       const participants = discussion.participants || [];
       const otherParticipants = participants.filter(p => p.user_id !== userId);
       
+      // Trouver le dernier message
+      const messages = discussion.messages || [];
+      const lastMessage = messages.length > 0 
+        ? messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+        : null;
+      
       return {
         id: discussion.id,
         name: discussion.name || (otherParticipants.length > 0 ? otherParticipants[0].users?.name : 'Discussion'),
         avatar: otherParticipants[0]?.users?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        lastMessage: discussion.last_message?.[0]?.content || 'Aucun message',
+        lastMessage: lastMessage?.content || 'Aucun message',
+        lastMessageTime: lastMessage?.created_at || discussion.created_at,
         unread: false, // À implémenter avec un système de marquage
         isOnline: otherParticipants.some(p => p.users?.status === 'online'),
         type: discussion.type,
         participants: participants.map(p => p.users).filter(Boolean)
       };
     }) || [];
+
+    // Trier par le timestamp du dernier message
+    transformedData.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
 
     return { data: transformedData, error: null };
   },
