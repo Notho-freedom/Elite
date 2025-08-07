@@ -2,6 +2,8 @@ import { useState, useEffect, useContext, createContext, useCallback } from 'rea
 import useFetchDiscussions from './../hooks/useFetchDiscussions';
 import { useTheme } from './ThemeContext';
 import { useMediaQuery } from 'react-responsive';
+import { useAuth } from './AuthContext';
+import { db, calls } from '../../lib/supabase';
 
 // Enum pour éviter les strings magiques
 export const TABS = {
@@ -10,58 +12,199 @@ export const TABS = {
   GROUPS: 'groups',
   CALLS: 'calls',
   SETTINGS: 'settings',
+  NATIVE: 'native',
 };
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const { theme, mode, setMode, toggleTheme } = useTheme();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { discussions, loading, error, fetchRandomUsers, sortedDiscussions } = useFetchDiscussions();
   const isMobile = useMediaQuery({ maxWidth: 779 });
-  const [messages, setMessages] = useState([
-    { 
-        id: 1, 
-        text: 'Hey there! How are you?', 
-        sender: 'them', 
-        time: '10:30 AM', 
-        status: 'read',
-        reactions: []
-      },
-      { 
-        id: 2, 
-        text: 'I was just thinking about our project', 
-        sender: 'them', 
-        time: '10:31 AM', 
-        status: 'read',
-        reactions: []
-      }
-  ]);
+  
+  // États pour les données réelles
+  const [realDiscussions, setRealDiscussions] = useState([]);
+  const [realMessages, setRealMessages] = useState([]);
+  const [realCallHistory, setRealCallHistory] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [dataError, setDataError] = useState(null);
 
   const [activeCall, setActiveCall] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.CHATS);
   const [activeChat, setActiveChat] = useState(null);
-  const [isLogin, setIsLogin] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Notifications dynamiques mockées, à remplacer par le backend / websocket
+  // Notifications dynamiques basées sur les vraies données
   const [notifications, setNotifications] = useState({
-    [TABS.CHATS]: 3,
+    [TABS.CHATS]: 0,
     [TABS.STATUS]: 0,
-    [TABS.GROUPS]: 12,
-    [TABS.CALLS]: 1,
+    [TABS.GROUPS]: 0,
+    [TABS.CALLS]: 0,
     [TABS.SETTINGS]: 0,
+    [TABS.NATIVE]: 0,
   });
+
+  // Charger les discussions réelles quand l'utilisateur est connecté
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadUserData();
+    } else {
+      // Reset des données quand l'utilisateur se déconnecte
+      setRealDiscussions([]);
+      setRealMessages([]);
+      setRealCallHistory([]);
+      setNotifications({
+        [TABS.CHATS]: 0,
+        [TABS.STATUS]: 0,
+        [TABS.GROUPS]: 0,
+        [TABS.CALLS]: 0,
+        [TABS.SETTINGS]: 0,
+        [TABS.NATIVE]: 0,
+      });
+    }
+  }, [isAuthenticated, user]);
+
+  // Charger toutes les données de l'utilisateur
+  const loadUserData = async () => {
+    if (!user) return;
+
+    try {
+      setLoadingData(true);
+      setDataError(null);
+
+      // Charger les discussions
+      const { data: discussionsData, error: discussionsError } = await db.getDiscussions(user.id);
+      if (discussionsError) throw discussionsError;
+      setRealDiscussions(discussionsData || []);
+
+      // Charger l'historique des appels
+      const { data: callHistoryData, error: callHistoryError } = await calls.getCallHistory(user.id);
+      if (callHistoryError) throw callHistoryError;
+      setRealCallHistory(callHistoryData || []);
+
+      // Mettre à jour les notifications
+      updateNotifications(discussionsData || [], callHistoryData || []);
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      setDataError(error.message);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  // Mettre à jour les notifications basées sur les vraies données
+  const updateNotifications = (discussions, callHistory) => {
+    const unreadMessages = discussions.filter(d => d.unread_count > 0).length;
+    const missedCalls = callHistory.filter(c => c.status === 'missed').length;
+    const activeCalls = callHistory.filter(c => c.status === 'active').length;
+
+    setNotifications({
+      [TABS.CHATS]: unreadMessages,
+      [TABS.STATUS]: 0, // À implémenter selon vos besoins
+      [TABS.GROUPS]: discussions.filter(d => d.type === 'group').length,
+      [TABS.CALLS]: missedCalls + activeCalls,
+      [TABS.SETTINGS]: 0,
+      [TABS.NATIVE]: 0,
+    });
+  };
+
+  // Charger les messages d'une discussion
+  const loadMessages = async (discussionId) => {
+    if (!discussionId) return;
+
+    try {
+      setLoadingData(true);
+      const { data, error } = await db.getMessages(discussionId);
+      
+      if (error) throw error;
+      
+      setRealMessages(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des messages:', error);
+      setDataError(error.message);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  // Envoyer un message
+  const sendMessage = async (content, messageType = 'text') => {
+    if (!activeChat || !user) return;
+
+    try {
+      const { data, error } = await db.sendMessage(
+        activeChat.id,
+        user.id,
+        content,
+        messageType
+      );
+
+      if (error) throw error;
+
+      // Ajouter le message à la liste locale
+      setRealMessages(prev => [data[0], ...prev]);
+      
+      // Recharger les discussions pour mettre à jour le dernier message
+      await loadUserData();
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi du message:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Créer une nouvelle discussion
+  const createDiscussion = async (participantIds, name = null) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await db.createDiscussion([user.id, ...participantIds], name);
+      
+      if (error) throw error;
+
+      // Recharger les discussions
+      await loadUserData();
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Erreur lors de la création de la discussion:', error);
+      return { success: false, error: error.message };
+    }
+  };
 
   // Gestion appels
   const callHandlers = {
     toggleMute: () => setActiveCall(prev => prev ? { ...prev, isMuted: !prev.isMuted } : prev),
     toggleVideo: () => setActiveCall(prev => prev ? { ...prev, isVideoOn: !prev.isVideoOn } : prev),
-    endCall: () => setActiveCall(null),
-  };
+    endCall: async () => {
+      if (activeCall) {
+        try {
+          await calls.updateCallStatus(activeCall.id, 'ended');
+        } catch (error) {
+          console.error('Erreur lors de la fin d\'appel:', error);
+        }
+      }
+      setActiveCall(null);
+    },
+    startCall: async (discussionId, callType = 'audio') => {
+      if (!user) return;
 
-  useEffect(() => {
-    fetchRandomUsers();
-  }, [fetchRandomUsers]);
+      try {
+        const { data, error } = await calls.createCall(discussionId, user.id, callType);
+        
+        if (error) throw error;
+
+        setActiveCall(data[0]);
+        return { success: true, data: data[0] };
+      } catch (error) {
+        console.error('Erreur lors du démarrage de l\'appel:', error);
+        return { success: false, error: error.message };
+      }
+    }
+  };
 
   // Hook helper pour changer d'onglet et reset activeChat si besoin
   const switchTab = useCallback((tabId) => {
@@ -69,21 +212,62 @@ export const AppProvider = ({ children }) => {
     if (tabId !== TABS.CHATS && activeChat) setActiveChat(null);
   }, [activeChat]);
 
+  // Charger les messages quand une discussion est sélectionnée
+  useEffect(() => {
+    if (activeChat?.id) {
+      loadMessages(activeChat.id);
+    } else {
+      setRealMessages([]);
+    }
+  }, [activeChat]);
+
   const value = {
-    theme, toggleTheme,
-    mode, setMode,
-    discussions, fetchRandomUsers, sortedDiscussions,
-    isMobile,
-    loading, error,
-    activeCall, setActiveCall,
-    activeTab, setActiveTab, switchTab,
-    activeChat, setActiveChat,
-    isLogin, setIsLogin,
-    callHandlers,
-    notifications, setNotifications,
-    showProfile, setShowProfile,
-    messages, setMessages,
+    // Authentification
+    user,
+    isAuthenticated,
+    authLoading,
     
+    // Thème
+    theme, 
+    toggleTheme,
+    mode, 
+    setMode,
+    
+    // Données réelles
+    realDiscussions,
+    realMessages,
+    realCallHistory,
+    loadingData,
+    dataError,
+    
+    // Données mockées (pour la transition)
+    discussions, 
+    fetchRandomUsers, 
+    sortedDiscussions,
+    
+    // UI
+    isMobile,
+    loading, 
+    error,
+    activeCall, 
+    setActiveCall,
+    activeTab, 
+    setActiveTab, 
+    switchTab,
+    activeChat, 
+    setActiveChat,
+    showProfile, 
+    setShowProfile,
+    
+    // Actions
+    callHandlers,
+    sendMessage,
+    createDiscussion,
+    loadUserData,
+    
+    // Notifications
+    notifications, 
+    setNotifications,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

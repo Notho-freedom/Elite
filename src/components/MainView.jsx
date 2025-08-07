@@ -6,9 +6,11 @@ import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
 import Status from './Status/Status';
+import NativeFeatures from './NativeFeatures';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
 import CallScreen from './CallScreen';
+import { useAuth } from './Context/AuthContext';
 
 const MainView = () => {
   const {
@@ -16,14 +18,40 @@ const MainView = () => {
     activeTab,
     activeChat,
     activeCall,
-    isLogin, isMobile,
-    showProfile, setShowProfile
+    isAuthenticated, 
+    isMobile,
+    showProfile, 
+    setShowProfile
   } = useApp();
   
+  const { user } = useAuth();
 
   // Priorité absolue aux états critiques
-  if (!isLogin) return <SocialLogin />;
-  if (activeCall) return <CallScreen />;
+  if (!isAuthenticated || !user) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="h-screen flex items-center justify-center"
+      >
+        <SocialLogin />
+      </motion.div>
+    );
+  }
+  
+  if (activeCall) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="h-screen"
+      >
+        <CallScreen />
+      </motion.div>
+    );
+  }
   
   // Profil en modale animée
   return (
@@ -31,17 +59,18 @@ const MainView = () => {
       <AnimatePresence>
         {showProfile && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowProfile(false)}
           >
             <motion.div
-              className="bg-white rounded-lg max-w-lg w-full p-6"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
+              className={`${theme.messageBg} rounded-2xl max-w-lg w-full mx-4 p-6 shadow-2xl border ${theme.borderColor}`}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
             >
               <Profile />
@@ -52,32 +81,198 @@ const MainView = () => {
 
       {/* Layout Desktop vs Mobile */}
       { !isMobile ? (
-        <div className="flex h-screen">
-          <div className={`${theme.divw} border-r ${theme.borderColor}`}>
-            {activeTab === TABS.CHATS && <DiscussionList />}
-            {activeTab === TABS.CALLS && <CallHistory />}
-            {activeTab === TABS.STATUS && <Status />}
-            {activeTab === TABS.SETTINGS && <EmptyState />}
-          </div>
-          <div className="flex-1">
-            {activeChat ? (
-              <ChatPage />
-            ) : (
-              <EmptyState />
-            )}
-          </div>
-        </div>
+        <motion.div 
+          className="flex h-screen"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div 
+            className={`${theme.divw} border-r ${theme.borderColor} ${theme.bgColor}`}
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            <AnimatePresence mode="wait">
+              {activeTab === TABS.CHATS && (
+                <motion.div
+                  key="chats"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <DiscussionList />
+                </motion.div>
+              )}
+              {activeTab === TABS.CALLS && (
+                <motion.div
+                  key="calls"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <CallHistory />
+                </motion.div>
+              )}
+              {activeTab === TABS.STATUS && (
+                <motion.div
+                  key="status"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Status />
+                </motion.div>
+              )}
+              {activeTab === TABS.SETTINGS && (
+                <motion.div
+                  key="settings"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <EmptyState />
+                </motion.div>
+              )}
+              {activeTab === TABS.NATIVE && (
+                <motion.div
+                  key="native"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <NativeFeatures />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+          <motion.div 
+            className="flex-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <AnimatePresence mode="wait">
+              {activeChat ? (
+                <motion.div
+                  key="chat"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full"
+                >
+                  <ChatPage />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full"
+                >
+                  <EmptyState />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </motion.div>
       ) : (
-        activeChat ? (
-          <ChatPage />
-        ) : (
-          <>
-            {activeTab === TABS.CHATS && <DiscussionList />}
-            {activeTab === TABS.CALLS && <CallHistory />}
-            {activeTab === TABS.STATUS && <Status />}
-            {activeTab === TABS.SETTINGS && <EmptyState />}
-          </>
-        )
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="h-screen"
+        >
+          <AnimatePresence mode="wait">
+            {activeChat ? (
+              <motion.div
+                key="chat-mobile"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="h-full"
+              >
+                <ChatPage />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="tabs-mobile"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="h-full"
+              >
+                <AnimatePresence mode="wait">
+                  {activeTab === TABS.CHATS && (
+                    <motion.div
+                      key="chats-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <DiscussionList />
+                    </motion.div>
+                  )}
+                  {activeTab === TABS.CALLS && (
+                    <motion.div
+                      key="calls-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CallHistory />
+                    </motion.div>
+                  )}
+                  {activeTab === TABS.STATUS && (
+                    <motion.div
+                      key="status-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Status />
+                    </motion.div>
+                  )}
+                  {activeTab === TABS.SETTINGS && (
+                    <motion.div
+                      key="settings-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <EmptyState />
+                    </motion.div>
+                  )}
+                  {activeTab === TABS.NATIVE && (
+                    <motion.div
+                      key="native-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <NativeFeatures />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       )}
     </>
   );
@@ -85,12 +280,17 @@ const MainView = () => {
 
 
 const EmptyState = () => {
-  const { activeTab } = useApp();
+  const { activeTab, theme } = useApp();
   return (
-    <div className="flex-1 flex items-center justify-center text-gray-500">
+    <motion.div 
+      className={`flex-1 flex items-center justify-center ${theme.emptyStateText}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {activeTab === TABS.CHATS && <Entry />}
-      {[TABS.CALLS, TABS.STATUS, TABS.GROUPS, TABS.SETTINGS].includes(activeTab) && <Loading />}
-    </div>
+      {[TABS.CALLS, TABS.STATUS, TABS.GROUPS, TABS.SETTINGS, TABS.NATIVE].includes(activeTab) && <Loading />}
+    </motion.div>
   );
 }
 

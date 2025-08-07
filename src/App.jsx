@@ -4,18 +4,24 @@ import MainView from './components/MainView';
 import MainTopbar from './components/MainTopbar';
 import clsx from 'clsx';
 import { useApp } from './components/Context/AppContext';
+import { useAuth } from './components/Context/AuthContext';
 
 const App = () => {
-  const { theme, loading, isLogin } = useApp();
+  const { theme, loading, authLoading, isAuthenticated } = useApp();
+  const { user } = useAuth();
+
+  // Afficher l'écran de chargement seulement pendant l'initialisation de l'auth
+  // et pas pendant le chargement des données
+  const shouldShowLoading = authLoading;
 
   return (
     <div className={`relative w-full h-screen overflow-hidden ${theme.bgColor}`}>
       <AnimatePresence>
-        {loading ? (
+        {shouldShowLoading ? (
           <LoadingScreen theme={theme} />
         ) : (
           <div className="flex w-full h-full">
-            {isLogin && (
+            {isAuthenticated && user && (
               <>
                 <MainTopbar
                   appName="ELITE"
