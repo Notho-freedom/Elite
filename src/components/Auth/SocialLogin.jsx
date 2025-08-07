@@ -3,21 +3,32 @@ import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { GoldenParticles } from '../Particles/GoldenParticles';
 import { AuthProviders } from './Providers';
-import { TABS, useApp } from '../Context/AppContext'; // Chemin à adapter
+import { TABS, useApp } from '../Context/AppContext';
+import { useAuth } from '../Context/AuthContext';
 
 export const SocialLogin = () => {
-  const { setIsLogin, switchTab, theme } = useApp();
+  const { switchTab, theme } = useApp();
+  const { signInWithOAuth, loading, error } = useAuth();
   const [loadingProvider, setLoadingProvider] = useState(null);
 
   const handleAuth = async (provider) => {
-    setLoadingProvider(provider);
-    console.log(`🔐 Auth with: ${provider}`);
+    try {
+      setLoadingProvider(provider);
+      console.log(`🔐 Auth with: ${provider}`);
 
-    await new Promise(resolve => setTimeout(resolve, 2));
-
-    setLoadingProvider(null);
-    setIsLogin(true);
-    switchTab(TABS.CHATS);
+      const result = await signInWithOAuth(provider);
+      
+      if (result.success) {
+        console.log('✅ Connexion réussie avec', provider);
+        switchTab(TABS.CHATS);
+      } else {
+        console.error('❌ Erreur de connexion:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la connexion:', error);
+    } finally {
+      setLoadingProvider(null);
+    }
   };
 
   return (
@@ -31,7 +42,9 @@ export const SocialLogin = () => {
       <MainContent 
         theme={theme} 
         loadingProvider={loadingProvider} 
-        onAuth={handleAuth} 
+        onAuth={handleAuth}
+        error={error}
+        loading={loading}
       />
     </div>
   );
@@ -53,15 +66,24 @@ const Logo = () => (
   </motion.div>
 );
 
-const MainContent = ({ theme, loadingProvider, onAuth }) => (
+const MainContent = ({ theme, loadingProvider, onAuth, error, loading }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6 }}
     className="relative w-full max-w-2xl z-30"
   >
-  <Header theme={theme} />
+    <Header theme={theme} />
     <div className="pt-[2vh] px-4 sm:px-6">
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
+        >
+          {error}
+        </motion.div>
+      )}
       <AuthProviders loadingProvider={loadingProvider} onAuth={onAuth} />
       <Footer theme={theme} />
     </div>
