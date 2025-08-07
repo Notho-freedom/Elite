@@ -1,7 +1,8 @@
 import React from 'react';
-import { FaComments, FaCircleNotch, FaPhoneAlt, FaCog, FaUsers, FaMobile } from 'react-icons/fa';
+import { FaComments, FaCircleNotch, FaPhoneAlt, FaCog, FaUsers, FaMobile, FaBars, FaStar, FaArchive } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useApp, TABS } from './Context/AppContext';
+import { useAuth } from './Context/AuthContext';
 
 // Composant bouton tab optimisé
 const TabButton = React.memo(({ tab, active, onClick, notificationCount, theme }) => (
@@ -10,7 +11,7 @@ const TabButton = React.memo(({ tab, active, onClick, notificationCount, theme }
     whileTap={{ scale: 0.95 }}
     aria-label={tab.label}
     onClick={onClick}
-    className={`w-10 h-10 rounded-full flex items-center justify-center
+    className={`w-7 h-7 rounded-full flex items-center justify-center
       transition duration-200 relative
       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
       ${active
@@ -42,18 +43,43 @@ const Sidebar = () => {
     switchTab,
     notifications,
   } = useApp();
+  
+  const { user } = useAuth();
 
-  const tabs = [
-    { id: TABS.CHATS, icon: <FaComments size={20} />, label: 'Discussions' },
-    { id: TABS.STATUS, icon: <FaCircleNotch size={20} />, label: 'Status' },
-    { id: TABS.GROUPS, icon: <FaUsers size={20} />, label: 'Groupes' },
-    { id: TABS.CALLS, icon: <FaPhoneAlt size={20} />, label: 'Appels' },
-    { id: TABS.SETTINGS, icon: <FaCog size={20} />, label: 'Paramètres' },
-    { id: TABS.NATIVE, icon: <FaMobile size={20} />, label: 'Native' },
+  // Onglets du haut
+  const topTabs = [
+    { id: 'toggle', icon: <FaBars size={17} />, label: 'Menu', isAction: true },
+    { id: TABS.CHATS, icon: <FaComments size={17} />, label: 'Discussions' },
+    { id: TABS.GROUPS, icon: <FaUsers size={17} />, label: 'Groupes' },
+    { id: TABS.CALLS, icon: <FaPhoneAlt size={17} />, label: 'Appels' },
+    { id: TABS.STATUS, icon: <FaCircleNotch size={17} />, label: 'Status' },
+  ];
+
+  // Onglets du bas
+  const bottomTabs = [
+    { id: 'favorites', icon: <FaStar size={17} />, label: 'Favoris', isAction: true },
+    { id: 'archive', icon: <FaArchive size={17} />, label: 'Archives', isAction: true },
+    { id: TABS.SETTINGS, icon: <FaCog size={17} />, label: 'Paramètres' },
   ];
 
   const handleTabClick = (tabId) => {
     if (!isAuthenticated) return;
+    
+    // Actions spéciales pour certains boutons
+    if (tabId === 'toggle') {
+      console.log('Toggle menu');
+      return;
+    }
+    if (tabId === 'favorites') {
+      console.log('Show favorites');
+      return;
+    }
+    if (tabId === 'archive') {
+      console.log('Show archives');
+      return;
+    }
+    
+    // Navigation normale pour les autres onglets
     switchTab(tabId);
   };
 
@@ -68,7 +94,7 @@ const Sidebar = () => {
         className={`fixed -bottom-1 left-0 right-0 ${activeChat?.name ? 'hidden' : 'flex'} justify-center items-stretch h-[80px] sm:h-[14vh] p-0 gap-2
           ${theme.headerBg} ${theme.textColor} border-t ${theme.borderColor} z-50`}
       >
-        {tabs.slice(0, 4).map(tab => (
+        {topTabs.slice(1, 5).map(tab => (
           <motion.button
             key={tab.id}
             whileTap={{ scale: 0.95 }}
@@ -105,18 +131,19 @@ const Sidebar = () => {
     );
   }
 
-  // Desktop sidebar
+  // Desktop sidebar - Layout WhatsApp Desktop
   return (
     <motion.nav
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex flex-col justify-between items-center h-screen w-16 border-r ${theme.borderColor}
-        p-3 gap-5 ${theme.headerBg} ${theme.textColor} shadow-md
+      className={`flex flex-col justify-between items-center h-screen w-12 border-r ${theme.borderColor}
+        p-3 ${theme.headerBg} ${theme.textColor} shadow-md
         flex-shrink-0 z-10`}
     >
+      {/* Navigation tabs HAUT : toggle_btn, chat, group, call, status */}
       <div className="flex flex-col items-center gap-5">
-        {tabs.map(tab => (
+        {topTabs.map(tab => (
           <TabButton
             key={tab.id}
             tab={tab}
@@ -128,20 +155,52 @@ const Sidebar = () => {
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-blue-400 transition relative cursor-pointer"
-        title="Profil utilisateur"
-      >
-        <img
-          alt="User avatar"
-          src="https://storage.googleapis.com/a1aa/image/b3b21a49-79c4-48b8-083f-00e99da6ec57.jpg"
-          className="w-full h-full object-cover"
+      {/* Section BAS : favoris, archive, séparation, paramètres, avatar */}
+      <div className="flex flex-col items-center gap-3">
+        {/* Favoris et Archives */}
+        {bottomTabs.slice(0, 2).map(tab => (
+          <TabButton
+            key={tab.id}
+            tab={tab}
+            active={false}
+            onClick={() => handleTabClick(tab.id)}
+            notificationCount={0}
+            theme={theme}
+          />
+        ))}
+        
+        {/* Séparation */}
+        <div className={`w-8 h-px border-t ${theme.borderColor} my-2`}></div>
+        
+        {/* Paramètres */}
+        <TabButton
+          key={bottomTabs[2].id}
+          tab={bottomTabs[2]}
+          active={activeTab === bottomTabs[2].id}
+          onClick={() => handleTabClick(bottomTabs[2].id)}
+          notificationCount={notifications[bottomTabs[2].id]}
+          theme={theme}
         />
-        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-      </motion.div>
+        
+        {/* Avatar utilisateur */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="w-9 h-9 rounded-full overflow-hidden border-2 border-transparent hover:border-blue-400 transition relative cursor-pointer mt-2"
+          title={user?.user_metadata?.name || user?.email?.split('@')[0] || 'Utilisateur'}
+        >
+          <img
+            alt="User avatar"
+            src={user?.user_metadata?.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.user_metadata?.name || user?.email || 'User')}&background=646cff&color=fff&size=128`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.user_metadata?.name || user?.email || 'User')}&background=646cff&color=fff&size=128`;
+            }}
+          />
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+        </motion.div>
+      </div>
     </motion.nav>
   );
 };
