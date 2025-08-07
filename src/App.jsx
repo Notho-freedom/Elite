@@ -21,8 +21,9 @@ const App = () => {
           <LoadingScreen theme={theme} />
         ) : (
           <div className="flex w-full h-full">
-            {isAuthenticated && user && (
-              <>
+            <Sidebar />
+            <div className="flex-1 flex flex-col">
+              {isAuthenticated && user && (
                 <MainTopbar
                   appName="ELITE"
                   theme={theme}
@@ -30,13 +31,11 @@ const App = () => {
                   onUser={() => console.log("Open profile")}
                   onAI={() => console.log("Summon SkyOS AI")}
                 />
-                <Sidebar />
-              </>
-            )}
-
-            <main className="flex-1 overflow-hidden">
-              <MainView />
-            </main>
+              )}
+              <main className="flex-1 overflow-hidden">
+                <MainView />
+              </main>
+            </div>
           </div>
         )}
       </AnimatePresence>

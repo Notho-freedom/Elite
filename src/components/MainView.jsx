@@ -283,7 +283,7 @@ const EmptyState = () => {
   const { activeTab, theme } = useApp();
   return (
     <motion.div 
-      className={`flex-1 flex items-center justify-center ${theme.emptyStateText}`}
+      className={`flex-1 flex items-center justify-center ${theme.bgColor}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}

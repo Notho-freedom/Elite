@@ -38,7 +38,7 @@ const FilterButton = ({ label, isActive, onClick, t }) => (
   </motion.button>
 );
 
-const EmptyState = ({ filter, searchQuery }) => {
+const EmptyState = ({ filter, searchQuery, theme }) => {
   let message = 'Commencez une nouvelle discussion';
   if (filter === FILTERS.UNREAD) message = 'Aucun message non lu';
   if (filter === FILTERS.ONLINE) message = 'Aucun contact en ligne';
@@ -49,17 +49,17 @@ const EmptyState = ({ filter, searchQuery }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center h-full italic text-muted p-4"
+      className={`flex flex-col items-center justify-center h-full italic ${theme.emptyStateText} p-4`}
     >
       {searchQuery ? (
         <>
-          <div className="text-lg mb-2">Aucun résultat pour "{searchQuery}"</div>
-          <div className="text-sm">Essayez un autre terme de recherche</div>
+          <div className={`text-lg mb-2 ${theme.textColor}`}>Aucun résultat pour "{searchQuery}"</div>
+          <div className={`text-sm ${theme.secondaryText}`}>Essayez un autre terme de recherche</div>
         </>
       ) : (
         <>
-          <div className="text-lg mb-2">Aucune discussion</div>
-          <div className="text-sm">{message}</div>
+          <div className={`text-lg mb-2 ${theme.textColor}`}>Aucune discussion</div>
+          <div className={`text-sm ${theme.secondaryText}`}>{message}</div>
         </>
       )}
     </motion.div>
@@ -204,7 +204,7 @@ const DiscussionList = () => {
               </motion.div>
             ))
           ) : (
-            <EmptyState filter={filter} searchQuery={searchQuery} />
+            <EmptyState filter={filter} searchQuery={searchQuery} theme={t} />
           )}
         </AnimatePresence>
       </div>

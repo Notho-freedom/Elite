@@ -36,7 +36,7 @@ const Sidebar = () => {
   const {
     activeTab,
     activeChat,
-    isLogin,
+    isAuthenticated,
     theme,
     isMobile,
     switchTab,
@@ -53,11 +53,11 @@ const Sidebar = () => {
   ];
 
   const handleTabClick = (tabId) => {
-    if (!isLogin) return;
+    if (!isAuthenticated) return;
     switchTab(tabId);
   };
 
-  if (!isLogin) return null;
+  if (!isAuthenticated) return null;
 
   if (isMobile) {
     return (
@@ -113,7 +113,7 @@ const Sidebar = () => {
       transition={{ duration: 0.3 }}
       className={`flex flex-col justify-between items-center h-screen w-16 border-r ${theme.borderColor}
         p-3 gap-5 ${theme.headerBg} ${theme.textColor} shadow-md
-        flex-shrink-0 `}
+        flex-shrink-0 z-10`}
     >
       <div className="flex flex-col items-center gap-5">
         {tabs.map(tab => (
