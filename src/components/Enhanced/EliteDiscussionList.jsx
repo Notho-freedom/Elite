@@ -18,6 +18,7 @@ import { DiscussionStates } from '../chat/Enhanced/MessageStates';
 import { useApp } from '../Context/AppContext';
 import { useDiscussionActions } from '../../lib/eliteStoreSimple';
 import { useActionNotifications } from '../Elite/Actions/ActionNotification';
+import CreateDiscussionModal from '../Elite/Creation/CreateDiscussionModal';
 
 // Composants de filtres avancés
 const FilterSection = ({ activeFilter, onFilterChange, theme, discussions }) => {
@@ -472,6 +473,7 @@ const EliteDiscussionList = () => {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuData, setContextMenuData] = useState({ discussion: null, position: { x: 0, y: 0 } });
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   const { 
     realDiscussions, 
@@ -681,8 +683,9 @@ const EliteDiscussionList = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateMenu(!showCreateMenu)}
+              onClick={() => setShowCreateModal(true)}
               className={`p-2 rounded-full ${t.accentBg} text-white`}
+              title="Nouvelle discussion"
             >
               <FaPlus className="w-4 h-4" />
             </motion.button>
@@ -824,6 +827,13 @@ const EliteDiscussionList = () => {
       
       {/* Notifications d'actions */}
       <NotificationContainer theme={t} />
+      
+      {/* Modal de création */}
+      <CreateDiscussionModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        theme={t}
+      />
     </div>
   );
 };
