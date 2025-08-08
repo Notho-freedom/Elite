@@ -1,112 +1,83 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaCamera, FaVideo, FaMicrophone, FaMapMarkerAlt, FaPollH, FaCrown, FaEye, FaCoins, FaGlobe, FaUsers, FaUserFriends, FaCog, FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaSmile, FaAt, FaHashtag } from 'react-icons/fa';
-import { useStatusStore, useStatusActions, STATUS_TYPES, MONETIZATION_TYPES } from '../../../lib/statusStore';
+import { FaTimes, FaCamera, FaVideo, FaMicrophone, FaMapMarkerAlt, FaPollH, FaCrown, FaCoins, FaClock, FaGlobe, FaUsers, FaUserFriends, FaSave, FaUndo, FaPause, FaUpload, FaPlus } from 'react-icons/fa';
+import { HiSparkles } from 'react-icons/hi2';
+import { useStatusStore, STATUS_TYPES, MONETIZATION_TYPES } from '../../../lib/statusStore';
 import { useApp } from '../../Context/AppContext';
 
 const StatusCreator = ({ onClose, onCreated }) => {
-  const { theme, user } = useApp();
+  const { theme } = useApp();
   const { createStatus, creationSettings } = useStatusStore();
-  const { createTextStatus, createMediaStatus, createEliteStatus } = useStatusActions();
   
-  const [step, setStep] = useState('type'); // type, content, settings, preview
-  const [selectedType, setSelectedType] = useState(null);
+  const [step, setStep] = useState(1);
+  const [statusType, setStatusType] = useState(STATUS_TYPES.TEXT);
   const [content, setContent] = useState('');
   const [mediaFile, setMediaFile] = useState(null);
-  const [mediaPreview, setMediaPreview] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
   const [location, setLocation] = useState(null);
   const [pollOptions, setPollOptions] = useState(['', '']);
-  const [settings, setSettings] = useState({
-    privacy: creationSettings.privacy,
-    duration: creationSettings.duration,
-    allowReplies: creationSettings.allowReplies,
-    allowReactions: creationSettings.allowReactions,
-    monetization: { ...creationSettings.monetization }
+  const [privacy, setPrivacy] = useState(creationSettings.defaultPrivacy);
+  const [duration, setDuration] = useState(creationSettings.defaultDuration);
+  const [allowReplies, setAllowReplies] = useState(creationSettings.allowReplies);
+  const [allowReactions, setAllowReactions] = useState(creationSettings.allowReactions);
+  const [monetization, setMonetization] = useState({
+    enabled: false,
+    type: MONETIZATION_TYPES.PAY_PER_VIEW,
+    price: 1,
+    minPrice: 1,
+    maxPrice: 100
   });
 
   const fileInputRef = useRef();
   const mediaRecorderRef = useRef();
+  const audioChunksRef = useRef([]);
 
   const statusTypes = [
-    {
-      id: STATUS_TYPES.TEXT,
-      label: 'Texte',
-      icon: null,
-      description: 'Partagez vos pensées'
-    },
-    {
-      id: STATUS_TYPES.IMAGE,
-      label: 'Photo',
-      icon: <FaCamera className="w-6 h-6" />,
-      description: 'Partagez une image'
-    },
-    {
-      id: STATUS_TYPES.VIDEO,
-      label: 'Vidéo',
-      icon: <FaVideo className="w-6 h-6" />,
-      description: 'Partagez une vidéo'
-    },
-    {
-      id: STATUS_TYPES.AUDIO,
-      label: 'Audio',
-      icon: <FaMicrophone className="w-6 h-6" />,
-      description: 'Enregistrez un message vocal'
-    },
-    {
-      id: STATUS_TYPES.LOCATION,
-      label: 'Localisation',
-      icon: <FaMapMarkerAlt className="w-6 h-6" />,
-      description: 'Partagez votre position'
-    },
-    {
-      id: STATUS_TYPES.POLL,
-      label: 'Sondage',
-      icon: <FaPollH className="w-6 h-6" />,
-      description: 'Créez un sondage'
-    },
-    {
-      id: STATUS_TYPES.ELITE,
-      label: 'Statut Elite',
-      icon: <FaCrown className="w-6 h-6 text-yellow-500" />,
-      description: 'Contenu premium monétisé'
-    }
+    { type: STATUS_TYPES.TEXT, label: 'Texte', icon: <HiSparkles />, color: 'from-blue-500 to-purple-500' },
+    { type: STATUS_TYPES.IMAGE, label: 'Photo', icon: <FaCamera />, color: 'from-green-500 to-teal-500' },
+    { type: STATUS_TYPES.VIDEO, label: 'Vidéo', icon: <FaVideo />, color: 'from-red-500 to-pink-500' },
+    { type: STATUS_TYPES.AUDIO, label: 'Audio', icon: <FaMicrophone />, color: 'from-orange-500 to-red-500' },
+    { type: STATUS_TYPES.LOCATION, label: 'Localisation', icon: <FaMapMarkerAlt />, color: 'from-indigo-500 to-blue-500' },
+    { type: STATUS_TYPES.POLL, label: 'Sondage', icon: <FaPollH />, color: 'from-purple-500 to-indigo-500' },
+    { type: STATUS_TYPES.ELITE, label: 'Elite', icon: <FaCrown />, color: 'from-yellow-400 via-amber-500 to-orange-500' }
   ];
 
-  const handleTypeSelect = (type) => {
-    setSelectedType(type);
-    setStep('content');
-  };
+  const privacyOptions = [
+    { value: 'public', label: 'Public', icon: <FaGlobe />, description: 'Visible par tous' },
+    { value: 'contacts', label: 'Contacts', icon: <FaUsers />, description: 'Visible par vos contacts' },
+    { value: 'friends', label: 'Amis', icon: <FaUserFriends />, description: 'Visible par vos amis uniquement' }
+  ];
+
+  const durationOptions = [
+    { value: 3600, label: '1 heure' },
+    { value: 7200, label: '2 heures' },
+    { value: 21600, label: '6 heures' },
+    { value: 43200, label: '12 heures' },
+    { value: 86400, label: '24 heures' }
+  ];
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setMediaFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setMediaPreview(e.target.result);
-      reader.readAsDataURL(file);
+      setMediaFile(URL.createObjectURL(file));
     }
-  };
-
-  const handleCameraCapture = () => {
-    // Simulation de capture photo
-    const mockImage = 'https://via.placeholder.com/400x600/4F46E5/FFFFFF?text=Photo+Capture';
-    setMediaPreview(mockImage);
-    setMediaFile({ name: 'captured-photo.jpg', type: 'image/jpeg' });
   };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
-      const chunks = [];
+      audioChunksRef.current = [];
 
-      mediaRecorderRef.current.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
-        setMediaPreview(URL.createObjectURL(blob));
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        setAudioBlob(URL.createObjectURL(audioBlob));
+        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorderRef.current.start();
@@ -120,18 +91,16 @@ const StatusCreator = ({ onClose, onCreated }) => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
   };
 
-  const getCurrentLocation = () => {
+  const getLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLocation({
             lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            address: 'Position actuelle'
+            lng: position.coords.longitude
           });
         },
         (error) => {
@@ -142,9 +111,7 @@ const StatusCreator = ({ onClose, onCreated }) => {
   };
 
   const addPollOption = () => {
-    if (pollOptions.length < 4) {
-      setPollOptions([...pollOptions, '']);
-    }
+    setPollOptions([...pollOptions, '']);
   };
 
   const removePollOption = (index) => {
@@ -160,535 +127,576 @@ const StatusCreator = ({ onClose, onCreated }) => {
   };
 
   const handleCreate = () => {
-    let statusData = {
-      ...settings,
-      duration: settings.duration * 60 * 60 * 1000 // Convertir en millisecondes
+    const statusData = {
+      type: statusType,
+      content: content,
+      privacy,
+      duration,
+      allowReplies,
+      allowReactions,
+      monetization: monetization.enabled ? monetization : null
     };
 
-    switch (selectedType) {
-      case STATUS_TYPES.TEXT:
-        createTextStatus(content, statusData);
-        break;
-      case STATUS_TYPES.IMAGE:
-        createMediaStatus(mediaPreview, 'image', statusData);
-        break;
-      case STATUS_TYPES.VIDEO:
-        createMediaStatus(mediaPreview, 'video', statusData);
-        break;
-      case STATUS_TYPES.AUDIO:
-        createMediaStatus(mediaPreview, 'audio', statusData);
-        break;
-      case STATUS_TYPES.LOCATION:
-        createStatus({
-          type: STATUS_TYPES.LOCATION,
-          content: location,
-          ...statusData
-        });
-        break;
-      case STATUS_TYPES.POLL:
-        createStatus({
-          type: STATUS_TYPES.POLL,
-          content: {
-            question: content,
-            options: pollOptions.filter(opt => opt.trim() !== '')
-          },
-          ...statusData
-        });
-        break;
-      case STATUS_TYPES.ELITE:
-        createEliteStatus(content, settings.monetization, statusData);
-        break;
+    if (statusType === STATUS_TYPES.IMAGE || statusType === STATUS_TYPES.VIDEO) {
+      statusData.content = mediaFile;
+    } else if (statusType === STATUS_TYPES.AUDIO) {
+      statusData.content = audioBlob;
+    } else if (statusType === STATUS_TYPES.LOCATION) {
+      statusData.content = location;
+    } else if (statusType === STATUS_TYPES.POLL) {
+      statusData.content = pollOptions.filter(option => option.trim() !== '');
     }
 
+    createStatus(statusData);
     onCreated();
   };
 
-  const renderContentStep = () => {
-    switch (selectedType) {
+  const canProceed = () => {
+    switch (statusType) {
       case STATUS_TYPES.TEXT:
-      case STATUS_TYPES.ELITE:
-        return (
-          <div className="space-y-4">
-            <div className="relative">
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={selectedType === STATUS_TYPES.ELITE ? "Contenu premium..." : "Que voulez-vous partager ?"}
-                className={`w-full h-32 p-4 rounded-lg resize-none ${
-                  theme === 'dark' 
-                    ? 'bg-gray-800 border-gray-600 text-white' 
-                    : 'bg-gray-50 border-gray-300 text-gray-900'
-                } border focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                maxLength={selectedType === STATUS_TYPES.ELITE ? 500 : 1000}
-              />
-              <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-                {content.length}/{selectedType === STATUS_TYPES.ELITE ? 500 : 1000}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button className="p-2 text-gray-500 hover:text-blue-500">
-                <FaSmile className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-gray-500 hover:text-blue-500">
-                <FaAt className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-gray-500 hover:text-blue-500">
-                <FaHashtag className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        );
-
+        return content.trim().length > 0;
       case STATUS_TYPES.IMAGE:
       case STATUS_TYPES.VIDEO:
-        return (
-          <div className="space-y-4">
-            {!mediaPreview ? (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <div className="space-y-4">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg"
-                  >
-                    Choisir un fichier
-                  </button>
-                  {selectedType === STATUS_TYPES.IMAGE && (
-                    <button
-                      onClick={handleCameraCapture}
-                      className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg ml-4"
-                    >
-                      <FaCamera className="w-4 h-4 inline mr-2" />
-                      Prendre une photo
-                    </button>
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={selectedType === STATUS_TYPES.IMAGE ? 'image/*' : 'video/*'}
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </div>
-            ) : (
-              <div className="relative">
-                {selectedType === STATUS_TYPES.IMAGE ? (
-                  <img src={mediaPreview} alt="Preview" className="w-full rounded-lg" />
-                ) : (
-                  <video src={mediaPreview} controls className="w-full rounded-lg" />
-                )}
-                <button
-                  onClick={() => {
-                    setMediaPreview(null);
-                    setMediaFile(null);
-                  }}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full"
-                >
-                  <FaTimes className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-            
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Ajouter une description..."
-              className={`w-full p-4 rounded-lg resize-none ${
-                theme === 'dark' 
-                  ? 'bg-gray-800 border-gray-600 text-white' 
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
-              } border focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              rows={3}
-            />
-          </div>
-        );
-
+        return mediaFile !== null;
       case STATUS_TYPES.AUDIO:
-        return (
-          <div className="space-y-4">
-            {!mediaPreview ? (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`px-8 py-4 rounded-full text-white ${
-                    isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
-                  }`}
-                >
-                  {isRecording ? (
-                    <>
-                      <FaPause className="w-6 h-6 inline mr-2" />
-                      Arrêter l'enregistrement
-                    </>
-                  ) : (
-                    <>
-                      <FaMicrophone className="w-6 h-6 inline mr-2" />
-                      Commencer l'enregistrement
-                    </>
-                  )}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-gray-100 rounded-lg p-4">
-                  <audio src={mediaPreview} controls className="w-full" />
-                </div>
-                <button
-                  onClick={() => {
-                    setMediaPreview(null);
-                    setAudioBlob(null);
-                  }}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-                >
-                  <FaTimes className="w-4 h-4 inline mr-2" />
-                  Supprimer l'enregistrement
-                </button>
-              </div>
-            )}
-          </div>
-        );
-
+        return audioBlob !== null;
       case STATUS_TYPES.LOCATION:
-        return (
-          <div className="space-y-4">
-            <button
-              onClick={getCurrentLocation}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg"
-            >
-              <FaMapMarkerAlt className="w-4 h-4 inline mr-2" />
-              Obtenir ma position
-            </button>
-            
-            {location && (
-              <div className="bg-gray-100 rounded-lg p-4">
-                <p className="font-semibold">{location.address}</p>
-                <p className="text-sm text-gray-600">
-                  {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
-                </p>
-              </div>
-            )}
-          </div>
-        );
-
+        return location !== null;
       case STATUS_TYPES.POLL:
-        return (
-          <div className="space-y-4">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Posez votre question..."
-              className={`w-full p-4 rounded-lg resize-none ${
-                theme === 'dark' 
-                  ? 'bg-gray-800 border-gray-600 text-white' 
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
-              } border focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              rows={3}
-            />
-            
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">Options du sondage</label>
-              {pollOptions.map((option, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={option}
-                    onChange={(e) => updatePollOption(index, e.target.value)}
-                    placeholder={`Option ${index + 1}`}
-                    className={`flex-1 p-2 rounded border ${
-                      theme === 'dark' 
-                        ? 'bg-gray-800 border-gray-600 text-white' 
-                        : 'bg-gray-50 border-gray-300 text-gray-900'
-                    }`}
-                  />
-                  {pollOptions.length > 2 && (
-                    <button
-                      onClick={() => removePollOption(index)}
-                      className="p-2 text-red-500 hover:text-red-700"
-                    >
-                      <FaTimes className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {pollOptions.length < 4 && (
-                <button
-                  onClick={addPollOption}
-                  className="text-blue-500 hover:text-blue-700 text-sm"
-                >
-                  + Ajouter une option
-                </button>
-              )}
-            </div>
-          </div>
-        );
-
+        return pollOptions.filter(option => option.trim() !== '').length >= 2;
       default:
-        return null;
+        return true;
     }
   };
-
-  const renderSettingsStep = () => (
-    <div className="space-y-6">
-      {/* Confidentialité */}
-      <div>
-        <label className="block text-sm font-medium mb-3">Confidentialité</label>
-        <div className="space-y-2">
-          {[
-            { id: 'contacts', label: 'Mes contacts', icon: <FaUserFriends /> },
-            { id: 'public', label: 'Public', icon: <FaGlobe /> },
-            { id: 'custom', label: 'Personnalisé', icon: <FaCog /> }
-          ].map((option) => (
-            <label key={option.id} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-              <input
-                type="radio"
-                name="privacy"
-                value={option.id}
-                checked={settings.privacy === option.id}
-                onChange={(e) => setSettings({ ...settings, privacy: e.target.value })}
-                className="text-blue-500"
-              />
-              <span className="text-gray-600">{option.icon}</span>
-              <span>{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Durée */}
-      <div>
-        <label className="block text-sm font-medium mb-3">Durée d'affichage</label>
-        <select
-          value={settings.duration}
-          onChange={(e) => setSettings({ ...settings, duration: parseInt(e.target.value) })}
-          className={`w-full p-3 rounded-lg border ${
-            theme === 'dark' 
-              ? 'bg-gray-800 border-gray-600 text-white' 
-              : 'bg-gray-50 border-gray-300 text-gray-900'
-          }`}
-        >
-          <option value={1}>1 heure</option>
-          <option value={6}>6 heures</option>
-          <option value={12}>12 heures</option>
-          <option value={24}>24 heures</option>
-          <option value={48}>48 heures</option>
-        </select>
-      </div>
-
-      {/* Options */}
-      <div className="space-y-3">
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={settings.allowReplies}
-            onChange={(e) => setSettings({ ...settings, allowReplies: e.target.checked })}
-            className="text-blue-500"
-          />
-          <span>Autoriser les réponses</span>
-        </label>
-        
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={settings.allowReactions}
-            onChange={(e) => setSettings({ ...settings, allowReactions: e.target.checked })}
-            className="text-blue-500"
-          />
-          <span>Autoriser les réactions</span>
-        </label>
-      </div>
-
-      {/* Monétisation (pour les statuts Elite) */}
-      {selectedType === STATUS_TYPES.ELITE && (
-        <div className="border-t pt-6">
-          <label className="flex items-center gap-3 mb-4">
-            <input
-              type="checkbox"
-              checked={settings.monetization.enabled}
-              onChange={(e) => setSettings({
-                ...settings,
-                monetization: { ...settings.monetization, enabled: e.target.checked }
-              })}
-              className="text-blue-500"
-            />
-            <span className="font-medium">Activer la monétisation</span>
-          </label>
-          
-          {settings.monetization.enabled && (
-            <div className="space-y-4 ml-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Type de monétisation</label>
-                <select
-                  value={settings.monetization.type}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    monetization: { ...settings.monetization, type: e.target.value }
-                  })}
-                  className={`w-full p-2 rounded border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-800 border-gray-600 text-white' 
-                      : 'bg-gray-50 border-gray-300 text-gray-900'
-                  }`}
-                >
-                  <option value={MONETIZATION_TYPES.VIEW_PAYMENT}>Paiement par vue</option>
-                  <option value={MONETIZATION_TYPES.TIP}>Pourboire</option>
-                  <option value={MONETIZATION_TYPES.PREMIUM_CONTENT}>Contenu premium</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Prix (Elite-Coins)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={settings.monetization.price}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    monetization: { ...settings.monetization, price: parseInt(e.target.value) || 0 }
-                  })}
-                  className={`w-full p-2 rounded border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-800 border-gray-600 text-white' 
-                      : 'bg-gray-50 border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg ${
-          theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
-        }`}
+        className={`relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl ${theme.bgColor} ${theme.textColor}`}
       >
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-500 via-yellow-400 to-orange-500" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
+        </div>
+
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${
-          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`}>
-          <h2 className="text-xl font-bold">Créer un statut</h2>
-          <button
+        <div className={`relative z-10 flex items-center justify-between p-6 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full ${theme.accentBg} flex items-center justify-center shadow-lg`}>
+              <FaCrown className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Créer un Statut Elite</h2>
+              <p className={`text-sm ${theme.secondaryText}`}>Étape {step} sur 3</p>
+            </div>
+          </div>
+          
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+            className={`p-2 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
           >
             <FaTimes className="w-5 h-5" />
-          </button>
+          </motion.button>
+        </div>
+
+        {/* Progress Bar */}
+        <div className={`relative z-10 h-1 bg-gray-200 ${theme.borderColor}`}>
+          <motion.div
+            className={`h-full ${theme.accentBg} rounded-r-full`}
+            initial={{ width: 0 }}
+            animate={{ width: `${(step / 3) * 100}%` }}
+            transition={{ duration: 0.3 }}
+          />
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="relative z-10 flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
-            {step === 'type' && (
+            {step === 1 && (
               <motion.div
-                key="type"
+                key="step1"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="grid grid-cols-2 gap-4"
+                className="space-y-6"
               >
-                {statusTypes.map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => handleTypeSelect(type.id)}
-                    className={`p-6 rounded-lg border-2 text-left transition-all ${
-                      theme === 'dark' 
-                        ? 'border-gray-700 hover:border-blue-500 hover:bg-gray-800' 
-                        : 'border-gray-200 hover:border-blue-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      {type.icon}
-                      <span className="font-semibold">{type.label}</span>
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Choisissez le type de statut</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {statusTypes.map((type) => (
+                      <motion.button
+                        key={type.type}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setStatusType(type.type)}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                          statusType === type.type
+                            ? `border-amber-500 bg-gradient-to-r ${type.color} text-white shadow-lg`
+                            : `${theme.borderColor} ${theme.itemHover}`
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-2xl">{type.icon}</span>
+                          <span className="font-medium">{type.label}</span>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Contenu</h3>
+                  {statusType === STATUS_TYPES.TEXT && (
+                    <textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder="Partagez votre pensée..."
+                      className={`w-full p-4 rounded-xl border ${theme.borderColor} ${theme.inputBg} resize-none focus:outline-none focus:ring-2 ${theme.focusRing}`}
+                      rows={4}
+                    />
+                  )}
+
+                  {statusType === STATUS_TYPES.IMAGE && (
+                    <div className="space-y-4">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      {mediaFile ? (
+                        <div className="relative">
+                          <img src={mediaFile} alt="Preview" className="w-full max-h-64 object-cover rounded-xl" />
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setMediaFile(null)}
+                            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full"
+                          >
+                            <FaTimes className="w-4 h-4" />
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`w-full p-8 border-2 border-dashed ${theme.borderColor} rounded-xl ${theme.itemHover} transition-all duration-200`}
+                        >
+                          <div className="flex flex-col items-center gap-3">
+                            <FaUpload className="w-8 h-8 text-gray-400" />
+                            <span className="font-medium">Cliquez pour sélectionner une image</span>
+                          </div>
+                        </motion.button>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-500">{type.description}</p>
-                  </button>
-                ))}
+                  )}
+
+                  {statusType === STATUS_TYPES.VIDEO && (
+                    <div className="space-y-4">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="video/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      {mediaFile ? (
+                        <div className="relative">
+                          <video src={mediaFile} controls className="w-full max-h-64 object-cover rounded-xl" />
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setMediaFile(null)}
+                            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full"
+                          >
+                            <FaTimes className="w-4 h-4" />
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`w-full p-8 border-2 border-dashed ${theme.borderColor} rounded-xl ${theme.itemHover} transition-all duration-200`}
+                        >
+                          <div className="flex flex-col items-center gap-3">
+                            <FaVideo className="w-8 h-8 text-gray-400" />
+                            <span className="font-medium">Cliquez pour sélectionner une vidéo</span>
+                          </div>
+                        </motion.button>
+                      )}
+                    </div>
+                  )}
+
+                  {statusType === STATUS_TYPES.AUDIO && (
+                    <div className="space-y-4">
+                      {audioBlob ? (
+                        <div className="space-y-3">
+                          <audio src={audioBlob} controls className="w-full" />
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setAudioBlob(null)}
+                            className={`px-4 py-2 rounded-lg ${theme.buttonSecondary} ${theme.buttonHover}`}
+                          >
+                            <FaUndo className="w-4 h-4 inline mr-2" />
+                            Réenregistrer
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={isRecording ? stopRecording : startRecording}
+                            className={`w-full p-6 rounded-xl flex items-center justify-center gap-3 ${
+                              isRecording ? 'bg-red-500 text-white' : theme.accentBg
+                            }`}
+                          >
+                            {isRecording ? (
+                              <>
+                                <FaPause className="w-6 h-6" />
+                                <span>Arrêter l'enregistrement</span>
+                              </>
+                            ) : (
+                              <>
+                                <FaMicrophone className="w-6 h-6" />
+                                <span>Commencer l'enregistrement</span>
+                              </>
+                            )}
+                          </motion.button>
+                          {isRecording && (
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse mx-auto mb-2" />
+                              <span className="text-sm text-gray-500">Enregistrement en cours...</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {statusType === STATUS_TYPES.LOCATION && (
+                    <div className="space-y-4">
+                      {location ? (
+                        <div className="space-y-3">
+                          <div className={`p-4 rounded-xl ${theme.buttonSecondary}`}>
+                            <div className="flex items-center gap-2">
+                              <FaMapMarkerAlt className="w-5 h-5 text-red-500" />
+                              <span>Latitude: {location.lat.toFixed(6)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <FaMapMarkerAlt className="w-5 h-5 text-red-500" />
+                              <span>Longitude: {location.lng.toFixed(6)}</span>
+                            </div>
+                          </div>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setLocation(null)}
+                            className={`px-4 py-2 rounded-lg ${theme.buttonSecondary} ${theme.buttonHover}`}
+                          >
+                            <FaUndo className="w-4 h-4 inline mr-2" />
+                            Relocaliser
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={getLocation}
+                          className={`w-full p-6 rounded-xl ${theme.accentBg} flex items-center justify-center gap-3`}
+                        >
+                          <FaMapMarkerAlt className="w-6 h-6" />
+                          <span>Obtenir ma localisation</span>
+                        </motion.button>
+                      )}
+                    </div>
+                  )}
+
+                  {statusType === STATUS_TYPES.POLL && (
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        {pollOptions.map((option, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={option}
+                              onChange={(e) => updatePollOption(index, e.target.value)}
+                              placeholder={`Option ${index + 1}`}
+                              className={`flex-1 p-3 rounded-lg border ${theme.borderColor} ${theme.inputBg} focus:outline-none focus:ring-2 ${theme.focusRing}`}
+                            />
+                            {pollOptions.length > 2 && (
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => removePollOption(index)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                              >
+                                <FaTimes className="w-4 h-4" />
+                              </motion.button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={addPollOption}
+                        className={`px-4 py-2 rounded-lg ${theme.buttonSecondary} ${theme.buttonHover}`}
+                      >
+                        <FaPlus className="w-4 h-4 inline mr-2" />
+                        Ajouter une option
+                      </motion.button>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
 
-            {step === 'content' && (
+            {step === 2 && (
               <motion.div
-                key="content"
+                key="step2"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
               >
-                {renderContentStep()}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Paramètres de confidentialité</h3>
+                  <div className="space-y-3">
+                    {privacyOptions.map((option) => (
+                      <motion.button
+                        key={option.value}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setPrivacy(option.value)}
+                        className={`w-full p-4 rounded-xl border-2 transition-all duration-200 ${
+                          privacy === option.value
+                            ? `border-amber-500 ${theme.accentBg} text-white`
+                            : `${theme.borderColor} ${theme.itemHover}`
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{option.icon}</span>
+                          <div className="text-left">
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-sm opacity-80">{option.description}</div>
+                          </div>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Durée d'affichage</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {durationOptions.map((option) => (
+                      <motion.button
+                        key={option.value}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setDuration(option.value)}
+                        className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                          duration === option.value
+                            ? `border-amber-500 ${theme.accentBg} text-white`
+                            : `${theme.borderColor} ${theme.itemHover}`
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <FaClock className="w-4 h-4" />
+                          <span>{option.label}</span>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Options d'interaction</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={allowReplies}
+                        onChange={(e) => setAllowReplies(e.target.checked)}
+                        className="w-4 h-4 text-amber-500 rounded focus:ring-amber-400"
+                      />
+                      <span>Autoriser les réponses</span>
+                    </label>
+                    <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={allowReactions}
+                        onChange={(e) => setAllowReactions(e.target.checked)}
+                        className="w-4 h-4 text-amber-500 rounded focus:ring-amber-400"
+                      />
+                      <span>Autoriser les réactions</span>
+                    </label>
+                  </div>
+                </div>
               </motion.div>
             )}
 
-            {step === 'settings' && (
+            {step === 3 && (
               <motion.div
-                key="settings"
+                key="step3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
               >
-                {renderSettingsStep()}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Monétisation Elite</h3>
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-3 p-4 rounded-xl cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={monetization.enabled}
+                        onChange={(e) => setMonetization(prev => ({ ...prev, enabled: e.target.checked }))}
+                        className="w-5 h-5 text-amber-500 rounded focus:ring-amber-400"
+                      />
+                      <div className="flex items-center gap-2">
+                        <FaCoins className="w-5 h-5 text-yellow-500" />
+                        <span className="font-medium">Activer la monétisation</span>
+                      </div>
+                    </label>
+
+                    {monetization.enabled && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="space-y-4 p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200"
+                      >
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Type de monétisation</label>
+                          <select
+                            value={monetization.type}
+                            onChange={(e) => setMonetization(prev => ({ ...prev, type: e.target.value }))}
+                            className={`w-full p-3 rounded-lg border ${theme.borderColor} ${theme.inputBg} focus:outline-none focus:ring-2 ${theme.focusRing}`}
+                          >
+                            <option value={MONETIZATION_TYPES.PAY_PER_VIEW}>Paiement par vue</option>
+                            <option value={MONETIZATION_TYPES.SUBSCRIPTION}>Abonnement</option>
+                            <option value={MONETIZATION_TYPES.DONATION}>Don</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Prix (Elite-Coins)</label>
+                          <input
+                            type="number"
+                            min={monetization.minPrice}
+                            max={monetization.maxPrice}
+                            value={monetization.price}
+                            onChange={(e) => setMonetization(prev => ({ ...prev, price: parseInt(e.target.value) }))}
+                            className={`w-full p-3 rounded-lg border ${theme.borderColor} ${theme.inputBg} focus:outline-none focus:ring-2 ${theme.focusRing}`}
+                          />
+                          <p className="text-sm text-gray-500 mt-1">
+                            Prix entre {monetization.minPrice} et {monetization.maxPrice} Elite-Coins
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Aperçu</h3>
+                  <div className={`p-4 rounded-xl border ${theme.borderColor} ${theme.itemHover}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`w-12 h-12 rounded-full ${theme.accentBg} flex items-center justify-center`}>
+                        <FaCrown className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium">Votre nom</span>
+                          <span className="text-sm text-gray-500">• {formatTimeAgo(new Date())}</span>
+                          {privacy === 'public' && <FaGlobe className="w-4 h-4 text-gray-400" />}
+                          {privacy === 'contacts' && <FaUsers className="w-4 h-4 text-gray-400" />}
+                          {privacy === 'friends' && <FaUserFriends className="w-4 h-4 text-gray-400" />}
+                        </div>
+                        <div className="text-sm">
+                          {statusType === STATUS_TYPES.TEXT && content}
+                          {statusType === STATUS_TYPES.IMAGE && '📸 Image'}
+                          {statusType === STATUS_TYPES.VIDEO && '🎥 Vidéo'}
+                          {statusType === STATUS_TYPES.AUDIO && '🎤 Audio'}
+                          {statusType === STATUS_TYPES.LOCATION && '📍 Localisation'}
+                          {statusType === STATUS_TYPES.POLL && '📊 Sondage'}
+                          {statusType === STATUS_TYPES.ELITE && '👑 Statut Elite'}
+                        </div>
+                        {monetization.enabled && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <FaCoins className="w-4 h-4 text-yellow-500" />
+                            <span className="text-sm text-yellow-600 font-medium">{monetization.price} Elite-Coins</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Footer */}
-        <div className={`flex items-center justify-between p-6 border-t ${
-          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`}>
-          <button
-            onClick={() => {
-              if (step === 'content') setStep('type');
-              if (step === 'settings') setStep('content');
-            }}
-            className={`px-4 py-2 rounded-lg ${
-              step === 'type' ? 'invisible' : 'visible'
-            } ${theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+        <div className={`relative z-10 flex items-center justify-between p-6 border-t ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => step > 1 && setStep(step - 1)}
+            disabled={step === 1}
+            className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+              step === 1
+                ? 'opacity-50 cursor-not-allowed'
+                : `${theme.buttonSecondary} ${theme.buttonHover}`
+            }`}
           >
-            Retour
-          </button>
-          
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
-            >
-              Annuler
-            </button>
-            
-            {step === 'content' && (
-              <button
-                onClick={() => setStep('settings')}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
-              >
-                Suivant
-              </button>
+            Précédent
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => step < 3 ? setStep(step + 1) : handleCreate()}
+            disabled={!canProceed()}
+            className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+              canProceed()
+                ? `${theme.buttonGold} shadow-lg ${theme.accentShadow}`
+                : 'opacity-50 cursor-not-allowed bg-gray-300'
+            }`}
+          >
+            {step === 3 ? (
+              <>
+                <FaSave className="w-4 h-4 inline mr-2" />
+                Créer le statut
+              </>
+            ) : (
+              'Suivant'
             )}
-            
-            {step === 'settings' && (
-              <button
-                onClick={handleCreate}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
-              >
-                Publier
-              </button>
-            )}
-          </div>
+          </motion.button>
         </div>
       </motion.div>
     </motion.div>
   );
+};
+
+const formatTimeAgo = (date) => {
+  return 'À l\'instant';
 };
 
 export default StatusCreator;

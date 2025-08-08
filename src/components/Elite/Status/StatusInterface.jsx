@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaCamera, FaVideo, FaMicrophone, FaMapMarkerAlt, FaPollH, FaCrown, FaEye, FaCoins, FaChartLine, FaCog, FaTimes, FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import { FaPlus, FaCamera, FaVideo, FaMicrophone, FaMapMarkerAlt, FaPollH, FaCrown, FaEye, FaCoins, FaChartLine, FaCog, FaTimes, FaPlay, FaVolumeUp, FaStar, FaFire, FaGem } from 'react-icons/fa';
+import { FaDiamond } from 'react-icons/fa6';
+import { HiSparkles } from 'react-icons/hi2';
 import { useStatusStore, useStatusActions, STATUS_TYPES, MONETIZATION_TYPES } from '../../../lib/statusStore';
 import { useApp } from '../../Context/AppContext';
 import StatusCreator from './StatusCreator';
@@ -20,6 +22,7 @@ const StatusInterface = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [viewingStatus, setViewingStatus] = useState(null);
+  const [hoveredStatus, setHoveredStatus] = useState(null);
 
   const activeStatuses = getActiveStatuses();
 
@@ -27,10 +30,9 @@ const StatusInterface = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       if (settings.autoArchive) {
-        // Appeler l'action d'archivage
         useStatusStore.getState().archiveExpiredStatuses();
       }
-    }, 60000); // Vérifier toutes les minutes
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [settings.autoArchive]);
@@ -46,46 +48,68 @@ const StatusInterface = () => {
 
   const handleStatusCreated = (newStatus) => {
     setShowCreator(false);
-    // Le statut est automatiquement ajouté au store
   };
 
   const getStatusIcon = (type) => {
+    const iconClass = "w-4 h-4";
     switch (type) {
-      case STATUS_TYPES.TEXT: return null;
-      case STATUS_TYPES.IMAGE: return <FaCamera className="w-4 h-4" />;
-      case STATUS_TYPES.VIDEO: return <FaVideo className="w-4 h-4" />;
-      case STATUS_TYPES.AUDIO: return <FaMicrophone className="w-4 h-4" />;
-      case STATUS_TYPES.LOCATION: return <FaMapMarkerAlt className="w-4 h-4" />;
-      case STATUS_TYPES.POLL: return <FaPollH className="w-4 h-4" />;
-      case STATUS_TYPES.ELITE: return <FaCrown className="w-4 h-4 text-yellow-500" />;
+      case STATUS_TYPES.TEXT: return <HiSparkles className={`${iconClass} ${theme.goldText}`} />;
+      case STATUS_TYPES.IMAGE: return <FaCamera className={`${iconClass} ${theme.goldText}`} />;
+      case STATUS_TYPES.VIDEO: return <FaVideo className={`${iconClass} ${theme.goldText}`} />;
+      case STATUS_TYPES.AUDIO: return <FaMicrophone className={`${iconClass} ${theme.goldText}`} />;
+      case STATUS_TYPES.LOCATION: return <FaMapMarkerAlt className={`${iconClass} ${theme.goldText}`} />;
+      case STATUS_TYPES.POLL: return <FaPollH className={`${iconClass} ${theme.goldText}`} />;
+      case STATUS_TYPES.ELITE: return <FaCrown className={`${iconClass} text-yellow-500`} />;
       default: return null;
     }
   };
 
   const getStatusPreview = (status) => {
+    const previewClass = "w-16 h-16 rounded-xl overflow-hidden shadow-lg";
+    const iconClass = "w-6 h-6";
+    
     switch (status.type) {
       case STATUS_TYPES.TEXT:
-        return status.content.length > 50 ? `${status.content.substring(0, 50)}...` : status.content;
+        return (
+          <div className={`${previewClass} ${theme.accentBg} flex items-center justify-center`}>
+            <HiSparkles className={`${iconClass} text-white`} />
+          </div>
+        );
       case STATUS_TYPES.IMAGE:
         return (
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
-            <img src={status.content} alt="Preview" className="w-full h-full object-cover" />
+          <div className={`${previewClass} relative group`}>
+            <img src={status.content} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         );
       case STATUS_TYPES.VIDEO:
         return (
-          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-            <FaPlay className="w-4 h-4 text-gray-600" />
+          <div className={`${previewClass} ${theme.accentBg} flex items-center justify-center relative group`}>
+            <FaPlay className={`${iconClass} text-white`} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         );
       case STATUS_TYPES.AUDIO:
         return (
-          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-            <FaVolumeUp className="w-4 h-4 text-gray-600" />
+          <div className={`${previewClass} ${theme.accentBg} flex items-center justify-center`}>
+            <FaVolumeUp className={`${iconClass} text-white`} />
+          </div>
+        );
+      case STATUS_TYPES.ELITE:
+        return (
+          <div className={`${previewClass} bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 flex items-center justify-center relative`}>
+            <FaCrown className={`${iconClass} text-white`} />
+            <div className="absolute top-1 right-1">
+              <FaGem className="w-3 h-3 text-white" />
+            </div>
           </div>
         );
       default:
-        return <div className="w-12 h-12 rounded-lg bg-gray-200" />;
+        return (
+          <div className={`${previewClass} ${theme.accentBg} flex items-center justify-center`}>
+            <FaStar className={`${iconClass} text-white`} />
+          </div>
+        );
     }
   };
 
@@ -100,76 +124,106 @@ const StatusInterface = () => {
   };
 
   const tabs = [
-    { id: 'my-statuses', label: 'Mes Statuts', count: activeStatuses.length },
-    { id: 'contacts', label: 'Contacts', count: 0 },
-    { id: 'discover', label: 'Découvrir', count: 0 }
+    { id: 'my-statuses', label: 'Mes Statuts', count: activeStatuses.length, icon: <HiSparkles /> },
+    { id: 'contacts', label: 'Contacts', count: 0, icon: <FaStar /> },
+    { id: 'discover', label: 'Découvrir', count: 0, icon: <FaFire /> }
   ];
 
   return (
-    <div className={`h-full flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+    <div className={`h-full flex flex-col ${theme.bgColor} ${theme.textColor} relative overflow-hidden`}>
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-500 via-yellow-400 to-orange-500" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
+      </div>
+
       {/* Header */}
-      <div className={`flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold">Statuts</h1>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <FaEye className="w-4 h-4" />
-            <span>{stats.totalViews} vues</span>
-            <FaCoins className="w-4 h-4 text-yellow-500" />
-            <span>{stats.totalEarnings} Elite-Coins</span>
+      <div className={`relative z-10 flex items-center justify-between p-6 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full ${theme.accentBg} flex items-center justify-center shadow-lg`}>
+              <FaCrown className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className={`text-2xl font-bold ${theme.textColor}`}>Statuts Elite</h1>
+              <div className="flex items-center gap-4 text-sm">
+                <span className={`flex items-center gap-2 ${theme.secondaryText}`}>
+                  <FaEye className="w-4 h-4" />
+                  <span className="font-medium">{stats.totalViews.toLocaleString()}</span>
+                  <span>vues</span>
+                </span>
+                <span className={`flex items-center gap-2 ${theme.goldText}`}>
+                  <FaCoins className="w-4 h-4" />
+                  <span className="font-medium">{stats.totalEarnings}</span>
+                  <span>Elite-Coins</span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <button
+        <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowStats(true)}
-            className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+            className={`p-3 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
             title="Statistiques"
           >
             <FaChartLine className="w-5 h-5" />
-          </button>
+          </motion.button>
           
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowSettings(true)}
-            className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+            className={`p-3 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
             title="Paramètres"
           >
             <FaCog className="w-5 h-5" />
-          </button>
+          </motion.button>
           
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleCreateStatus}
-            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg flex items-center gap-2"
+            className={`${theme.buttonGold} p-3 rounded-xl flex items-center gap-3 shadow-lg transition-all duration-200 ${theme.accentShadow}`}
           >
             <FaPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nouveau</span>
-          </button>
+            <span className="hidden sm:inline font-medium">Nouveau Statut</span>
+          </motion.button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className={`flex border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className={`relative z-10 flex border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-3 px-4 text-center relative ${
+            className={`flex-1 py-4 px-6 text-center relative transition-all duration-200 ${
               activeTab === tab.id
-                ? 'text-blue-500'
-                : theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+                ? `${theme.goldText} font-semibold`
+                : `${theme.secondaryText} ${theme.filterHover}`
             }`}
           >
-            <span className="flex items-center justify-center gap-2">
-              {tab.label}
+            <span className="flex items-center justify-center gap-3">
+              <span className="text-lg">{tab.icon}</span>
+              <span>{tab.label}</span>
               {tab.count > 0 && (
-                <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px]">
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className={`${theme.accentBg} text-white text-xs rounded-full px-2 py-1 min-w-[24px] font-medium shadow-lg`}
+                >
                   {tab.count}
-                </span>
+                </motion.span>
               )}
             </span>
             {activeTab === tab.id && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+                className={`absolute bottom-0 left-0 right-0 h-1 ${theme.accentBg} rounded-t-full`}
               />
             )}
           </button>
@@ -177,87 +231,115 @@ const StatusInterface = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto relative z-10">
         {activeTab === 'my-statuses' && (
-          <div className="p-4">
+          <div className="p-6">
             {activeStatuses.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center">
-                  <FaPlus className="w-8 h-8 text-gray-400" />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-16"
+              >
+                <div className={`w-24 h-24 mx-auto mb-6 rounded-full ${theme.accentBg} flex items-center justify-center shadow-2xl`}>
+                  <FaPlus className="w-12 h-12 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Aucun statut actif</h3>
-                <p className="text-gray-500 mb-4">Créez votre premier statut pour commencer à partager</p>
-                <button
+                <h3 className={`text-2xl font-bold mb-3 ${theme.textColor}`}>Aucun statut actif</h3>
+                <p className={`text-lg mb-8 ${theme.secondaryText}`}>Créez votre premier statut Elite pour commencer à partager</p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleCreateStatus}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
+                  className={`${theme.buttonGold} px-8 py-4 rounded-xl text-lg font-medium shadow-xl transition-all duration-200 ${theme.accentShadow}`}
                 >
-                  Créer un statut
-                </button>
-              </div>
+                  <HiSparkles className="w-5 h-5 inline mr-3" />
+                  Créer un statut Elite
+                </motion.button>
+              </motion.div>
             ) : (
-              <div className="grid gap-4">
-                {activeStatuses.map((status) => (
+              <div className="grid gap-6 max-w-4xl mx-auto">
+                {activeStatuses.map((status, index) => (
                   <motion.div
                     key={status.id}
                     layout
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
+                    exit={{ opacity: 0, y: -30 }}
+                    transition={{ delay: index * 0.1 }}
+                    onHoverStart={() => setHoveredStatus(status.id)}
+                    onHoverEnd={() => setHoveredStatus(null)}
                     onClick={() => handleViewStatus(status)}
-                    className={`p-4 rounded-lg cursor-pointer transition-all ${
+                    className={`group p-6 rounded-2xl cursor-pointer transition-all duration-300 transform ${
+                      hoveredStatus === status.id ? 'scale-[1.02] shadow-2xl' : 'shadow-lg'
+                    } ${
                       theme === 'dark' 
-                        ? 'bg-gray-800 hover:bg-gray-700 border border-gray-700' 
-                        : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                        ? 'bg-gray-800/80 hover:bg-gray-700/90 border border-gray-700/50 backdrop-blur-sm' 
+                        : 'bg-white/80 hover:bg-white/90 border border-gray-200/50 backdrop-blur-sm'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-4">
                       <div className="flex-shrink-0">
                         {getStatusPreview(status)}
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-3 mb-3">
                           {getStatusIcon(status.type)}
-                          <span className="text-sm text-gray-500">
+                          <span className={`text-sm font-medium ${theme.secondaryText}`}>
                             {formatTimeAgo(status.createdAt)}
                           </span>
                           {status.monetization?.enabled && (
-                            <FaCoins className="w-4 h-4 text-yellow-500" title="Statut monétisé" />
+                            <div className="flex items-center gap-1">
+                              <FaCoins className="w-4 h-4 text-yellow-500" title="Statut monétisé" />
+                              <FaDiamond className="w-3 h-3 text-blue-500" title="Premium" />
+                            </div>
+                          )}
+                          {status.type === STATUS_TYPES.ELITE && (
+                            <div className="flex items-center gap-1">
+                              <FaCrown className="w-4 h-4 text-yellow-500" />
+                              <FaGem className="w-3 h-3 text-purple-500" />
+                            </div>
                           )}
                         </div>
                         
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             {status.type === STATUS_TYPES.TEXT && (
-                              <p className="text-sm line-clamp-2">{status.content}</p>
+                              <p className={`text-base leading-relaxed ${theme.textColor}`}>{status.content}</p>
                             )}
                             {status.type !== STATUS_TYPES.TEXT && (
-                              <p className="text-sm text-gray-500">
-                                {status.type === STATUS_TYPES.IMAGE && 'Image'}
-                                {status.type === STATUS_TYPES.VIDEO && 'Vidéo'}
-                                {status.type === STATUS_TYPES.AUDIO && 'Audio'}
-                                {status.type === STATUS_TYPES.LOCATION && 'Localisation'}
-                                {status.type === STATUS_TYPES.POLL && 'Sondage'}
-                                {status.type === STATUS_TYPES.ELITE && 'Statut Elite'}
+                              <p className={`text-base font-medium ${theme.textColor}`}>
+                                {status.type === STATUS_TYPES.IMAGE && '📸 Image'}
+                                {status.type === STATUS_TYPES.VIDEO && '🎥 Vidéo'}
+                                {status.type === STATUS_TYPES.AUDIO && '🎤 Audio'}
+                                {status.type === STATUS_TYPES.LOCATION && '📍 Localisation'}
+                                {status.type === STATUS_TYPES.POLL && '📊 Sondage'}
+                                {status.type === STATUS_TYPES.ELITE && '👑 Statut Elite'}
                               </p>
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-3 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <FaEye className="w-3 h-3" />
-                              {status.views.length}
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className={`flex items-center gap-2 ${theme.secondaryText}`}>
+                              <FaEye className="w-4 h-4" />
+                              <span className="font-medium">{status.views.length}</span>
                             </span>
                             {status.monetization?.enabled && (
-                              <span className="flex items-center gap-1 text-yellow-500">
-                                <FaCoins className="w-3 h-3" />
-                                {status.earnings}
+                              <span className={`flex items-center gap-2 ${theme.goldText} font-medium`}>
+                                <FaCoins className="w-4 h-4" />
+                                <span>{status.earnings}</span>
                               </span>
                             )}
                           </div>
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Hover Effects */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: hoveredStatus === status.id ? 1 : 0 }}
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 pointer-events-none"
+                    />
                   </motion.div>
                 ))}
               </div>
@@ -266,15 +348,31 @@ const StatusInterface = () => {
         )}
 
         {activeTab === 'contacts' && (
-          <div className="p-4 text-center py-12">
-            <p className="text-gray-500">Statuts des contacts à venir</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 text-center py-16"
+          >
+            <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${theme.accentBg} flex items-center justify-center`}>
+              <FaStar className="w-10 h-10 text-white" />
+            </div>
+            <h3 className={`text-xl font-semibold mb-2 ${theme.textColor}`}>Statuts des contacts</h3>
+            <p className={`${theme.secondaryText}`}>Découvrez les statuts de vos contacts</p>
+          </motion.div>
         )}
 
         {activeTab === 'discover' && (
-          <div className="p-4 text-center py-12">
-            <p className="text-gray-500">Découverte de statuts à venir</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 text-center py-16"
+          >
+            <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${theme.accentBg} flex items-center justify-center`}>
+              <FaFire className="w-10 h-10 text-white" />
+            </div>
+            <h3 className={`text-xl font-semibold mb-2 ${theme.textColor}`}>Découvrir</h3>
+            <p className={`${theme.secondaryText}`}>Explorez les statuts populaires</p>
+          </motion.div>
         )}
       </div>
 

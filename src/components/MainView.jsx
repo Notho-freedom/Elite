@@ -10,6 +10,7 @@ import Entry from "./Entry";
 import Loading from './Loading';
 import StatusInterface from './Elite/Status/StatusInterface';
 import NativeFeatures from './NativeFeatures';
+import GroupInterface from './Elite/Groups/GroupInterface';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
 import CallScreen from './CallScreen';
@@ -18,6 +19,7 @@ import GroupList from './Groups/GroupList';
 import SettingsList from './Settings/SettingsList';
 import FeatureNotification from './Enhanced/FeatureNotification';
 import StatusList from './Status/StatusList';
+import { useState, useEffect } from 'react';
 
 const MainView = () => {
   const {
@@ -32,6 +34,20 @@ const MainView = () => {
   } = useApp();
   
   const { user } = useAuth();
+  const [groupInterfaceLoaded, setGroupInterfaceLoaded] = useState(false);
+
+  // Load group interface when needed
+  useEffect(() => {
+    if (activeTab === TABS.GROUPS && !groupInterfaceLoaded) {
+      console.log('Loading GroupInterface...');
+      setGroupInterfaceLoaded(true);
+    }
+  }, [activeTab, groupInterfaceLoaded]);
+
+  // Debug logging for active tab
+  useEffect(() => {
+    console.log('Active tab changed to:', activeTab);
+  }, [activeTab]);
 
   // Priorité absolue aux états critiques
   if (!isAuthenticated || !user) {
@@ -132,6 +148,21 @@ const MainView = () => {
                   transition={{ duration: 0.2 }}
                 >
                   <StatusInterface />
+                </motion.div>
+              )}
+              {activeTab === TABS.GROUPS && (
+                <motion.div
+                  key="groups"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {groupInterfaceLoaded ? (
+                    <GroupInterface />
+                  ) : (
+                    <Loading />
+                  )}
                 </motion.div>
               )}
               {activeTab === TABS.SETTINGS && (
@@ -253,6 +284,21 @@ const MainView = () => {
                       <StatusList />
                     </motion.div>
                   )}
+                  {activeTab === TABS.GROUPS && (
+                    <motion.div
+                      key="groups-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {groupInterfaceLoaded ? (
+                        <GroupInterface />
+                      ) : (
+                        <Loading />
+                      )}
+                    </motion.div>
+                  )}
                   {activeTab === TABS.SETTINGS && (
                     <motion.div
                       key="settings-mobile"
@@ -302,7 +348,7 @@ const EmptyState = () => {
       transition={{ duration: 0.3 }}
     >
       {activeTab === TABS.CHATS && <Entry />}
-      {[TABS.CALLS, TABS.STATUS, TABS.GROUPS, TABS.SETTINGS, TABS.NATIVE].includes(activeTab) && <Loading />}
+      {[TABS.CALLS, TABS.STATUS, TABS.SETTINGS, TABS.NATIVE].includes(activeTab) && <Loading />}
     </motion.div>
   );
 }
