@@ -4,7 +4,7 @@ import { FaTimes, FaUsers, FaCrown, FaUserShield, FaUser, FaUserFriends, FaEye, 
 import { useGroupStore, PARTICIPANT_ROLES } from '../../../lib/groupStore';
 import { useApp } from '../../Context/AppContext';
 
-const GroupParticipants = ({ group, onClose }) => {
+const GroupParticipants = ({ group, onClose, onUpdate, isCompact = false }) => {
   const { theme } = useApp();
   const { participants, updateParticipantRole, removeParticipant } = useGroupStore();
   
@@ -72,6 +72,233 @@ const GroupParticipants = ({ group, onClose }) => {
     removeParticipant(group.id, participantId);
   };
 
+  // Version compacte pour le panel droit
+  if (isCompact) {
+    return (
+      <div className={`h-full flex flex-col ${theme.bgColor} ${theme.textColor}`}>
+        {/* Header compact */}
+        <div className={`flex items-center justify-between p-4 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg}`}>
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full ${theme.accentBg} flex items-center justify-center`}>
+              <FaUsers className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">Participants</h3>
+              <p className={`text-xs ${theme.secondaryText}`}>{groupParticipants.length} membres</p>
+            </div>
+          </div>
+          
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onClose}
+            className={`p-1.5 rounded-lg ${theme.buttonSecondary} ${theme.buttonHover}`}
+          >
+            <FaTimes className="w-3 h-3" />
+          </motion.button>
+        </div>
+
+        {/* Search compact */}
+        <div className="p-3 border-b border-gray-100">
+          <div className="relative">
+            <FaSearch className={`absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 ${theme.secondaryText}`} />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`w-full pl-7 pr-3 py-2 text-sm rounded-lg border ${theme.inputBg} ${theme.inputBorder} ${theme.inputText} ${theme.inputFocus}`}
+            />
+          </div>
+        </div>
+
+        {/* Filters compact */}
+        <div className="p-3 border-b border-gray-100">
+          <div className="flex gap-1 overflow-x-auto">
+            {filters.map((filter) => (
+              <button
+                key={filter.id}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                  selectedFilter === filter.id
+                    ? `${theme.accentBg} text-white`
+                    : `${theme.buttonSecondary} ${theme.buttonHover}`
+                }`}
+                onClick={() => setSelectedFilter(filter.id)}
+              >
+                <span>{filter.label}</span>
+                {filter.count > 0 && (
+                  <span className={`${theme.accentBg} text-white text-xs rounded-full px-1.5 py-0.5 min-w-[16px] font-medium`}>
+                    {filter.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Participants list compact */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredParticipants.length === 0 ? (
+            <div className="text-center py-8">
+              <div className={`w-12 h-12 mx-auto mb-3 rounded-full ${theme.accentBg} flex items-center justify-center`}>
+                <FaUsers className="w-6 h-6 text-white" />
+              </div>
+              <p className={`text-sm ${theme.secondaryText}`}>
+                {searchQuery ? 'Aucun participant trouvé' : 'Aucun participant'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1 p-2">
+              {filteredParticipants.map((participant) => (
+                <motion.div
+                  key={participant.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-2 rounded-lg transition-all cursor-pointer ${
+                    theme === 'dark' 
+                      ? 'hover:bg-gray-800 border border-gray-700/30' 
+                      : 'hover:bg-gray-50 border border-gray-200/50'
+                  }`}
+                  onClick={() => setSelectedParticipant(participant)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <img 
+                        src={participant.avatar} 
+                        alt={participant.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                      {participant.isOnline && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <h4 className={`text-sm font-medium truncate ${theme.textColor}`}>{participant.name}</h4>
+                        {participant.isVerified && (
+                          <FaCheck className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                        )}
+                        {participant.isElite && (
+                          <div className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">E</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={`flex items-center gap-1 ${theme.secondaryText}`}>
+                          {getRoleIcon(participant.role)}
+                          <span>{getRoleLabel(participant.role)}</span>
+                        </span>
+                        <span className={`${theme.secondaryText}`}>
+                          {formatTimeAgo(participant.lastSeen)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right text-xs">
+                      <div className={`font-medium ${theme.textColor}`}>{participant.messageCount}</div>
+                      <div className={`${theme.secondaryText}`}>msg</div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer compact */}
+        <div className={`p-3 border-t ${theme.borderColor} bg-gradient-to-r ${theme.headerBg}`}>
+          <div className="flex items-center justify-between text-xs">
+            <span className={`${theme.secondaryText}`}>
+              {filteredParticipants.length} affiché{filteredParticipants.length > 1 ? 's' : ''}
+            </span>
+            <span className={`${theme.secondaryText}`}>
+              {groupParticipants.filter(p => p.isOnline).length} en ligne
+            </span>
+          </div>
+        </div>
+
+        {/* Participant Actions Modal compact */}
+        {selectedParticipant && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedParticipant(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-sm rounded-xl shadow-2xl ${theme.bgColor} ${theme.textColor}`}
+            >
+              <div className={`p-4 border-b ${theme.borderColor}`}>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={selectedParticipant.avatar} 
+                    alt={selectedParticipant.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h3 className={`text-sm font-semibold ${theme.textColor}`}>{selectedParticipant.name}</h3>
+                    <p className={`text-xs ${theme.secondaryText}`}>{getRoleLabel(selectedParticipant.role)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 space-y-3">
+                <div>
+                  <label className={`block text-xs font-medium mb-2 ${theme.textColor}`}>Rôle</label>
+                  <select
+                    value={selectedParticipant.role}
+                    onChange={(e) => {
+                      handleRoleChange(selectedParticipant.id, e.target.value);
+                      setSelectedParticipant(null);
+                    }}
+                    className={`w-full px-3 py-2 text-sm rounded-lg border ${theme.inputBg} ${theme.inputBorder} ${theme.inputText} ${theme.inputFocus}`}
+                  >
+                    <option value={PARTICIPANT_ROLES.MEMBER}>Membre</option>
+                    <option value={PARTICIPANT_ROLES.MODERATOR}>Modérateur</option>
+                    <option value={PARTICIPANT_ROLES.ADMIN}>Administrateur</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      handleRemoveParticipant(selectedParticipant.id);
+                      setSelectedParticipant(null);
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white`}
+                  >
+                    <FaTrash className="w-3 h-3" />
+                    Retirer
+                  </motion.button>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedParticipant(null)}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${theme.buttonSecondary} ${theme.buttonHover}`}
+                  >
+                    Annuler
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </div>
+    );
+  }
+
+  // Version originale (modale plein écran)
   return (
     <motion.div
       initial={{ opacity: 0 }}
