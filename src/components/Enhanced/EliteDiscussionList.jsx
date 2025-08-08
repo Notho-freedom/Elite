@@ -23,7 +23,7 @@ import EliteWallet from '../Elite/Wallet/EliteWallet';
 import CallButtons from '../Elite/Calls/CallButtons';
 
 // Composants de filtres avancés
-const FilterSection = ({ activeFilter, onFilterChange, theme, discussions }) => {
+const FilterSection = ({ activeFilter, onFilterChange, theme, discussions, isShowingFilters, toggleFilters }) => {
   const filters = useMemo(() => [
     { 
       id: 'all', 
@@ -69,45 +69,46 @@ const FilterSection = ({ activeFilter, onFilterChange, theme, discussions }) => 
     },
   ], [discussions]);
 
-  return (
-    <motion.div 
-      className={`flex items-center gap-2 px-4 py-3 border-b ${theme.borderColor} overflow-x-auto`}
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      {filters.map((filter) => (
-        <motion.button
-          key={filter.id}
-          onClick={() => onFilterChange(filter.id)}
-          className={`
-            flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap
-            transition-all duration-200 relative
-            ${activeFilter === filter.id 
-              ? `${theme.accentBg} text-white shadow-md` 
-              : `${theme.hoverBg} ${theme.textColor} hover:${theme.accentBg} hover:text-white`
-            }
-          `}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          {filter.icon}
-          <span>{filter.label}</span>
-          {filter.count > 0 && (
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className={`
-                absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center
-                ${activeFilter === filter.id ? 'bg-white text-blue-600' : 'bg-red-500 text-white'}
-              `}
-            >
-              {filter.count > 9 ? '9+' : filter.count}
-            </motion.span>
-          )}
-        </motion.button>
-      ))}
-    </motion.div>
-  );
+return (
+  <motion.div 
+    className={` ${isShowingFilters ? '' : 'hidden'} flex flex-wrap items-center gap-1 px-2 py-2 border-b ${theme.borderColor}`}
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    {filters.map((filter) => (
+      <motion.button
+        key={filter.id}
+        onClick={() => onFilterChange(filter.id)}
+        className={`
+          flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap
+          transition-all duration-200 relative
+          ${activeFilter === filter.id 
+            ? `${theme.accentBg} text-white shadow-md` 
+            : `${theme.hoverBg} ${theme.textColor} hover:${theme.accentBg} hover:text-white`
+          }
+        `}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {filter.icon}
+        <span>{filter.label}</span>
+        {filter.count > 0 && (
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className={`
+              absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center
+              ${activeFilter === filter.id ? 'bg-white text-blue-600' : 'bg-red-500 text-white'}
+            `}
+          >
+            {filter.count > 9 ? '9+' : filter.count}
+          </motion.span>
+        )}
+      </motion.button>
+    ))}
+  </motion.div>
+);
+
 };
 
 // Menu contextuel pour les discussions
@@ -443,6 +444,7 @@ const EliteDiscussionItem = ({
 // Composant principal
 const EliteDiscussionList = () => {
   const [filter, setFilter] = useState('all');
+  const [isShowingFilters, setIsShowingFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -467,11 +469,15 @@ const EliteDiscussionList = () => {
   const { showNotification, NotificationContainer } = useActionNotifications();
   
   // Utiliser les données réelles si disponibles, sinon les données mockées
-  const discussions = realDiscussions.length > 0 ? realDiscussions : mockDiscussions;
+  const discussions = realDiscussions.length == 0 ? realDiscussions : mockDiscussions;
 
   const handleFilterChange = useCallback((newFilter) => {
     setFilter(newFilter);
   }, []);
+
+  const toggleFilters = useCallback(() => {
+    setIsShowingFilters(!isShowingFilters);
+  }, [isShowingFilters]);
 
   const handleContextMenu = useCallback((e, discussion) => {
     e.preventDefault();
@@ -635,7 +641,7 @@ const EliteDiscussionList = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className={`text-xl font-bold ${t.textColor}`}>
-              Discussions Elite
+              Discussions
             </h1>
             {realDiscussions.length === 0 && (
               <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -663,7 +669,7 @@ const EliteDiscussionList = () => {
               className="p-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white"
               title="Elite Wallet"
             >
-              <FaCoins className="w-4 h-4" />
+              <FaCoins className="w-3 h-3" />
             </motion.button>
             
             {/* Bouton de création */}
@@ -674,16 +680,20 @@ const EliteDiscussionList = () => {
               className={`p-2 rounded-full ${t.accentBg} text-white`}
               title="Nouvelle discussion"
             >
-              <FaPlus className="w-4 h-4" />
+              <FaPlus className="w-3 h-3" />
             </motion.button>
             
-            {/* Bouton de paramètres */}
+            {/* Bouton de filtre */}
             <motion.button
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.95 }}  
               className={`p-2 rounded-full ${t.hoverBg} ${t.textColor}`}
             >
-              <FaCog className="w-4 h-4" />
+            {!isShowingFilters ? (
+              <FaFilter className="w-4 h-4" onClick={toggleFilters} />
+            ) : (
+              <FaTimes className="w-4 h-4" onClick={toggleFilters} />)
+              }
             </motion.button>
           </div>
         </div>
@@ -743,10 +753,12 @@ const EliteDiscussionList = () => {
         onFilterChange={handleFilterChange}
         theme={t}
         discussions={enrichedDiscussions}
+        isShowingFilters={isShowingFilters}
+        toggleFilters={toggleFilters}
       />
 
       {/* Liste des discussions */}
-      <div className={`flex-1 overflow-y-auto ${isMobile ? 'mb-[12vh]' : 'mb-[1vh]'}`}>
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'mb-[12vh]' : 'mb-[1vh]'} ml-1 ${t.scrollbar}`}>
         <AnimatePresence mode="popLayout">
           {filteredDiscussions.length > 0 ? (
             filteredDiscussions.map((discussion, index) => (

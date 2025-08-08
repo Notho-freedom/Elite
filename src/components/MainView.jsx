@@ -13,7 +13,6 @@ import NativeFeatures from './NativeFeatures';
 import GroupInterface from './Elite/Groups/GroupInterface';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
-import CallScreen from './CallScreen';
 import { useAuth } from './Context/AuthContext';
 import GroupList from './Groups/GroupList';
 import SettingsList from './Settings/SettingsList';
@@ -26,7 +25,6 @@ const MainView = () => {
     theme,
     activeTab,
     activeChat,
-    activeCall,
     isAuthenticated, 
     isMobile,
     showProfile, 
@@ -63,18 +61,6 @@ const MainView = () => {
     );
   }
   
-  if (activeCall) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="h-screen"
-      >
-        <CallScreen />
-      </motion.div>
-    );
-  }
   
   // Profil en modale animée
   return (
@@ -158,11 +144,7 @@ const MainView = () => {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {groupInterfaceLoaded ? (
-                    <GroupInterface />
-                  ) : (
-                    <Loading />
-                  )}
+                  <GroupInterface />
                 </motion.div>
               )}
               {activeTab === TABS.SETTINGS && (
@@ -259,7 +241,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <DiscussionList />
+                      <EliteDiscussionList />
                     </motion.div>
                   )}
                   {activeTab === TABS.CALLS && (
@@ -281,7 +263,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <StatusList />
+                      <StatusInterface />
                     </motion.div>
                   )}
                   {activeTab === TABS.GROUPS && (
@@ -292,7 +274,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <GroupList />
+                      <GroupInterface />
                     </motion.div>
                   )}
                   {activeTab === TABS.SETTINGS && (

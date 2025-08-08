@@ -31,6 +31,7 @@ const CallHistory = ({ onClose }) => {
     { id: 'type', label: 'Type' }
   ];
 
+  
   // Filtrer et trier les appels
   const filteredAndSortedCalls = callHistory
     .filter(call => {
@@ -240,7 +241,7 @@ const CallHistory = ({ onClose }) => {
                         <div className="flex items-center space-x-4">
                           {/* Call Icon */}
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            call.type.includes('video') ? 'bg-blue-600' : 'bg-green-600'
+                            call.type == 'video' ? 'bg-blue-600' : 'bg-green-600'
                           }`}>
                             <CallIcon className="text-white" />
                           </div>

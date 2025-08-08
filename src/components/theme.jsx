@@ -44,12 +44,14 @@ const light = {
   buttonHover: 'hover:bg-gray-100',
   iconColor: 'text-gray-600',
   buttonBg: 'bg-blue-500',
-  menuItemHover: 'hover:bg-gray-50'
+  menuItemHover: 'hover:bg-gray-50',
+  scrollbar: 'scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800',
+
 };
 
 const dark = {
   w: 'w-full',
-  divw: ' w-2/5 lg:w-1/4',
+  divw: ' w-4/7 lg:w-1/4',
   bgColor: 'bg-gray-900',
   textColor: 'text-gray-100',
   secondaryText: 'text-gray-400',
@@ -93,7 +95,9 @@ const dark = {
   buttonHover: 'hover:bg-gray-700',
   iconColor: 'text-gray-400',
   buttonBg: 'bg-blue-500',
-  menuItemHover: 'hover:bg-gray-800'
+  menuItemHover: 'hover:bg-gray-800',
+  // Propriétés pour les composants de discussion
+  scrollbar: 'scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800',
 };
 
 export const theme = { light, dark };

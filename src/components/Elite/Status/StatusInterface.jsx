@@ -131,21 +131,14 @@ const StatusInterface = () => {
 
   return (
     <div className={`h-full flex flex-col ${theme.bgColor} ${theme.textColor} relative overflow-hidden`}>
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-500 via-yellow-400 to-orange-500" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
-      </div>
+
 
       {/* Header */}
-      <div className={`relative z-10 flex items-center justify-between p-6 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
+      <div className={`relative z-10 flex items-center justify-between p-3 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${theme.accentBg} flex items-center justify-center shadow-lg`}>
-              <FaCrown className="w-5 h-5 text-white" />
-            </div>
             <div>
-              <h1 className={`text-2xl font-bold ${theme.textColor}`}>Statuts Elite</h1>
+              <h1 className={`text-xl font-bold ${theme.textColor}`}>Statuts</h1>
               <div className="flex items-center gap-4 text-sm">
                 <span className={`flex items-center gap-2 ${theme.secondaryText}`}>
                   <FaEye className="w-4 h-4" />
@@ -167,48 +160,48 @@ const StatusInterface = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowStats(true)}
-            className={`p-3 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
+            className={`p-2 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
             title="Statistiques"
           >
-            <FaChartLine className="w-5 h-5" />
+            <FaChartLine className="w-3 h-3" />
           </motion.button>
           
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowSettings(true)}
-            className={`p-3 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
+            className={`p-2 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
             title="Paramètres"
           >
-            <FaCog className="w-5 h-5" />
+            <FaCog className="w-3 h-3" />
           </motion.button>
           
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleCreateStatus}
-            className={`${theme.buttonGold} p-3 rounded-xl flex items-center gap-3 shadow-lg transition-all duration-200 ${theme.accentShadow}`}
+            title='Nouveau Statut'
+            className={`${theme.buttonGold} p-2 rounded-xl flex items-center gap-3 shadow-lg transition-all duration-200 ${theme.accentShadow}`}
           >
-            <FaPlus className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Nouveau Statut</span>
+            <FaPlus className="w-3 h-3" />
           </motion.button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className={`relative z-10 flex border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
+      <div className={`relative z-10 flex border-b text-sm ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-4 px-6 text-center relative transition-all duration-200 ${
+            className={`flex-1 py-3 px-4 text-center text-nowrap relative transition-all duration-200 ${
               activeTab === tab.id
-                ? `${theme.goldText} font-semibold`
+                ? `${theme.goldText} font-medium`
                 : `${theme.secondaryText} ${theme.filterHover}`
             }`}
           >
             <span className="flex items-center justify-center gap-3">
-              <span className="text-lg">{tab.icon}</span>
+              <span className="text-md">{tab.icon}</span>
               <span>{tab.label}</span>
               {tab.count > 0 && (
                 <motion.span
@@ -240,16 +233,16 @@ const StatusInterface = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-16"
               >
-                <div className={`w-24 h-24 mx-auto mb-6 rounded-full ${theme.accentBg} flex items-center justify-center shadow-2xl`}>
-                  <FaPlus className="w-12 h-12 text-white" />
+                <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${theme.accentBg} flex items-center justify-center shadow-2xl`}>
+                  <FaPlus className="w-10 h-10 text-white" />
                 </div>
-                <h3 className={`text-2xl font-bold mb-3 ${theme.textColor}`}>Aucun statut actif</h3>
-                <p className={`text-lg mb-8 ${theme.secondaryText}`}>Créez votre premier statut Elite pour commencer à partager</p>
+                <h3 className={`text-xl font-bold mb-3 ${theme.textColor}`}>Aucun statut actif</h3>
+                <p className={`text-sm mb-8 ${theme.secondaryText}`}>Créez votre premier statut Elite pour commencer <br/> à partager</p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleCreateStatus}
-                  className={`${theme.buttonGold} px-8 py-4 rounded-xl text-lg font-medium shadow-xl transition-all duration-200 ${theme.accentShadow}`}
+                  className={`${theme.buttonGold} px-4 py-2 rounded-xl text-sm font-medium shadow-xl transition-all duration-200 ${theme.accentShadow}`}
                 >
                   <HiSparkles className="w-5 h-5 inline mr-3" />
                   Créer un statut Elite

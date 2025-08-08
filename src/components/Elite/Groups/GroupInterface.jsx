@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaUsers, FaLock, FaGlobe, FaCrown, FaEye, FaCoins, FaChartLine, FaCog, FaTimes, FaSearch, FaFilter, FaThumbtack, FaArchive, FaVolumeMute, FaVolumeUp, FaShieldAlt, FaUserFriends, FaRocket, FaStar, FaFire, FaGem, FaEllipsisV, FaEdit, FaTrash, FaBan, FaCheck, FaClock, FaUserPlus, FaBell, FaBellSlash, FaList, FaTh, FaCompress, FaBroadcastTower } from 'react-icons/fa';
+import { FaPlus, FaUsers, FaLock, FaGlobe, FaCrown, FaUser , FaEye, FaCoins, FaChartLine, FaCog, FaTimes, FaSearch, FaFilter, FaThumbtack, FaArchive, FaVolumeMute, FaVolumeUp, FaShieldAlt, FaUserFriends, FaRocket, FaStar, FaFire, FaGem, FaEllipsisV, FaEdit, FaTrash, FaBan, FaCheck, FaClock, FaUserPlus, FaBell, FaBellSlash, FaList, FaTh, FaCompress, FaBroadcastTower, FaChevronDown } from 'react-icons/fa';
 import { useGroupStore, useGroupActions, GROUP_TYPES, PRIVACY_TYPES, PARTICIPANT_ROLES } from '../../../lib/groupStore';
 import { useApp } from '../../Context/AppContext';
 import GroupCreator from './GroupCreator';
@@ -8,9 +8,10 @@ import GroupSettings from './GroupSettings';
 import GroupParticipants from './GroupParticipants';
 import GroupJoinRequests from './GroupJoinRequests';
 import GroupInvite from './GroupInvite';
+import { Menu } from '@headlessui/react'
 
 const GroupInterface = () => {
-  const { theme } = useApp();
+  const { theme, setActiveChat } = useApp();
   const { myGroups, discoveredGroups, stats, settings, ui } = useGroupStore();
   const { getActiveGroups, getPinnedGroups } = useGroupActions();
   
@@ -22,32 +23,11 @@ const GroupInterface = () => {
   const [showInvite, setShowInvite] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [hoveredGroup, setHoveredGroup] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('list'); // list, grid, compact
+  const [viewMode, setViewMode] = useState('compact'); // list, grid, compact
   const [sortBy, setSortBy] = useState('lastActivity'); // lastActivity, name, memberCount, createdAt
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Simulate loading state
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Handle loading state
-  if (isLoading) {
-    return (
-      <div className={`h-full flex items-center justify-center ${theme.bgColor}`}>
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1 }}
-          className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"
-        />
-      </div>
-    );
-  }
 
   const activeGroups = getActiveGroups();
   const pinnedGroups = getPinnedGroups();
@@ -117,6 +97,7 @@ const GroupInterface = () => {
   const handleViewGroup = (group) => {
     setSelectedGroup(group);
     // TODO: Navigate to group chat
+    setActiveChat(group);
   };
 
   const handleGroupAction = (action, group) => {
@@ -185,8 +166,8 @@ const GroupInterface = () => {
   };
 
   const getGroupPreview = (group) => {
-    const previewClass = "w-16 h-16 rounded-xl overflow-hidden shadow-lg";
-    const iconClass = "w-6 h-6";
+    const previewClass = "w-14 h-14 rounded-xl overflow-hidden shadow-lg";
+    const iconClass = "w-4 h-4";
     
     if (group.avatar) {
       return (
@@ -245,29 +226,20 @@ const GroupInterface = () => {
 
   return (
     <div className={`h-full flex flex-col ${theme.bgColor} ${theme.textColor} relative overflow-hidden w-full`}>
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-500 via-yellow-400 to-orange-500" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
-      </div>
-
       {/* Header */}
-      <div className={`relative z-10 flex items-center justify-between p-6 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
+      <div className={`relative z-10 flex items-center justify-between p-2 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${theme.accentBg} flex items-center justify-center shadow-lg`}>
-              <FaUsers className="w-5 h-5 text-white" />
-            </div>
             <div>
-              <h1 className={`text-2xl font-bold ${theme.textColor}`}>Groupes Elite</h1>
-              <div className="flex items-center gap-4 text-sm">
-                <span className={`flex items-center gap-2 ${theme.secondaryText}`}>
+              <h1 className={`text-xl font-bold ${theme.textColor}`}>Groupes</h1>
+              <div className="flex items-center gap-2 text-sm">
+                <span className={`flex items-center gap-1 ${theme.secondaryText}`}>
                   <FaUsers className="w-4 h-4" />
                   <span className="font-medium">{stats.totalGroups}</span>
                   <span>groupes</span>
                 </span>
-                <span className={`flex items-center gap-2 ${theme.goldText}`}>
-                  <FaCoins className="w-4 h-4" />
+                <span className={`flex items-center gap-1 ${theme.goldText}`}>
+                  <FaUser className="w-4 h-4" />
                   <span className="font-medium">{stats.totalMembers}</span>
                   <span>membres</span>
                 </span>
@@ -277,24 +249,36 @@ const GroupInterface = () => {
         </div>
         
         <div className="flex items-center gap-3">
+
+    
+            {/* Bouton de recherche */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsSearching(!isSearching)}
+              className={`p-2 rounded-full ${theme.hoverBg} ${theme.textColor}`}
+            >
+              <FaSearch className="w-4 h-4" />
+            </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowSettings(true)}
-            className={`p-3 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
+            className={`p-2 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200`}
             title="Paramètres"
           >
-            <FaCog className="w-5 h-5" />
+            <FaCog className="w-3 h-3" />
           </motion.button>
           
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowJoinRequests(true)}
-            className={`p-3 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200 relative`}
+            className={`p-2 rounded-xl ${theme.buttonSecondary} ${theme.buttonHover} transition-all duration-200 relative`}
             title="Demandes d'adhésion"
           >
-            <FaUserPlus className="w-5 h-5" />
+            <FaUserPlus className="w-3 h-3" />
             {useGroupStore.getState().joinRequests.filter(r => r.state === 'pending').length > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                 {useGroupStore.getState().joinRequests.filter(r => r.state === 'pending').length}
@@ -305,11 +289,11 @@ const GroupInterface = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            title='Créer un groupe'
             onClick={handleCreateGroup}
-            className={`${theme.buttonGold} p-3 rounded-xl flex items-center gap-3 shadow-lg transition-all duration-200 ${theme.accentShadow}`}
+            className={`${theme.buttonGold} p-2 rounded-xl flex items-center gap-3 shadow-lg transition-all duration-200 ${theme.accentShadow}`}
           >
-            <FaPlus className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Nouveau Groupe</span>
+            <FaPlus className="w-3 h-3" />
           </motion.button>
         </div>
       </div>
@@ -318,86 +302,100 @@ const GroupInterface = () => {
       <div className={`relative z-10 p-4 border-b ${theme.borderColor} bg-gradient-to-r ${theme.headerBg} backdrop-blur-sm`}>
         <div className="flex flex-col gap-4">
           {/* Search Bar */}
-          <div className="relative">
-            <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${theme.secondaryText}`} />
-            <input
-              type="text"
-              placeholder="Rechercher des groupes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 rounded-xl border ${theme.borderColor} ${theme.inputBg} focus:outline-none focus:ring-2 ${theme.focusRing}`}
-            />
-          </div>
-
-          {/* Filters and Controls */}
-          <div className="flex items-center justify-between gap-4">
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {filters.map((filter) => (
-                <motion.button
-                  key={filter.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedFilter(filter.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                    selectedFilter === filter.id
-                      ? `${theme.accentBg} text-white shadow-lg`
-                      : `${theme.buttonSecondary} ${theme.buttonHover}`
-                  }`}
-                >
-                  <span>{filter.icon}</span>
-                  <span>{filter.label}</span>
-                  {filter.count > 0 && (
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      selectedFilter === filter.id ? 'bg-white/20' : theme.accentBg
-                    } text-white`}>
-                      {filter.count}
-                    </span>
-                  )}
-                </motion.button>
-              ))}
-            </div>
-
-            {/* View Controls */}
-            <div className="flex items-center gap-2">
-              {/* Sort Dropdown */}
+        <AnimatePresence>
+          {isSearching && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3"
+            >
               <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className={`px-3 py-2 rounded-lg border ${theme.borderColor} ${theme.inputBg} focus:outline-none focus:ring-2 ${theme.focusRing} text-sm`}
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center rounded-lg border ${theme.borderColor} overflow-hidden">
-                {['list', 'grid', 'compact'].map((mode) => (
-                  <motion.button
-                    key={mode}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setViewMode(mode)}
-                    className={`p-2 transition-all duration-200 ${
-                      viewMode === mode
-                        ? `${theme.accentBg} text-white`
-                        : `${theme.buttonSecondary} ${theme.buttonHover}`
-                    }`}
-                    title={`Vue ${mode}`}
+                <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 ${theme.secondaryText} w-4 h-4`} />
+                <input
+                  type="text"
+                  placeholder="Rechercher des groupes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.targetheme.value)}
+                  className={`w-full pl-10 pr-4 py-3 rounded-xl border ${theme.borderColor} ${theme.inputBg} focus:outline-none focus:ring-2 ${theme.focusRing}`}
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${theme.secondaryText}`}
                   >
-                    {mode === 'list' && <FaList className="w-4 h-4" />}
-                    {mode === 'grid' && <FaTh className="w-4 h-4" />}
-                    {mode === 'compact' && <FaCompress className="w-4 h-4" />}
-                  </motion.button>
-                ))}
+                    <FaTimes className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+
+{/* Filters and Controls */}
+<div className="flex flex-col md:flex-row items-start justify-between gap-2">
+
+  {/* Filter Dropdown */}
+  <div className="relative">
+    <select
+      value={selectedFilter}
+      onChange={(e) => setSelectedFilter(e.target.value)}
+      className={`px-3 py-2 min-w-[140px] rounded-lg border ${theme.borderColor} ${theme.inputBg} text-sm font-medium focus:outline-none focus:ring-2 ${theme.focusRing}`}
+    >
+      {filters.map((filter) => (
+        <option key={filter.id} value={filter.id}>
+          {filter.label} {filter.count > 0 ? `(${filter.count})` : ''}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* View Controls */}
+  <div className="flex items-center gap-2 shrink-0">
+    
+    {/* Sort Dropdown */}
+    <div className="relative">
+      <select
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value)}
+        className={`px-1 py-2 min-w-[80px] rounded-lg border ${theme.borderColor} ${theme.inputBg} focus:outline-none focus:ring-2 ${theme.focusRing} text-sm`}
+      >
+        {sortOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* View Toggle */}
+    <div className={`flex items-center rounded-lg border ${theme.borderColor} overflow-hidden`}>
+      {['list', 'grid', 'compact'].map((mode) => (
+        <motion.button
+          key={mode}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setViewMode(mode)}
+          className={`p-2 transition-all duration-200 ${
+            viewMode === mode
+              ? `${theme.accentBg} text-white`
+              : `${theme.buttonSecondary} ${theme.buttonHover}`
+          }`}
+          title={`Vue ${mode}`}
+        >
+          {mode === 'list' && <FaList className="w-4 h-4" />}
+          {mode === 'grid' && <FaTh className="w-4 h-4" />}
+          {mode === 'compact' && <FaCompress className="w-4 h-4" />}
+        </motion.button>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+
         </div>
       </div>
 

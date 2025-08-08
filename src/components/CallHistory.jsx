@@ -177,13 +177,6 @@ const CallHistory = () => {
         searchQuery={state.searchTerm}
         onSearchChange={(value) => setState(prev => ({ ...prev, searchTerm: value }))}
         searchPlaceholder="Rechercher un appel..."
-        customActions={[
-          {
-            icon: <FaChevronCircleDown className="w-4 h-4" />,
-            label: 'Filtrer',
-            onClick: () => console.log('Filter clicked')
-          }
-        ]}
       />
 
       {/* Filter Tabs */}

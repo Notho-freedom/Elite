@@ -33,13 +33,143 @@ export const PARTICIPANT_STATES = {
   BUSY: 'busy'
 };
 
+
+const mockCallHistory = [
+  {
+    id: '1',
+    type: 'VOICE',
+    state: 'ENDED',
+    isOutgoing: true,
+    startTime: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
+    duration: 180, // 3 minutes
+    participants: [
+      { id: 'user1', name: 'Jean Dupont', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '2',
+    type: CALL_TYPES.VIDEO,
+    state: CALL_STATES.ENDED,
+    isOutgoing: false,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    duration: 0,
+    participants: [
+      { id: 'me', name: 'Moi', isMe: true }
+      ,{ id: 'user2', name: 'Marie Martin', isMe: false }
+    ]
+  },
+  {
+    id: '3',
+    type: 'GROUP_VIDEO',
+    state: 'ENDED',
+    isOutgoing: true,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+    duration: 1500, // 25 minutes
+    isGroup: true,
+    participants: [
+      { id: 'user1', name: 'Jean Dupont', isMe: false },
+      { id: 'user2', name: 'Marie Martin', isMe: false },
+      { id: 'user3', name: 'Pierre Durand', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '4',
+    type: 'voice',
+    state: 'REJECTED',
+    isOutgoing: false,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
+    duration: 0,
+    participants: [
+      { id: 'user4', name: 'Sophie Lambert', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '5',
+    type: 'voice',
+    state: 'ENDED',
+    isOutgoing: true,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), // 3 days ago
+    duration: 45, // 45 seconds
+    participants: [
+      { id: 'user5', name: 'Thomas Leroy', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '6',
+    type: 'GROUP_VOICE',
+    state: 'ENDED',
+    isOutgoing: true,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(), // 4 days ago
+    duration: 720, // 12 minutes
+    participants: [
+      { id: 'user1', name: 'Jean Dupont', isMe: false },
+      { id: 'user6', name: 'Camille Petit', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '7',
+    type: CALL_TYPES['video'],
+    state: 'MISSED',
+    isOutgoing: false,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(), // 5 days ago
+    duration: 0,
+    participants: [
+      { id: 'user7', name: 'Lucie Moreau', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '8',
+    type: 'VOICE',
+    state: 'ENDED',
+    isOutgoing: true,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 144).toISOString(), // 6 days ago
+    duration: 300, // 5 minutes
+    participants: [
+      { id: 'user8', name: 'Nicolas Bernard', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '9',
+    type: CALL_TYPES['video'],
+    state: 'ENDED',
+    isOutgoing: false,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 168).toISOString(), // 7 days ago
+    duration: 900, // 15 minutes
+    participants: [
+      { id: 'user9', name: 'Élodie Roux', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  },
+  {
+    id: '10',
+    type: 'GROUP_VIDEO',
+    state: 'ENDED',
+    isOutgoing: true,
+    startTime: new Date(Date.now() - 1000 * 60 * 60 * 192).toISOString(), // 8 days ago
+    duration: 1800, // 30 minutes
+    participants: [
+      { id: 'user2', name: 'Marie Martin', isMe: false },
+      { id: 'user5', name: 'Thomas Leroy', isMe: false },
+      { id: 'user10', name: 'Antoine Michel', isMe: false },
+      { id: 'me', name: 'Moi', isMe: true }
+    ]
+  }
+];
+
 // État initial
 const initialState = {
   // Appel actuel
   currentCall: null,
   
   // Historique des appels
-  callHistory: [],
+  callHistory: mockCallHistory,
   
   // Paramètres d'appel
   settings: {
