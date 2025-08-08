@@ -292,11 +292,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {groupInterfaceLoaded ? (
-                        <GroupInterface />
-                      ) : (
-                        <Loading />
-                      )}
+                      <GroupList />
                     </motion.div>
                   )}
                   {activeTab === TABS.SETTINGS && (
