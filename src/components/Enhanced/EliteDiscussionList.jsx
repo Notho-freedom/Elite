@@ -469,7 +469,7 @@ const EliteDiscussionList = () => {
   const { showNotification, NotificationContainer } = useActionNotifications();
   
   // Utiliser les données réelles si disponibles, sinon les données mockées
-  const discussions = realDiscussions.length > 0 ? realDiscussions : mockDiscussions;
+  const discussions = realDiscussions.length == 0 ? realDiscussions : mockDiscussions;
 
   const handleFilterChange = useCallback((newFilter) => {
     setFilter(newFilter);

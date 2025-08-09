@@ -10,6 +10,7 @@ import ChatMenu from './chat/ChatMenu';
 import ChatSettings from './chat/ChatSettings';
 import EmojiPickerWrapper from './chat/EmojiPickerWrapper';
 import TypingIndicator from './chat/TypingIndicator';
+import DemoIndicator from './chat/DemoIndicator';
 import { useChatSync, ConnectionStatus, PerformanceOptimizer } from './chat/ChatSync';
 import { getAIStats } from './IA/AIResponse';
 import { BsPin, BsStar, BsGear, BsWifi } from 'react-icons/bs';
@@ -20,7 +21,8 @@ const ChatPage = () => {
     activeChat, 
     setActiveChat, 
     setActiveCall, 
-    setShowProfile 
+    setShowProfile,
+    isAuthenticated 
   } = useApp();
   
   const {
@@ -138,6 +140,15 @@ const ChatPage = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
+      {/* Indicateur de mode démo */}
+      {!isAuthenticated && (
+        <DemoIndicator 
+          theme={theme} 
+          aiEnabled={aiEnabled} 
+          onToggleAI={toggleAI} 
+        />
+      )}
+
       {/* Header avec nouveaux boutons */}
       <div className="relative">
         <ChatHeader 
