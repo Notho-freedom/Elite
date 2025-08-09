@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiCheck, FiX, FiInfo, FiAlertTriangle, FiAlertCircle,
   FiCopy, FiDownload, FiHeart, FiShare2, FiEdit3,
-  FiTrash2, FiPin, FiLock, FiEye, FiEyeOff
+  FiTrash2, FiLock, FiEye, FiEyeOff
 } from 'react-icons/fi';
+import { FaThumbtack } from 'react-icons/fa';
 
 // Types de notifications
 const NOTIFICATION_TYPES = {
@@ -77,12 +78,12 @@ const ACTION_CONFIG = {
     type: NOTIFICATION_TYPES.INFO
   },
   pin: {
-    icon: FiPin,
+    icon: FaThumbtack,
     message: 'Message épinglé',
     type: NOTIFICATION_TYPES.SUCCESS
   },
   unpin: {
-    icon: FiPin,
+    icon: FaThumbtack,
     message: 'Message désépinglé',
     type: NOTIFICATION_TYPES.INFO
   },

@@ -4,7 +4,6 @@ import {
   FiMic, FiMicOff, FiPlay, FiPause, FiTrash2, 
   FiSend, FiSquare, FiVolume2, FiVolumeX 
 } from 'react-icons/fi';
-import { BsWaveform } from 'react-icons/bs';
 
 const VoiceRecorder = ({ 
   onSend, 

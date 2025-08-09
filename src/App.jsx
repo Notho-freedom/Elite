@@ -26,9 +26,7 @@ function App() {
       <AuthProvider>
         <AppProvider>
           <NotificationProvider>
-            <div className="App">
               <AppContent />
-            </div>
           </NotificationProvider>
         </AppProvider>
       </AuthProvider>

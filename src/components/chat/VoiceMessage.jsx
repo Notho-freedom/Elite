@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiPlay, FiPause, FiVolume2, FiVolumeX, FiDownload } from 'react-icons/fi';
-import { BsWaveform } from 'react-icons/bs';
 
 const VoiceMessage = ({ 
   audioUrl, 
