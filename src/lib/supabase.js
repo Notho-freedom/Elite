@@ -346,4 +346,4 @@ export const calls = {
   }
 }
 
-export default supabase 
+export default supabase;

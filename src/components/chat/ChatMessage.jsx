@@ -34,12 +34,13 @@ const ChatMessage = ({
   onPin,
   onMarkImportant,
   onCopy,
-  onForward
+  onForward,
+  currentUserId // Nouveau prop pour le nouveau schéma
 }) => {
   const [showActions, setShowActions] = useState(false);
   const [showReactionMenu, setShowReactionMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(message.text);
+  const [editText, setEditText] = useState(message.content || message.text);
   const [showMenu, setShowMenu] = useState(false);
   const [isLongPressed, setIsLongPressed] = useState(false);
   
@@ -47,7 +48,8 @@ const ChatMessage = ({
   const editInputRef = useRef(null);
   const longPressTimerRef = useRef(null);
   
-  const isMe = message.sender === 'me';
+  // Compatible avec nouveau et ancien schéma
+  const isMe = message.sender === 'me' || message.sender_id === currentUserId;
   const hasReactions = message.reactions && message.reactions.length > 0;
 
   // Gestion de l'édition

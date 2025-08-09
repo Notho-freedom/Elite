@@ -108,12 +108,12 @@ const useAvailableUsers = (filters = {}) => {
   // Filtrer les utilisateurs en ligne
   const onlineUsers = users.filter(u => u.is_online);
 
-  // Filtrer les utilisateurs récemment actifs
+  // Filtrer les utilisateurs récemment actifs (nouveau schéma)
   const recentUsers = users.filter(u => {
-    if (!u.last_sign_in_at) return false;
-    const lastSignIn = new Date(u.last_sign_in_at);
+    if (!u.last_seen) return false;
+    const lastSeen = new Date(u.last_seen);
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-    return lastSignIn > threeDaysAgo;
+    return lastSeen > threeDaysAgo;
   });
 
   return {

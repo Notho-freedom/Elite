@@ -3,8 +3,8 @@ import useFetchDiscussions from './../hooks/useFetchDiscussions';
 import { useTheme } from './ThemeContext';
 import { useMediaQuery } from 'react-responsive';
 import { useAuth } from './AuthContext';
-import { db, calls } from '../../lib/supabase';
-import { createEliteDemoMessages, enrichMessagesWithEliteFeatures } from '../Enhanced/EliteDataEnricher';
+import { supabase, calls } from '../../lib/supabase';
+import { createEliteDemoMessages } from '../Enhanced/EliteDataEnricher';
 import userService from '../../services/userService';
 
 // Enum pour éviter les strings magiques
@@ -77,7 +77,7 @@ export const AppProvider = ({ children }) => {
     }
   }, [isAuthenticated, mockDiscussions.length, fetchRandomUsers]);
 
-  // Charger toutes les données de l'utilisateur
+  // Charger toutes les données de l'utilisateur (nouveau schéma)
   const loadUserData = async () => {
     if (!user?.id) return;
 
@@ -87,15 +87,24 @@ export const AppProvider = ({ children }) => {
 
       console.log('🔄 Chargement des données pour utilisateur:', user.id);
 
-      // Charger les discussions de l'utilisateur (excluant automatiquement l'utilisateur courant)
+      // Charger les discussions de l'utilisateur (nouveau schéma avec vue optimisée)
       const discussionsResult = await userService.getUserDiscussions(user.id);
       
       if (!discussionsResult.success) {
         throw new Error(`Erreur discussions: ${discussionsResult.error}`);
       }
 
-      // Charger l'historique des appels
-      const { data: callHistoryData, error: callHistoryError } = await calls.getCallHistory(user.id);
+      // Charger l'historique des appels depuis la nouvelle table
+      const { data: callHistoryData, error: callHistoryError } = await supabase
+        .from('calls')
+        .select(`
+          *,
+          initiator:initiator_id(*),
+          call_participants(*)
+        `)
+        .or(`initiator_id.eq.${user.id},call_participants.user_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
       if (callHistoryError) {
         console.warn('Avertissement calls:', callHistoryError.message);
         // Les appels ne sont pas critiques, on continue
@@ -105,14 +114,15 @@ export const AppProvider = ({ children }) => {
       setRealDiscussions(discussionsResult.data || []);
       setRealCallHistory(callHistoryData || []);
 
-      // Mettre à jour les notifications
+      // Mettre à jour les notifications (nouveau format)
       updateNotifications(discussionsResult.data || [], callHistoryData || []);
 
-      console.log('✅ Données utilisateur chargées:', {
+      console.log('✅ Données utilisateur chargées (nouveau schéma):', {
         discussions: discussionsResult.data?.length || 0,
         calls: callHistoryData?.length || 0,
         currentUser: user.id,
-        excludedFromDiscussions: true
+        excludedFromDiscussions: true,
+        schema: 'updated'
       });
 
     } catch (error) {
@@ -139,17 +149,82 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  // Charger les messages d'une discussion
+  // Charger les messages d'une discussion (nouveau schéma)
   const loadMessages = async (discussionId) => {
     if (!discussionId) return;
 
     try {
       setLoadingData(true);
-      const { data, error } = await db.getMessages(discussionId);
+      
+      // Utiliser la nouvelle table messages avec tous les champs
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:sender_id(*),
+          reply_to:reply_to_id(*),
+          message_reactions(*),
+          message_read_status(*)
+        `)
+        .eq('discussion_id', discussionId)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: true });
       
       if (error) throw error;
       
-      setRealMessages(data || []);
+      // Transformer les données pour le frontend
+      const formattedMessages = data?.map(message => ({
+        id: message.id,
+        discussion_id: message.discussion_id,
+        sender_id: message.sender_id,
+        content: message.content,
+        type: message.message_type || 'text',
+        
+        // Métadonnées médias
+        media_url: message.media_url,
+        media_type: message.media_type,
+        media_size: message.media_size,
+        media_name: message.media_name,
+        thumbnail_url: message.thumbnail_url,
+        
+        // Réponses et mentions
+        reply_to_id: message.reply_to_id,
+        reply_to: message.reply_to,
+        mentions: message.mentions || [],
+        
+        // Statuts
+        status: message.status || 'sent',
+        is_edited: message.is_edited || false,
+        is_deleted: message.is_deleted || false,
+        is_pinned: message.is_pinned || false,
+        is_important: message.is_important || false,
+        
+        // Réactions
+        reactions: message.reactions || [],
+        message_reactions: message.message_reactions || [],
+        
+        // Lecture
+        message_read_status: message.message_read_status || [],
+        
+        // Métadonnées et localisation
+        metadata: message.metadata || {},
+        location: message.location,
+        
+        // Timestamps
+        created_at: message.created_at,
+        updated_at: message.updated_at,
+        deleted_at: message.deleted_at,
+        
+        // Compatibilité frontend existant
+        time: new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sender: message.sender?.name || 'Utilisateur',
+        avatar: message.sender?.avatar_url,
+        isRead: message.message_read_status?.some(rs => rs.user_id === user?.id) || false
+      })) || [];
+      
+      setRealMessages(formattedMessages);
+      
+      console.log('✅ Messages chargés (nouveau schéma):', formattedMessages.length);
     } catch (error) {
       console.error('Erreur lors du chargement des messages:', error);
       setDataError(error.message);
@@ -158,31 +233,53 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Envoyer un message
-  const sendMessage = async (content, messageType = 'text') => {
+  // Envoyer un message (nouveau schéma)
+  const sendMessage = async (content, messageType = 'text', additionalData = {}) => {
     if (!activeChat) return;
 
     try {
       if (isAuthenticated && user) {
-        // Mode Supabase
-        const { data, error } = await db.sendMessage(
-          activeChat.id,
-          user.id,
-          content,
-          messageType
-        );
+        // Mode Supabase avec nouveau schéma
+        const messageData = {
+          discussion_id: activeChat.discussion_id || activeChat.id,
+          sender_id: user.id,
+          content: content.text || content,
+          message_type: messageType,
+          status: 'sent',
+          
+          // Données supplémentaires du nouveau schéma
+          media_url: additionalData.media_url || null,
+          media_type: additionalData.media_type || null,
+          media_size: additionalData.media_size || null,
+          media_name: additionalData.media_name || null,
+          thumbnail_url: additionalData.thumbnail_url || null,
+          reply_to_id: additionalData.reply_to_id || null,
+          mentions: additionalData.mentions || [],
+          metadata: additionalData.metadata || {},
+          location: additionalData.location || null
+        };
 
+        const { data, error } = await supabase
+          .from('messages')
+          .insert(messageData)
+          .select(`
+            *,
+            sender:sender_id(*)
+          `)
+          .single();
+        
         if (error) throw error;
-
-        // Ajouter le message à la liste locale
-        setRealMessages(prev => [data[0], ...prev]);
+        
+        // Recharger les messages pour voir le nouveau message
+        await loadMessages(activeChat.discussion_id || activeChat.id);
         
         // Recharger les discussions pour mettre à jour le dernier message
         await loadUserData();
 
-        return { success: true, data };
+        console.log('✅ Message envoyé (nouveau schéma):', data.id);
+        return { success: true, data: [data] };
       } else {
-        // Mode démonstration
+        // Mode démonstration (compatible)
         const newMessage = {
           id: Date.now().toString(),
           text: content.text || content,
@@ -191,16 +288,14 @@ export const AppProvider = ({ children }) => {
           timestamp: new Date().toISOString(),
           isRead: false,
           type: messageType || 'text',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+          status: 'sent',
+          ...additionalData
         };
 
         // Ajouter le message à la liste locale
         setMockMessages(prev => [newMessage, ...prev]);
         
-        // Mettre à jour le dernier message dans les discussions mockées
-        // Note: Les discussions mockées sont gérées par useFetchDiscussions
-        // Cette mise à jour sera visible lors du prochain rechargement
-
         return { success: true, data: [newMessage] };
       }
     } catch (error) {
@@ -214,7 +309,7 @@ export const AppProvider = ({ children }) => {
     if (!user) return;
 
     try {
-      const { data, error } = await db.createDiscussion([user.id, ...participantIds], name);
+      const { data, error } = await supabase.createDiscussion([user.id, ...participantIds], name);
       
       if (error) throw error;
 

@@ -59,21 +59,22 @@ const AvailableUsersList = ({ onUserSelect, onCreateConversation }) => {
       const result = await createConversationWithUser(otherUser.id);
       
       if (result.success) {
-        // Transformer les données pour correspondre au format attendu
-        const discussionData = {
-          id: result.conversation.id,
-          name: otherUser.full_name || otherUser.username || 'Utilisateur',
-          avatar: otherUser.avatar_url || 'https://via.placeholder.com/150',
-          lastMessage: result.isNew ? 'Nouvelle conversation' : 'Conversation existante',
-          time: new Date().toISOString(),
-          unread: false,
-          unread_count: 0,
-          isOnline: otherUser.is_online || false,
-          typing: false,
-          user_id: otherUser.id,
-          conversation_id: result.conversation.id,
-          type: 'private'
-        };
+                 // Transformer les données pour correspondre au format attendu (nouveau schéma)
+         const discussionData = {
+           id: result.conversation.id,
+           name: otherUser.name || otherUser.username || 'Utilisateur',
+           avatar: otherUser.avatar_url || 'https://via.placeholder.com/150',
+           lastMessage: result.isNew ? 'Nouvelle conversation' : 'Conversation existante',
+           time: new Date().toISOString(),
+           unread: false,
+           unread_count: 0,
+           isOnline: otherUser.is_online || false,
+           typing: false,
+           user_id: otherUser.id,
+           discussion_id: result.conversation.id, // Nouveau schéma
+           conversation_id: result.conversation.id, // Compatibilité
+           type: 'private'
+         };
 
         if (onCreateConversation) {
           onCreateConversation(discussionData);
@@ -114,19 +115,27 @@ const AvailableUsersList = ({ onUserSelect, onCreateConversation }) => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-medium truncate">
-                {user.full_name || user.username || 'Utilisateur'}
+                {user.name || user.username || 'Utilisateur'}
               </h3>
               {user.is_online && (
                 <span className="text-xs text-green-500 font-medium">En ligne</span>
+              )}
+              {user.status && user.status !== 'online' && user.status !== 'offline' && (
+                <span className={`text-xs font-medium ${
+                  user.status === 'away' ? 'text-yellow-500' : 
+                  user.status === 'busy' ? 'text-red-500' : 'text-gray-500'
+                }`}>
+                  {user.status === 'away' ? 'Absent' : user.status === 'busy' ? 'Occupé' : user.status}
+                </span>
               )}
             </div>
             
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>@{user.username || user.email?.split('@')[0]}</span>
-              {user.last_sign_in_at && (
+              {user.last_seen && (
                 <span className="flex items-center gap-1">
                   <FiClock size={12} />
-                  {new Date(user.last_sign_in_at).toLocaleDateString()}
+                  {new Date(user.last_seen).toLocaleDateString()}
                 </span>
               )}
             </div>
