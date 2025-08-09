@@ -53,9 +53,14 @@ const WorldGlobe = () => {
       .pointLabel('label')
       .pointsTransitionDuration(600);
 
+    const controls = g.controls();
+
     // Auto-rotate and initial POV
-    g.controls().autoRotate = true;
-    g.controls().autoRotateSpeed = 0.6;
+    if (controls) {
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.6;
+    }
+    
     g.pointOfView({ altitude: 2.4 });
 
     globeRef.current = g;
