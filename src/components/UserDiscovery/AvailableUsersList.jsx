@@ -7,7 +7,7 @@ import {
 import { useApp } from '../Context/AppContext';
 import useAvailableUsers from '../../hooks/useAvailableUsers';
 
-const AvailableUsersList = ({ onUserSelect, onCreateConversation }) => {
+const AvailableUsersList = ({ onUserSelect, onCreateConversation, includeCurrent = false }) => {
   const { theme } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, online, recent
@@ -27,7 +27,7 @@ const AvailableUsersList = ({ onUserSelect, onCreateConversation }) => {
     searchUsers,
     createConversationWithUser,
     currentUserId
-  } = useAvailableUsers(filters);
+  } = useAvailableUsers(filters, includeCurrent);
 
   // Gérer la recherche
   const handleSearch = async (term) => {
@@ -180,7 +180,7 @@ const AvailableUsersList = ({ onUserSelect, onCreateConversation }) => {
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <FiUsers className="text-blue-500" />
-          Utilisateurs disponibles
+          {includeCurrent ? 'Tous les utilisateurs' : 'Utilisateurs disponibles'}
         </h2>
 
         {/* Barre de recherche */}
@@ -293,7 +293,7 @@ const AvailableUsersList = ({ onUserSelect, onCreateConversation }) => {
       </div>
 
       {/* Footer avec informations */}
-      {currentUserId && (
+      {currentUserId && !includeCurrent && (
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 text-center">
             Votre ID: {currentUserId} • Vous êtes exclu(e) de cette liste

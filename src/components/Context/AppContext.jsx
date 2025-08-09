@@ -15,6 +15,7 @@ export const TABS = {
   CALLS: 'calls',
   SETTINGS: 'settings',
   NATIVE: 'native',
+  WORLD: 'world',
 };
 
 const AppContext = createContext();
@@ -48,6 +49,7 @@ export const AppProvider = ({ children }) => {
     [TABS.CALLS]: 0,
     [TABS.SETTINGS]: 0,
     [TABS.NATIVE]: 0,
+    [TABS.WORLD]: 0,
   });
 
   // Charger les discussions réelles quand l'utilisateur est connecté
@@ -66,6 +68,7 @@ export const AppProvider = ({ children }) => {
         [TABS.CALLS]: 0,
         [TABS.SETTINGS]: 0,
         [TABS.NATIVE]: 0,
+        [TABS.WORLD]: 0,
       });
     }
   }, [isAuthenticated, user]);
@@ -146,6 +149,7 @@ export const AppProvider = ({ children }) => {
       [TABS.CALLS]: missedCalls + activeCalls,
       [TABS.SETTINGS]: 0,
       [TABS.NATIVE]: 0,
+      [TABS.WORLD]: 0,
     });
   };
 
