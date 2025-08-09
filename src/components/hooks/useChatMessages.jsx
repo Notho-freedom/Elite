@@ -4,6 +4,7 @@ import useSound from 'use-sound';
 import { useLocalStorage } from 'usehooks-ts';
 import { askGroq, clearChatHistory } from '../IA/AIResponse';
 import { useApp } from '../Context/AppContext';
+import { createEliteDemoMessagesForContact } from '../Enhanced/EliteDataEnricher';
 
 // Configuration des sons
 const SOUNDS = {
@@ -23,7 +24,10 @@ const STORAGE_KEYS = {
 
 const useChatMessages = () => {
   // État principal
-  const { activeChat, messages, setMessages } = useApp();
+  const { activeChat, isAuthenticated } = useApp();
+  
+  // Messages locaux pour chaque chat
+  const [chatMessages, setChatMessages] = useState({});
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,7 +49,46 @@ const useChatMessages = () => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const aiResponseTimeoutRef = useRef(null);
-  
+
+  // Messages pour le chat actuel
+  const messages = useMemo(() => {
+    if (!activeChat?.id) return [];
+    return chatMessages[activeChat.id] || [];
+  }, [chatMessages, activeChat?.id]);
+
+  // Fonction pour mettre à jour les messages d'un chat spécifique
+  const setMessages = useCallback((newMessages) => {
+    if (!activeChat?.id) return;
+    
+    setChatMessages(prev => ({
+      ...prev,
+      [activeChat.id]: typeof newMessages === 'function' 
+        ? newMessages(prev[activeChat.id] || [])
+        : newMessages
+    }));
+  }, [activeChat?.id]);
+
+  // Initialiser les messages de démonstration quand un chat devient actif
+  useEffect(() => {
+    if (activeChat?.id && !isAuthenticated) {
+      // Si ce chat n'a pas encore de messages, initialiser avec des messages de démo
+      if (!chatMessages[activeChat.id] || chatMessages[activeChat.id].length === 0) {
+        const demoMessages = createEliteDemoMessagesForContact(activeChat.id, activeChat.name).map(msg => ({
+          ...msg,
+          time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: msg.sender === 'me' ? 'read' : 'delivered',
+          reactions: msg.reactions || [],
+          isPinned: msg.isPinned || false,
+          isImportant: msg.isImportant || false,
+          replyTo: msg.replyTo || null,
+          mentions: msg.mentions || []
+        }));
+        
+        setMessages(demoMessages);
+      }
+    }
+  }, [activeChat?.id, isAuthenticated, chatMessages, setMessages]);
+
   // Sons
   const [playSendSound] = useSound(SOUNDS.SEND, { 
     volume: 0.3,
@@ -108,7 +151,7 @@ const useChatMessages = () => {
 
   // Gestion des réponses IA améliorée
   useEffect(() => {
-    if (!aiEnabled) return;
+    if (!aiEnabled || !activeChat?.isOnline) return;
 
     const handleAIResponse = async (lastMessage) => {
       try {
@@ -132,7 +175,10 @@ const useChatMessages = () => {
           reactions: [],
           type: 'text',
           isAI: true,
-          replyTo: lastMessage.id
+          replyTo: lastMessage.id,
+          isPinned: false,
+          isImportant: false,
+          mentions: []
         };
 
         setMessages(prev => [...prev, replyMessage]);
@@ -160,7 +206,10 @@ const useChatMessages = () => {
           reactions: [],
           type: 'text',
           isAI: true,
-          isError: true
+          isError: true,
+          isPinned: false,
+          isImportant: false,
+          mentions: []
         };
 
         setMessages(prev => [...prev, errorMessage]);
@@ -169,7 +218,7 @@ const useChatMessages = () => {
 
     const lastMessage = messages[messages.length - 1];
 
-    if (lastMessage?.sender === 'me' && lastMessage?.text && activeChat?.isOnline && !lastMessage.isEdited) {
+    if (lastMessage?.sender === 'me' && lastMessage?.text && !lastMessage.isEdited) {
       // Nettoyer les timeouts précédents
       if (aiResponseTimeoutRef.current) {
         clearTimeout(aiResponseTimeoutRef.current);
@@ -186,7 +235,7 @@ const useChatMessages = () => {
       }
       stopTypingSound();
     };
-  }, [messages, activeChat, soundEnabled, aiEnabled, autoReplyDelay]);
+  }, [messages, activeChat, soundEnabled, aiEnabled, autoReplyDelay, playTypingSound, stopTypingSound, playReceiveSound, playNotificationSound, setMessages]);
 
   // Envoi de message amélioré
   const handleSend = useCallback((e, { message, media = [] } = {}) => {
@@ -209,7 +258,9 @@ const useChatMessages = () => {
       isRead: false,
       type: media.length > 0 ? 'media' : 'text',
       replyTo: replyingTo?.id || null,
-      mentions: extractMentions(message || '')
+      mentions: extractMentions(message || ''),
+      isPinned: false,
+      isImportant: false
     };
 
     setMessages(prev => [...prev, newMessage]);
@@ -233,7 +284,7 @@ const useChatMessages = () => {
     setTimeout(() => updateMessageStatus('delivered'), 800);
     setTimeout(() => updateMessageStatus('read', true), 1600);
     
-  }, [soundEnabled, playSendSound, replyingTo, saveDraft]);
+  }, [soundEnabled, playSendSound, replyingTo, saveDraft, setMessages]);
 
   // Extraction des mentions
   const extractMentions = useCallback((text) => {
