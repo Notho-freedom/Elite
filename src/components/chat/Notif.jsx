@@ -3,9 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiCheck, FiX, FiInfo, FiAlertTriangle, FiAlertCircle,
   FiCopy, FiDownload, FiHeart, FiShare2, FiEdit3,
-  FiTrash2, FiLock, FiEye, FiEyeOff
+  FiTrash2, FiPin, FiLock, FiEye, FiEyeOff
 } from 'react-icons/fi';
-import { FaThumbtack } from 'react-icons/fa';
 
 // Types de notifications
 const NOTIFICATION_TYPES = {
@@ -78,12 +77,12 @@ const ACTION_CONFIG = {
     type: NOTIFICATION_TYPES.INFO
   },
   pin: {
-    icon: FaThumbtack,
+    icon: FiPin,
     message: 'Message épinglé',
     type: NOTIFICATION_TYPES.SUCCESS
   },
   unpin: {
-    icon: FaThumbtack,
+    icon: FiPin,
     message: 'Message désépinglé',
     type: NOTIFICATION_TYPES.INFO
   },
@@ -291,6 +290,9 @@ const NotificationContainer = () => {
   );
 };
 
+<<<<<<< Current (Your changes)
+export default Notif;
+=======
 // Hook pour les notifications de messages
 export const useMessageNotifications = () => {
   const { notifyAction, notifySuccess, notifyError } = useNotifications();
@@ -337,3 +339,4 @@ export const useMessageNotifications = () => {
 
 // Export du composant pour compatibilité
 export default NotificationContainer;
+>>>>>>> Incoming (Background Agent changes)
