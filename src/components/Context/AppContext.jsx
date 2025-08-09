@@ -4,7 +4,7 @@ import { useTheme } from './ThemeContext';
 import { useMediaQuery } from 'react-responsive';
 import { useAuth } from './AuthContext';
 import { supabase, calls } from '../../lib/supabase';
-import { createEliteDemoMessages } from '../Enhanced/EliteDataEnricher';
+import { createEliteDemoMessages, enrichMessagesWithEliteFeatures } from '../Enhanced/EliteDataEnricher';
 import userService from '../../services/userService';
 
 // Enum pour éviter les strings magiques
@@ -15,23 +15,14 @@ export const TABS = {
   CALLS: 'calls',
   SETTINGS: 'settings',
   NATIVE: 'native',
-  WORLD: 'world'
 };
 
 const AppContext = createContext();
 
-/**
- * AppProvider component that provides global state and functionality to the application
- * It manages authentication, theme, discussions, messages, calls, and notifications
- */
 export const AppProvider = ({ children }) => {
-  // Destructure theme and mode from useTheme hook
   const { theme, mode, setMode, toggleTheme } = useTheme();
-  // Destructure authentication state from useAuth hook
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  // Destructure discussions data from useFetchDiscussions hook
   const { discussions: mockDiscussions, loading, error, fetchRandomUsers, sortedDiscussions } = useFetchDiscussions();
-  // Check if the current view is mobile
   const isMobile = useMediaQuery({ maxWidth: 779 });
   
   // États pour les données réelles
