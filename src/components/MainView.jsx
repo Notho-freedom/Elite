@@ -14,6 +14,7 @@ import { useAuth } from './Context/AuthContext';
 import FeatureNotification from './Enhanced/FeatureNotification';
 import { useState, useEffect } from 'react';
 import Profile from './chat/Profile';
+import AvailableUsersList from './UserDiscovery/AvailableUsersList';
 
 const MainView = () => {
   const {
@@ -164,6 +165,19 @@ const MainView = () => {
                   <NativeFeatures />
                 </motion.div>
               )}
+
+              {activeTab === TABS.WORLD && (
+                <motion.div
+                  key="native"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <AvailableUsersList />
+                </motion.div>
+              )}
+
             </AnimatePresence>
           </motion.div>
           <motion.div 
