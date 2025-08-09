@@ -5,6 +5,7 @@ import { useMediaQuery } from 'react-responsive';
 import { useAuth } from './AuthContext';
 import { db, calls } from '../../lib/supabase';
 import { createEliteDemoMessages, enrichMessagesWithEliteFeatures } from '../Enhanced/EliteDataEnricher';
+import userService from '../../services/userService';
 
 // Enum pour éviter les strings magiques
 export const TABS = {
@@ -78,27 +79,44 @@ export const AppProvider = ({ children }) => {
 
   // Charger toutes les données de l'utilisateur
   const loadUserData = async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setLoadingData(true);
       setDataError(null);
 
-      // Charger les discussions
-      const { data: discussionsData, error: discussionsError } = await db.getDiscussions(user.id);
-      if (discussionsError) throw discussionsError;
-      setRealDiscussions(discussionsData || []);
+      console.log('🔄 Chargement des données pour utilisateur:', user.id);
+
+      // Charger les discussions de l'utilisateur (excluant automatiquement l'utilisateur courant)
+      const discussionsResult = await userService.getUserDiscussions(user.id);
+      
+      if (!discussionsResult.success) {
+        throw new Error(`Erreur discussions: ${discussionsResult.error}`);
+      }
 
       // Charger l'historique des appels
       const { data: callHistoryData, error: callHistoryError } = await calls.getCallHistory(user.id);
-      if (callHistoryError) throw callHistoryError;
+      if (callHistoryError) {
+        console.warn('Avertissement calls:', callHistoryError.message);
+        // Les appels ne sont pas critiques, on continue
+      }
+
+      // Mettre à jour les états
+      setRealDiscussions(discussionsResult.data || []);
       setRealCallHistory(callHistoryData || []);
 
       // Mettre à jour les notifications
-      updateNotifications(discussionsData || [], callHistoryData || []);
+      updateNotifications(discussionsResult.data || [], callHistoryData || []);
+
+      console.log('✅ Données utilisateur chargées:', {
+        discussions: discussionsResult.data?.length || 0,
+        calls: callHistoryData?.length || 0,
+        currentUser: user.id,
+        excludedFromDiscussions: true
+      });
 
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
+      console.error('❌ Erreur lors du chargement des données:', error);
       setDataError(error.message);
     } finally {
       setLoadingData(false);

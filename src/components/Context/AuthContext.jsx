@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, supabase } from '../../lib/supabase';
+import userService from '../../services/userService';
 
 const AuthContext = createContext();
 
@@ -42,9 +43,41 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = auth.onAuthStateChange(
       async (event, session) => {
         console.log('Changement d\'état d\'authentification:', event, session?.user?.id);
-        setUser(session?.user || null);
+        
+        const user = session?.user;
+        setUser(user || null);
         setLoading(false);
         setError(null);
+
+        // Enregistrer/mettre à jour l'utilisateur en BD lors de la connexion
+        if (event === 'SIGNED_IN' && user) {
+          console.log('Utilisateur connecté, enregistrement en BD...');
+          try {
+            const result = await userService.upsertUserProfile(user);
+            if (result.success) {
+              console.log('✅ Profil utilisateur enregistré en BD:', result.data);
+              
+              // Mettre à jour le statut en ligne
+              await userService.updateOnlineStatus(user.id, true);
+              console.log('✅ Statut en ligne mis à jour');
+            } else {
+              console.error('❌ Erreur lors de l\'enregistrement:', result.error);
+            }
+          } catch (error) {
+            console.error('❌ Erreur lors de l\'enregistrement en BD:', error);
+          }
+        }
+
+        // Marquer comme hors ligne lors de la déconnexion
+        if (event === 'SIGNED_OUT' && user) {
+          console.log('Utilisateur déconnecté, mise à jour du statut...');
+          try {
+            await userService.setUserOffline(user.id);
+            console.log('✅ Utilisateur marqué comme hors ligne');
+          } catch (error) {
+            console.error('❌ Erreur lors de la mise hors ligne:', error);
+          }
+        }
       }
     );
 
