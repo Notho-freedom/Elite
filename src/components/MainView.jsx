@@ -19,6 +19,7 @@ import SettingsList from './Settings/SettingsList';
 import FeatureNotification from './Enhanced/FeatureNotification';
 import StatusList from './Status/StatusList';
 import { useState, useEffect } from 'react';
+import EnhancedProfile from './Profile/EnhancedProfile';
 
 const MainView = () => {
   const {
@@ -82,7 +83,7 @@ const MainView = () => {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
             >
-              <Profile />
+              <EnhancedProfile />
             </motion.div>
           </motion.div>
         )}

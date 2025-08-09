@@ -25,8 +25,8 @@ import ReactionMenu from './ReactionMenu';
 const ChatMessage = ({ 
   message, 
   addReaction, 
-  theme,
-  variants,
+  theme, 
+  variants, 
   activeChat,
   onReply,
   onEdit,
@@ -218,12 +218,12 @@ const ChatMessage = ({
   );
 
   return (
-      <motion.div
+    <motion.div
       ref={messageRef}
-        variants={variants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
+      variants={variants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       className={`mb-3 relative group ${isMe ? 'ml-auto' : 'mr-auto'}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => {
@@ -299,10 +299,10 @@ const ChatMessage = ({
                 </div>
               </div>
             ) : (
-          <MessageBubble 
-            message={message} 
+              <MessageBubble
+                message={message}
                 isMe={isMe}
-            theme={theme} 
+                theme={theme}
                 onClick={() => setShowReactionMenu(!showReactionMenu)}
               />
             )}
@@ -391,8 +391,8 @@ const ChatMessage = ({
               <MessageReactions 
                 reactions={message.reactions}
                 onReactionClick={(reaction) => addReaction(message.id, reaction)}
-          />
-        </div>
+              />
+            </div>
           )}
 
           {/* Heure et statut */}
