@@ -125,4 +125,8 @@ Cliquez sur l'icône ⚙️ en haut à droite pour accéder à :
 
 **🎯 Cette démo showcases toutes les capacités d'Elite Chat en mode interactif !**
 
+<<<<<<< HEAD
 **Application disponible sur :** `http://localhost:5173`
+=======
+**Application disponible sur :** `http://localhost:5173`
+>>>>>>> f1270d92a9bb13ef0ce8e60ccba33810aff5d1f1
