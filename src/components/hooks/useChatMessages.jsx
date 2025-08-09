@@ -124,6 +124,7 @@ const useChatMessages = () => {
 
     setTimeout(() => updateMessageStatus('delivered'), 800);
     setTimeout(() => updateMessageStatus('read', true), 1600);
+    
   }, [soundEnabled, playSendSound]);
 
   // Scroll automatique

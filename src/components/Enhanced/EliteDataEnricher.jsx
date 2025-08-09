@@ -322,3 +322,28 @@ const EliteDataEnricher = () => {
 };
 
 export default EliteDataEnricher;
+
+
+export function normalizeMessage(raw) {
+  let parsedContent = {};
+
+  try {
+    parsedContent = JSON.parse(raw.content || "{}");
+  } catch (e) {
+    console.error("Erreur parsing content", e, raw.content);
+    parsedContent = { text: raw.content || "", media: [] };
+  }
+
+  return {
+    id: raw.id,
+    discussionId: raw.discussion_id,
+    senderId: raw.senderId,
+    sender: parsedContent.sender || null,
+    text: parsedContent.text || "",
+    media: Array.isArray(parsedContent.media) ? parsedContent.media : [],
+    replyTo: parsedContent.replyTo || raw.reply_to_id || null,
+    timestamp: parsedContent.timestamp || raw.created_at,
+    isRead: parsedContent.isRead ?? false,
+    isEdited: parsedContent.isEdited ?? false
+  };
+}
