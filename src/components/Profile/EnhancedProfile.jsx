@@ -220,7 +220,7 @@ const EnhancedProfile = () => {
               {/* Badge de type d'utilisateur */}
               {userProfile.isPremium() && (
                 <div className={`absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-r ${getUserTypeColor()} rounded-full flex items-center justify-center shadow-lg`}>
-                  {userProfile.userType === USER_TYPES.ELITE && <FaCrown className="text-white text-sm" />}
+                  {userProfile.userType === USER_TYPES.ELITE && <FiCrown className="text-white text-sm" />}
                   {userProfile.userType === USER_TYPES.CREATOR && <FiStar className="text-white text-sm" />}
                   {userProfile.userType === USER_TYPES.BUSINESS && <FiShield className="text-white text-sm" />}
                   {userProfile.userType === USER_TYPES.PREMIUM && <FiAward className="text-white text-sm" />}

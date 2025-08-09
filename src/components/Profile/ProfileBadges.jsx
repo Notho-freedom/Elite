@@ -5,8 +5,8 @@ import {
   FiTrendingUp, FiCode, FiMic, FiCamera, FiHeart,
   FiUsers, FiZap, FiGift, FiTarget
 } from 'react-icons/fi';
-import { FaCrown } from 'react-icons/fa';
 import { USER_TYPES } from '../../models/UserProfile';
+import { FaCrown } from 'react-icons/fa';
 
 const ProfileBadges = ({ badges, userType }) => {
   // Configuration des badges avec leurs propriétés

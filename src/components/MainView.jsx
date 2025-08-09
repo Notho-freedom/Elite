@@ -1,11 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import CallHistory from "./CallHistory";
-import DiscussionList from "./DiscussionList";
 import EliteDiscussionList from './Enhanced/EliteDiscussionList';
-import ChatPage from './ChatPage';
 import EnhancedChatPage from './chat/Enhanced/EnhancedChatPage';
 import CallInterface from './Elite/Calls/CallInterface';
-import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
 import StatusInterface from './Elite/Status/StatusInterface';
@@ -14,12 +11,9 @@ import GroupInterface from './Elite/Groups/GroupInterface';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
 import { useAuth } from './Context/AuthContext';
-import GroupList from './Groups/GroupList';
-import SettingsList from './Settings/SettingsList';
 import FeatureNotification from './Enhanced/FeatureNotification';
-import StatusList from './Status/StatusList';
 import { useState, useEffect } from 'react';
-import EnhancedProfile from './Profile/EnhancedProfile';
+import Profile from './chat/Profile';
 
 const MainView = () => {
   const {
@@ -83,7 +77,7 @@ const MainView = () => {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
             >
-              <EnhancedProfile />
+              <Profile />
             </motion.div>
           </motion.div>
         )}

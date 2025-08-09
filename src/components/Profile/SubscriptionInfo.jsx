@@ -5,7 +5,6 @@ import {
   FiCalendar, FiCreditCard, FiTrendingUp, FiZap
 } from 'react-icons/fi';
 import { FaCrown } from 'react-icons/fa';
-
 import { USER_TYPES } from '../../models/UserProfile';
 
 const SubscriptionInfo = ({ subscription, userType }) => {
