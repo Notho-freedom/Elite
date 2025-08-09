@@ -187,6 +187,46 @@ class UserService {
   }
 
   /**
+   * Récupérer tous les utilisateurs (liste intégrale)
+   * @param {Object} filters - Filtres optionnels
+   */
+  async getAllUsers(filters = {}) {
+    try {
+      let query = supabase
+        .from('users')
+        .select('*');
+
+      // Appliquer les filtres optionnels
+      if (filters.isOnline) {
+        query = query.eq('is_online', true);
+      }
+
+      if (filters.isActive) {
+        query = query.neq('status', 'offline');
+      }
+
+      if (filters.search) {
+        query = query.or(`name.ilike.%${filters.search}%,username.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+      }
+
+      // Ordonner par dernière activité
+      query = query.order('last_seen', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erreur lors de la récupération de tous les utilisateurs:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Erreur dans getAllUsers:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Récupérer les discussions de l'utilisateur (nouveau schéma)
    * @param {string} currentUserId - ID de l'utilisateur courant
    */

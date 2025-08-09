@@ -7,6 +7,7 @@ import Entry from "./Entry";
 import Loading from './Loading';
 import StatusInterface from './Elite/Status/StatusInterface';
 import NativeFeatures from './NativeFeatures';
+import WorldGlobe from './World/WorldGlobe';
 import GroupInterface from './Elite/Groups/GroupInterface';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
@@ -14,7 +15,7 @@ import { useAuth } from './Context/AuthContext';
 import FeatureNotification from './Enhanced/FeatureNotification';
 import { useState, useEffect } from 'react';
 import Profile from './chat/Profile';
-import AvailableUsersList from './UserDiscovery/AvailableUsersList';
+import WorldUsersPanel from './World/WorldUsersPanel';
 
 const MainView = () => {
   const {
@@ -168,13 +169,13 @@ const MainView = () => {
 
               {activeTab === TABS.WORLD && (
                 <motion.div
-                  key="native"
+                  key="world-left"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <AvailableUsersList />
+                  <WorldUsersPanel />
                 </motion.div>
               )}
 
@@ -197,6 +198,17 @@ const MainView = () => {
                   className="h-full"
                 >
                   <EnhancedChatPage />
+                </motion.div>
+              ) : activeTab === TABS.WORLD ? (
+                <motion.div
+                  key="world-right"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full"
+                >
+                  <WorldGlobe />
                 </motion.div>
               ) : (
                 <motion.div
@@ -306,6 +318,17 @@ const MainView = () => {
                       transition={{ duration: 0.2 }}
                     >
                       <NativeFeatures />
+                    </motion.div>
+                  )}
+                  {activeTab === TABS.WORLD && (
+                    <motion.div
+                      key="world-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <WorldUsersPanel />
                     </motion.div>
                   )}
                 </AnimatePresence>
