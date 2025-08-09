@@ -140,50 +140,108 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Envoyer un message
-  const sendMessage = async (content, messageType = 'text') => {
-    if (!activeChat) return;
+  // Envoyer un message (adapté à la nouvelle structure)
+  const sendMessage = async (messageContent, messageType = 'text') => {
+    if (!activeChat || !user) {
+      console.warn('Pas de chat actif ou d\'utilisateur connecté');
+      return { success: false, error: 'Pas de chat actif' };
+    }
 
     try {
-      if (isAuthenticated && user) {
-        // Mode Supabase
+      if (isAuthenticated) {
+        // Mode Supabase - envoyer selon la nouvelle structure
+        let messageData;
+        
+        if (typeof messageContent === 'string') {
+          // Message texte simple
+          messageData = messageContent;
+        } else if (messageContent && typeof messageContent === 'object') {
+          // Message complexe avec texte et/ou médias
+          messageData = {
+            message: messageContent.text || messageContent.message || '',
+            media: messageContent.media || []
+          };
+        } else {
+          messageData = '';
+        }
+
         const { data, error } = await db.sendMessage(
           activeChat.id,
           user.id,
-          content,
-          messageType
+          messageData
         );
 
         if (error) throw error;
 
-        // Ajouter le message à la liste locale
-        setRealMessages(prev => [data[0], ...prev]);
+        // Ajouter les nouveaux messages à la liste locale
+        if (data && Array.isArray(data)) {
+          setRealMessages(prev => [...prev, ...data]);
+        }
         
-        // Recharger les discussions pour mettre à jour le dernier message
+        // Recharger les discussions pour mettre à jour la liste
         await loadUserData();
 
         return { success: true, data };
       } else {
         // Mode démonstration
-        const newMessage = {
-          id: Date.now().toString(),
-          text: content.text || content,
-          sender: 'me',
-          senderId: 'me',
-          timestamp: new Date().toISOString(),
-          isRead: false,
-          type: messageType || 'text',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-        };
-
-        // Ajouter le message à la liste locale
-        setMockMessages(prev => [newMessage, ...prev]);
+        let demoMessage;
         
-        // Mettre à jour le dernier message dans les discussions mockées
-        // Note: Les discussions mockées sont gérées par useFetchDiscussions
-        // Cette mise à jour sera visible lors du prochain rechargement
+        if (typeof messageContent === 'string') {
+          demoMessage = {
+            id: Date.now().toString(),
+            text: messageContent,
+            sender: 'me',
+            senderId: 'demo-user',
+            timestamp: new Date().toISOString(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: 'text',
+            isRead: false,
+            reactions: [],
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+          };
+        } else if (messageContent && messageContent.media?.length > 0) {
+          // Messages avec médias - créer un message par média
+          const mediaMessages = [];
+          
+          // Message texte d'abord s'il y en a un
+          if (messageContent.text || messageContent.message) {
+            mediaMessages.push({
+              id: `${Date.now()}-text`,
+              text: messageContent.text || messageContent.message,
+              sender: 'me',
+              senderId: 'demo-user',
+              timestamp: new Date().toISOString(),
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              type: 'text',
+              isRead: false,
+              reactions: [],
+              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+            });
+          }
+          
+          // Puis un message par média
+          messageContent.media.forEach((media, index) => {
+            mediaMessages.push({
+              id: `${Date.now()}-media-${index}`,
+              text: '',
+              sender: 'me',
+              senderId: 'demo-user',
+              timestamp: new Date().toISOString(),
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              type: media.type || 'file',
+              isRead: false,
+              reactions: [],
+              media: [media],
+              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+            });
+          });
+          
+          setMockMessages(prev => [...prev, ...mediaMessages]);
+          return { success: true, data: mediaMessages };
+        }
 
-        return { success: true, data: [newMessage] };
+        setMockMessages(prev => [...prev, demoMessage]);
+        return { success: true, data: [demoMessage] };
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
@@ -269,6 +327,15 @@ export const AppProvider = ({ children }) => {
     setMockMessages(eliteMessages);
   };
 
+  // Fonction helper pour mettre à jour les messages (pour les actions comme édition, suppression)
+  const setMessages = useCallback((updater) => {
+    if (isAuthenticated) {
+      setRealMessages(updater);
+    } else {
+      setMockMessages(updater);
+    }
+  }, [isAuthenticated]);
+
   const value = {
     // Authentification
     user,
@@ -289,8 +356,9 @@ export const AppProvider = ({ children }) => {
     dataError,
     
     // Données mockées (pour la transition)
-    discussions: mockDiscussions, 
-    messages: realMessages.length > 0 ? realMessages : mockMessages,
+    discussions: isAuthenticated ? realDiscussions : mockDiscussions, 
+    messages: isAuthenticated ? realMessages : mockMessages,
+    setMessages, // Nouvelle fonction helper
     fetchRandomUsers, 
     sortedDiscussions,
     

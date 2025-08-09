@@ -1,10 +1,14 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import MainView from './components/MainView';
 import MainTopbar from './components/MainTopbar';
+import Loading from './components/Loading';
 import clsx from 'clsx';
 import { useApp } from './components/Context/AppContext';
 import { useAuth } from './components/Context/AuthContext';
+import { NotificationProvider } from './components/chat/Notif';
+import './App.css';
 
 const App = () => {
   const { theme, loading, authLoading, isAuthenticated } = useApp();
@@ -15,31 +19,33 @@ const App = () => {
   const shouldShowLoading = authLoading;
 
   return (
-    <div className={`relative w-full h-screen overflow-hidden ${theme.bgColor}`}>
-      <AnimatePresence>
-        {shouldShowLoading ? (
-          <LoadingScreen theme={theme} />
-        ) : (
-          <div className="flex w-full h-full">
-            <Sidebar />
-            <div className="flex-1 flex flex-col">
-              {isAuthenticated && user && (
-                <MainTopbar
-                  appName="ELITE"
-                  theme={theme}
-                  onSettings={() => console.log("Open settings")}
-                  onUser={() => console.log("Open profile")}
-                  onAI={() => console.log("Summon SkyOS AI")}
-                />
-              )}
-              <main className="flex-1 overflow-hidden">
-                <MainView />
-              </main>
+    <NotificationProvider>
+      <div className={`relative w-full h-screen overflow-hidden ${theme.bgColor}`}>
+        <AnimatePresence>
+          {shouldShowLoading ? (
+            <LoadingScreen theme={theme} />
+          ) : (
+            <div className="flex w-full h-full">
+              <Sidebar />
+              <div className="flex-1 flex flex-col">
+                {isAuthenticated && user && (
+                  <MainTopbar
+                    appName="ELITE"
+                    theme={theme}
+                    onSettings={() => console.log("Open settings")}
+                    onUser={() => console.log("Open profile")}
+                    onAI={() => console.log("Summon SkyOS AI")}
+                  />
+                )}
+                <main className="flex-1 overflow-hidden">
+                  <MainView />
+                </main>
+              </div>
             </div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </NotificationProvider>
   );
 };
 

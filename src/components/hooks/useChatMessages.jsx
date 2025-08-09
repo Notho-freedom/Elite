@@ -14,7 +14,7 @@ const SOUNDS = {
 
 const useChatMessages = () => {
   // État principal
-  const {activeChat, messages, setMessages } = useApp();
+  const { activeChat, messages, setMessages, sendMessage: contextSendMessage, user } = useApp();
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,87 +45,93 @@ const useChatMessages = () => {
     loop: true
   });
 
-  // Gestion des réponses IA
+  // Gestion des réponses IA (seulement en mode démo)
   useEffect(() => {
-    const handleAIResponse = async (lastMessage) => {
-      try {
-        const aiReply = await askGroq(lastMessage.text, activeChat);
+    if (!user) { // Mode démo seulement
+      const handleAIResponse = async (lastMessage) => {
+        try {
+          const aiReply = await askGroq(lastMessage.text, activeChat);
+          
+          stopTypingSound();
+          setIsTyping(false);
+
+          const replyMessage = {
+            id: Date.now(),
+            text: aiReply,
+            sender: 'them',
+            senderId: activeChat?.id || 'ai-bot',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: new Date().toISOString(),
+            status: 'read',
+            reactions: [],
+            avatar: activeChat?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+          };
+
+          setMessages(prev => [...prev, replyMessage]);
+          if (soundEnabled) playReceiveSound();
+        } catch (err) {
+          console.error('Erreur réponse IA:', err);
+          stopTypingSound();
+          setIsTyping(false);
+        }
+      };
+
+      const lastMessage = messages[messages.length - 1];
+      let typingTimeout;
+
+      if (lastMessage?.sender === 'me' && lastMessage?.text && activeChat?.isOnline) {
+        setIsTyping(true);
+        if (soundEnabled) playTypingSound();
         
-        stopTypingSound();
-        setIsTyping(false);
-
-        const replyMessage = {
-          id: Date.now(),
-          text: aiReply,
-          sender: 'them',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          status: 'read',
-          reactions: []
-        };
-
-        setMessages(prev => [...prev, replyMessage]);
-        if (soundEnabled) playReceiveSound();
-      } catch (err) {
-        console.error('Erreur réponse IA:', err);
-        stopTypingSound();
-        setIsTyping(false);
+        typingTimeout = setTimeout(() => {
+          handleAIResponse(lastMessage);
+        }, 1500 + Math.random() * 2000);
       }
-    };
 
-    const lastMessage = messages[messages.length - 1];
-    let typingTimeout;
-
-    if (lastMessage?.sender === 'me' && lastMessage?.text && activeChat?.isOnline) {
-      setIsTyping(true);
-      if (soundEnabled) playTypingSound();
-      
-      typingTimeout = setTimeout(() => {
-        handleAIResponse(lastMessage);
-      }, 1500 + Math.random() * 2000);
+      return () => {
+        clearTimeout(typingTimeout);
+        stopTypingSound();
+      };
     }
+  }, [messages, activeChat, soundEnabled, user, setMessages, playReceiveSound, playTypingSound, stopTypingSound]);
 
-    return () => {
-      clearTimeout(typingTimeout);
-      stopTypingSound();
-    };
-  }, [messages, activeChat, soundEnabled]);
-
-  // Envoi de message
-  const handleSend = useCallback((e, { message, media = [] }) => {
+  // Envoi de message (adapté à la nouvelle structure)
+  const handleSend = useCallback(async (e, data) => {
     e?.preventDefault();
     
-    if (!message?.trim() && media.length === 0) return;
+    if (!data?.message?.trim() && !data?.media?.length) return;
 
     if (soundEnabled) playSendSound();
 
-    const newMessage = {
-      id: Date.now(),
-      text: message || '',
-      media,
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent',
-      reactions: [],
-      isRead: false
-    };
+    try {
+      // Construire les données du message selon la nouvelle structure
+      let messageData;
+      
+      if (data.media && data.media.length > 0) {
+        // Message avec médias
+        messageData = {
+          message: data.message || '',
+          media: data.media
+        };
+      } else {
+        // Message texte simple
+        messageData = data.message;
+      }
 
-    setMessages(prev => [...prev, newMessage]);
-    setInputValue('');
-    setShowEmojiPicker(false);
+      // Envoyer via le contexte
+      const result = await contextSendMessage(messageData);
 
-    // Simulation progression envoi
-    const updateMessageStatus = (status, isRead = false) => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === newMessage.id 
-          ? { ...msg, status, ...(isRead && { isRead }) } 
-          : msg
-      ));
-    };
-
-    setTimeout(() => updateMessageStatus('delivered'), 800);
-    setTimeout(() => updateMessageStatus('read', true), 1600);
-    
-  }, [soundEnabled, playSendSound]);
+      if (result.success) {
+        // Les messages sont déjà ajoutés par le contexte
+        setInputValue('');
+        setShowEmojiPicker(false);
+      } else {
+        console.error('Erreur envoi message:', result.error);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi:', error);
+    }
+  }, [soundEnabled, playSendSound, contextSendMessage]);
 
   // Scroll automatique
   useEffect(() => {
@@ -141,16 +147,17 @@ const useChatMessages = () => {
   const addReaction = useCallback((messageId, reaction) => {
     setMessages(prev => prev.map(msg => {
       if (msg.id === messageId) {
-        const existingIndex = msg.reactions.findIndex(r => r.emoji === reaction);
+        const existingIndex = msg.reactions?.findIndex(r => r.emoji === reaction) || -1;
         if (soundEnabled) playSendSound();
+        
         if (existingIndex >= 0) {
-          const updatedReactions = [...msg.reactions];
+          const updatedReactions = [...(msg.reactions || [])];
           updatedReactions.splice(existingIndex, 1);
           return { ...msg, reactions: updatedReactions };
         }
         return { 
           ...msg, 
-          reactions: [...msg.reactions, { emoji: reaction, count: 1 }]
+          reactions: [...(msg.reactions || []), { emoji: reaction, count: 1 }]
         };
       }
       return msg;
@@ -159,8 +166,11 @@ const useChatMessages = () => {
 
   // Filtrage des messages
   const filteredMessages = useMemo(() => {
+    if (!searchQuery.trim()) return messages;
+    
     return messages.filter(msg => 
-      msg.text.toLowerCase().includes(searchQuery.toLowerCase())
+      msg.text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      msg.sender?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [messages, searchQuery]);
 

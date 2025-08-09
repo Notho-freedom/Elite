@@ -77,7 +77,7 @@ export const auth = {
 
 // Fonctions utilitaires pour les données
 export const db = {
-  // Récupérer les discussions
+  // Récupérer les discussions avec le dernier message formaté
   getDiscussions: async (userId) => {
     const { data, error } = await supabase
       .from('discussions')
@@ -87,10 +87,13 @@ export const db = {
           user_id,
           users(id, name, avatar_url, status)
         ),
-        messages(
+        last_message:messages(
+          id,
           content,
+          message_type,
+          media_url,
           created_at,
-          sender_id
+          sender:users(name)
         )
       `)
       .eq('participants.user_id', userId)
@@ -106,17 +109,31 @@ export const db = {
       const participants = discussion.participants || [];
       const otherParticipants = participants.filter(p => p.user_id !== userId);
       
-      // Trouver le dernier message
-      const messages = discussion.messages || [];
-      const lastMessage = messages.length > 0 
-        ? messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
-        : null;
+      // Trouver le dernier message et le formater correctement
+      const lastMessage = discussion.last_message?.[0];
+      let lastMessagePreview = 'Aucun message';
+      
+      if (lastMessage) {
+        if (lastMessage.message_type === 'text') {
+          lastMessagePreview = lastMessage.content || 'Message texte';
+        } else if (lastMessage.message_type === 'image') {
+          lastMessagePreview = '📷 Photo';
+        } else if (lastMessage.message_type === 'video') {
+          lastMessagePreview = '🎥 Vidéo';
+        } else if (lastMessage.message_type === 'audio') {
+          lastMessagePreview = '🎵 Message vocal';
+        } else if (lastMessage.message_type === 'file') {
+          lastMessagePreview = '📎 Fichier';
+        } else {
+          lastMessagePreview = lastMessage.content || 'Message';
+        }
+      }
       
       return {
         id: discussion.id,
         name: discussion.name || (otherParticipants.length > 0 ? otherParticipants[0].users?.name : 'Discussion'),
         avatar: otherParticipants[0]?.users?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        lastMessage: lastMessage?.content || 'Aucun message',
+        lastMessage: lastMessagePreview,
         lastMessageTime: lastMessage?.created_at || discussion.created_at,
         unread: false, // À implémenter avec un système de marquage
         isOnline: otherParticipants.some(p => p.users?.status === 'online'),
@@ -125,22 +142,23 @@ export const db = {
       };
     }) || [];
 
-    // Trier par le timestamp du dernier message
+    // Trier par le timestamp du dernier message (plus récent en premier)
     transformedData.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
 
     return { data: transformedData, error: null };
   },
 
-  // Récupérer les messages d'une discussion
+  // Récupérer les messages d'une discussion (ordre chronologique)
   getMessages: async (discussionId, limit = 50, offset = 0) => {
     const { data, error } = await supabase
       .from('messages')
       .select(`
         *,
-        sender:users(id, name, avatar_url)
+        sender:users(id, name, avatar_url),
+        reply_to:reply_to_id(id, content, sender:users(name))
       `)
       .eq('discussion_id', discussionId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true }) // Plus anciens en premier, récents en bas
       .range(offset, offset + limit - 1)
     
     if (error) {
@@ -148,52 +166,143 @@ export const db = {
       return { data: [], error };
     }
 
-    // Transformer les données pour correspondre au format attendu
-    const transformedData = data?.map(message => ({
-      id: message.id,
-      content: message.content,
-      sender: message.sender?.name || 'Utilisateur',
-      senderId: message.sender_id,
-      avatar: message.sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      timestamp: message.created_at,
-      type: message.message_type || 'text'
-    })) || [];
+    // Transformer les données pour correspondre au format attendu du front-end
+    const transformedData = data?.map(message => {
+      const transformedMessage = {
+        id: message.id,
+        text: message.content || '',
+        sender: message.sender_id === 'current_user' ? 'me' : message.sender?.name || 'Utilisateur',
+        senderId: message.sender_id,
+        avatar: message.sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        timestamp: message.created_at,
+        time: formatMessageTime(message.created_at),
+        type: message.message_type || 'text',
+        isRead: true, // À implémenter selon la logique métier
+        reactions: [], // À implémenter
+        replyTo: message.reply_to ? {
+          id: message.reply_to.id,
+          text: message.reply_to.content,
+          sender: message.reply_to.sender?.name
+        } : null
+      };
+
+      // Ajouter les médias si présents
+      if (message.media_url && message.message_type !== 'text') {
+        transformedMessage.media = [{
+          id: `media-${message.id}`,
+          url: message.media_url,
+          type: message.message_type,
+          size: null, // À implémenter si nécessaire
+          duration: null // À implémenter pour audio/video
+        }];
+      }
+
+      return transformedMessage;
+    }) || [];
 
     return { data: transformedData, error: null };
   },
 
-  // Envoyer un message
-  sendMessage: async (discussionId, senderId, content, messageType = 'text') => {
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({
-        discussion_id: discussionId,
-        sender_id: senderId,
-        content,
-        message_type: messageType
-      })
-      .select(`
-        *,
-        sender:users(id, name, avatar_url)
-      `)
-    
-    if (error) {
+  // Envoyer un message (gérer texte et média séparément)
+  sendMessage: async (discussionId, senderId, messageData) => {
+    try {
+      const messages = [];
+      
+      // Si c'est un message avec texte et médias, on les sépare
+      if (typeof messageData === 'object' && messageData.message && messageData.media?.length > 0) {
+        // D'abord envoyer le message texte s'il y en a un
+        if (messageData.message.trim()) {
+          const textMessage = {
+            discussion_id: discussionId,
+            sender_id: senderId,
+            content: messageData.message.trim(),
+            message_type: 'text'
+          };
+          
+          const { data: textData, error: textError } = await supabase
+            .from('messages')
+            .insert(textMessage)
+            .select(`
+              *,
+              sender:users(id, name, avatar_url)
+            `);
+            
+          if (textError) throw textError;
+          messages.push(...textData);
+        }
+        
+        // Ensuite envoyer chaque média comme un message séparé
+        for (const media of messageData.media) {
+          const mediaMessage = {
+            discussion_id: discussionId,
+            sender_id: senderId,
+            content: '', // Pas de texte pour les médias purs
+            message_type: getMessageTypeFromMedia(media),
+            media_url: media.url || media.blob ? URL.createObjectURL(media.blob) : null
+          };
+          
+          const { data: mediaData, error: mediaError } = await supabase
+            .from('messages')
+            .insert(mediaMessage)
+            .select(`
+              *,
+              sender:users(id, name, avatar_url)
+            `);
+            
+          if (mediaError) throw mediaError;
+          messages.push(...mediaData);
+        }
+      } else {
+        // Message simple (texte seulement)
+        const simpleMessage = {
+          discussion_id: discussionId,
+          sender_id: senderId,
+          content: typeof messageData === 'string' ? messageData : messageData.message || messageData.text,
+          message_type: 'text'
+        };
+        
+        const { data, error } = await supabase
+          .from('messages')
+          .insert(simpleMessage)
+          .select(`
+            *,
+            sender:users(id, name, avatar_url)
+          `);
+          
+        if (error) throw error;
+        messages.push(...data);
+      }
+
+      // Mettre à jour le timestamp de la discussion
+      await supabase
+        .from('discussions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', discussionId);
+
+      // Transformer les messages pour le front-end
+      const transformedMessages = messages.map(message => ({
+        id: message.id,
+        text: message.content || '',
+        sender: 'me',
+        senderId: message.sender_id,
+        avatar: message.sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        timestamp: message.created_at,
+        time: formatMessageTime(message.created_at),
+        type: message.message_type || 'text',
+        isRead: false,
+        reactions: [],
+        media: message.media_url ? [{
+          id: `media-${message.id}`,
+          url: message.media_url,
+          type: message.message_type
+        }] : undefined
+      }));
+
+      return { data: transformedMessages, error: null };
+    } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
       return { data: null, error };
     }
-
-    // Transformer le message envoyé
-    const transformedMessage = {
-      id: data[0].id,
-      content: data[0].content,
-      sender: data[0].sender?.name || 'Utilisateur',
-      senderId: data[0].sender_id,
-      avatar: data[0].sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      timestamp: data[0].created_at,
-      type: data[0].message_type || 'text'
-    };
-
-    return { data: [transformedMessage], error: null };
   },
 
   // Créer une nouvelle discussion
@@ -202,6 +311,7 @@ export const db = {
       .from('discussions')
       .insert({
         name,
+        type: participantIds.length > 2 ? 'group' : 'private',
         created_at: new Date().toISOString()
       })
       .select()
@@ -262,7 +372,46 @@ export const db = {
   }
 }
 
-// Fonctions pour les appels
+// Fonctions utilitaires
+function formatMessageTime(timestamp) {
+  if (!timestamp) return '';
+  
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+    
+    const now = new Date();
+    const diffMs = now - date;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    
+    if (diffDays < 1) {
+      // Moins de 24h : afficher l'heure
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays < 7) {
+      // Moins d'une semaine : afficher le jour
+      return date.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      // Plus d'une semaine : afficher la date
+      return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+    }
+  } catch (error) {
+    console.error('Erreur formatage date:', error);
+    return '';
+  }
+}
+
+function getMessageTypeFromMedia(media) {
+  if (!media.type && !media.url) return 'file';
+  
+  const type = media.type || '';
+  if (type.startsWith('image/')) return 'image';
+  if (type.startsWith('video/')) return 'video';
+  if (type.startsWith('audio/') || type === 'voice') return 'audio';
+  return 'file';
+}
+
+// Fonctions pour les appels (inchangées)
 export const calls = {
   // Créer un appel
   createCall: async (discussionId, initiatorId, callType = 'audio') => {

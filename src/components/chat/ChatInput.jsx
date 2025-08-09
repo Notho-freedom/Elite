@@ -3,6 +3,7 @@ import { FiPaperclip, FiMic } from 'react-icons/fi';
 import { BsEmojiSmile, BsSendFill } from 'react-icons/bs';
 import MediaPreviewModal from './Input/MediaPreview';
 import LinkPreview from './LinkPreview';
+import VoiceRecorder from './Input/VoiceRecorder';
 
 const ChatInput = memo(({ 
   inputValue, 
@@ -16,6 +17,7 @@ const ChatInput = memo(({
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const formRef = useRef(null);
+  const micButtonRef = useRef(null);
   
   // States
   const [previewMedia, setPreviewMedia] = useState([]);
@@ -23,6 +25,9 @@ const ChatInput = memo(({
   const [detectedUrl, setDetectedUrl] = useState(null);
   const [isComposing, setIsComposing] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState(null);
 
   // Calcul de la hauteur de la textarea
   const resizeTextarea = useCallback(() => {
@@ -108,6 +113,66 @@ const ChatInput = memo(({
 
   }, [inputValue, previewMedia, handleSend, setInputValue, resetTextareaHeight]);
 
+  // Gestion de l'envoi de messages vocaux
+  const handleVoiceSend = useCallback((voiceData) => {
+    handleSend(
+      { preventDefault: () => {} },
+      {
+        message: '',
+        media: [{
+          type: 'voice',
+          url: URL.createObjectURL(voiceData.blob),
+          duration: voiceData.duration,
+          size: voiceData.size,
+          blob: voiceData.blob
+        }]
+      }
+    );
+    setShowVoiceRecorder(false);
+  }, [handleSend]);
+
+  // Gestion du long press pour l'enregistrement vocal
+  const handleMicMouseDown = useCallback((e) => {
+    e.preventDefault();
+    if (inputValue.trim() || previewMedia.length > 0) {
+      // Si il y a du contenu, envoyer normalement
+      formRef.current?.requestSubmit();
+      return;
+    }
+
+    // Démarrer le timer pour le long press
+    setIsLongPressing(true);
+    const timer = setTimeout(() => {
+      setShowVoiceRecorder(true);
+      setIsLongPressing(false);
+    }, 500); // 500ms pour détecter un long press
+    
+    setLongPressTimer(timer);
+  }, [inputValue, previewMedia]);
+
+  const handleMicMouseUp = useCallback(() => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    
+    if (isLongPressing) {
+      // Si c'était un court press et pas de contenu, ouvrir le recorder
+      if (!inputValue.trim() && previewMedia.length === 0) {
+        setShowVoiceRecorder(true);
+      }
+      setIsLongPressing(false);
+    }
+  }, [longPressTimer, isLongPressing, inputValue, previewMedia]);
+
+  const handleMicMouseLeave = useCallback(() => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    setIsLongPressing(false);
+  }, [longPressTimer]);
+
   // Détection d'URL avec debounce
   useEffect(() => {
     if (isComposing) return;
@@ -161,6 +226,9 @@ const ChatInput = memo(({
     ? Math.floor(textareaRef.current.scrollHeight / parseInt(getComputedStyle(textareaRef.current).lineHeight))
     : 1;
 
+  // Détermine si le bouton doit afficher l'icône d'envoi ou micro
+  const showSendIcon = inputValue.trim() || previewMedia.length > 0;
+
   return (
     <div className="relative -mx-2">
       {showMediaModal && (
@@ -172,6 +240,15 @@ const ChatInput = memo(({
           fmessage={inputValue}
         />
       )}
+
+      {/* Enregistreur vocal */}
+      <VoiceRecorder
+        isVisible={showVoiceRecorder}
+        onSend={handleVoiceSend}
+        onCancel={() => setShowVoiceRecorder(false)}
+        theme={theme}
+        maxDuration={300}
+      />
 
       {detectedUrl && (
         <div className="mb-1 p-1 bg-transparent absolute bottom-full left-2 right-2">
@@ -250,18 +327,37 @@ const ChatInput = memo(({
         />
 
         <button 
-          type={inputValue.trim() || previewMedia.length > 0 ? 'submit' : 'button'} 
+          ref={micButtonRef}
+          type={showSendIcon ? 'submit' : 'button'}
+          onMouseDown={handleMicMouseDown}
+          onMouseUp={handleMicMouseUp}
+          onMouseLeave={handleMicMouseLeave}
+          onTouchStart={handleMicMouseDown}
+          onTouchEnd={handleMicMouseUp}
           className={`
             p-1.5 rounded-full text-lg
-            ${theme.accentBg} ${theme.accentText}
-            transition-colors duration-200
-            flex-shrink-0
+            ${showSendIcon ? `${theme.accentBg} ${theme.accentText}` : theme.buttonSecondary}
+            ${isLongPressing ? 'scale-110 bg-red-500 text-white' : ''}
+            transition-all duration-200
+            flex-shrink-0 relative
           `}
-          aria-label={inputValue.trim() || previewMedia.length > 0 ? 'Send message' : 'Start recording'}
+          aria-label={showSendIcon ? 'Send message' : 'Record voice message (hold to record)'}
         >
-          {inputValue.trim() || previewMedia.length > 0 ? <BsSendFill /> : <FiMic />}
+          {showSendIcon ? <BsSendFill /> : <FiMic />}
+          
+          {/* Indicateur de long press */}
+          {isLongPressing && (
+            <div className="absolute inset-0 rounded-full border-2 border-red-300 animate-ping" />
+          )}
         </button>
       </form>
+      
+      {/* Instructions pour les messages vocaux */}
+      {!showSendIcon && !showVoiceRecorder && (
+        <div className={`text-xs ${theme.secondaryText} text-center mt-1 opacity-70`}>
+          Appuyez sur 🎤 ou maintenez pour enregistrer un message vocal
+        </div>
+      )}
     </div>
   );
 });
