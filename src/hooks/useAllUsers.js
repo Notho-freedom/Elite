@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import userService from '../services/userService';
 import { useAuth } from '../components/Context/AuthContext';
 
@@ -10,25 +10,37 @@ const useAllUsers = (filters = {}) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const filtersRef = useRef(filters);
+
+  // Mettre à jour la ref des filtres
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
 
   const loadUsers = useCallback(async () => {
     try {
+      console.log('🔄 useAllUsers: Chargement des utilisateurs...');
       setLoading(true);
       setError(null);
-      const result = await userService.getAllUsers(filters);
+      const result = await userService.getAllUsers(filtersRef.current);
+      console.log('📊 useAllUsers: Résultat:', result);
       if (result.success) {
         setUsers(result.data || []);
+        console.log('✅ useAllUsers: Utilisateurs chargés:', result.data?.length || 0);
       } else {
         setUsers([]);
         setError(result.error);
+        console.log('❌ useAllUsers: Erreur:', result.error);
       }
     } catch (err) {
+      console.log('💥 useAllUsers: Exception:', err);
       setUsers([]);
       setError(err.message);
     } finally {
       setLoading(false);
+      console.log('🏁 useAllUsers: Chargement terminé');
     }
-  }, [filters]);
+  }, []); // Pas de dépendances pour éviter la boucle infinie
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -40,7 +52,7 @@ const useAllUsers = (filters = {}) => {
     try {
       setLoading(true);
       setError(null);
-      const result = await userService.getAllUsers({ ...filters, search: searchTerm });
+      const result = await userService.getAllUsers({ ...filtersRef.current, search: searchTerm });
       if (result.success) {
         setUsers(result.data || []);
       } else {
@@ -53,7 +65,7 @@ const useAllUsers = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, []); // Pas de dépendances pour éviter la boucle infinie
 
   const onlineUsers = users.filter(u => u.is_online);
 

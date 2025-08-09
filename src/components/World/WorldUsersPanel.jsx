@@ -16,6 +16,15 @@ const WorldUsersPanel = () => {
 
   const { users, onlineUsers, recentUsers, loading, error, loadUsers, searchUsers } = useAllUsers(filters);
 
+  // Debug logging
+  console.log('🔍 WorldUsersPanel: État actuel:', { 
+    usersCount: users.length, 
+    loading, 
+    error, 
+    filterType,
+    filters 
+  });
+
   const handleSearch = async (term) => {
     setSearchTerm(term);
     if (term.trim()) {

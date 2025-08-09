@@ -192,6 +192,7 @@ class UserService {
    */
   async getAllUsers(filters = {}) {
     try {
+      console.log('🔄 userService.getAllUsers: Début avec filtres:', filters);
       let query = supabase
         .from('users')
         .select('*');
@@ -212,16 +213,19 @@ class UserService {
       // Ordonner par dernière activité
       query = query.order('last_seen', { ascending: false });
 
+      console.log('📊 userService.getAllUsers: Exécution de la requête...');
       const { data, error } = await query;
+      console.log('📊 userService.getAllUsers: Données reçues:', data?.length || 0, 'erreur:', error);
 
       if (error) {
-        console.error('Erreur lors de la récupération de tous les utilisateurs:', error);
+        console.error('❌ userService.getAllUsers: Erreur lors de la récupération de tous les utilisateurs:', error);
         return { success: false, error: error.message };
       }
 
+      console.log('✅ userService.getAllUsers: Succès, retour de', data?.length || 0, 'utilisateurs');
       return { success: true, data: data || [] };
     } catch (error) {
-      console.error('Erreur dans getAllUsers:', error);
+      console.error('💥 userService.getAllUsers: Exception:', error);
       return { success: false, error: error.message };
     }
   }
