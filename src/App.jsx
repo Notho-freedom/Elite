@@ -1,61 +1,39 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import Sidebar from './components/Sidebar';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { AppProvider } from './components/Context/AppContext';
+import { ThemeProvider } from './components/Context/ThemeContext';
+import { AuthProvider } from './components/Context/AuthContext';
+import { NotificationProvider } from './components/chat/Notif';
 import MainView from './components/MainView';
-import MainTopbar from './components/MainTopbar';
-import clsx from 'clsx';
-import { useApp } from './components/Context/AppContext';
+import Loading from './components/Loading';
 import { useAuth } from './components/Context/AuthContext';
+import './App.css';
 
-const App = () => {
-  const { theme, loading, authLoading, isAuthenticated } = useApp();
-  const { user } = useAuth();
+// Composant wrapper pour utiliser les hooks
+const AppContent = () => {
+  const { loading: authLoading } = useAuth();
 
-  // Afficher l'écran de chargement seulement pendant l'initialisation de l'auth
-  // et pas pendant le chargement des données
-  const shouldShowLoading = authLoading;
+  if (authLoading) {
+    return <Loading />;
+  }
 
-  return (
-    <div className={`relative w-full h-screen overflow-hidden ${theme.bgColor}`}>
-      <AnimatePresence>
-        {shouldShowLoading ? (
-          <LoadingScreen theme={theme} />
-        ) : (
-          <div className="flex w-full h-full">
-            <Sidebar />
-            <div className="flex-1 flex flex-col">
-              {isAuthenticated && user && (
-                <MainTopbar
-                  appName="ELITE"
-                  theme={theme}
-                  onSettings={() => console.log("Open settings")}
-                  onUser={() => console.log("Open profile")}
-                  onAI={() => console.log("Summon SkyOS AI")}
-                />
-              )}
-              <main className="flex-1 overflow-hidden">
-                <MainView />
-              </main>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  return <MainView />;
 };
 
-const LoadingScreen = ({ theme }) => (
-  <motion.div
-    className={clsx("flex items-center justify-center h-screen", theme.bgColor)}
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-  >
-    <motion.div
-      className="border-4 border-amber-400 rounded-full w-12 h-12"
-      animate={{ rotate: 360 }}
-      transition={{ repeat: Infinity, duration: 1 }}
-    />
-  </motion.div>
-);
+function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppProvider>
+          <NotificationProvider>
+            <div className="App">
+              <AppContent />
+            </div>
+          </NotificationProvider>
+        </AppProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
 
 export default App;
