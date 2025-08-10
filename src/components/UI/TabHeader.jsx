@@ -189,7 +189,6 @@ const TabHeader = ({
                   whileHover="hover"
                   whileTap="tap"
                   aria-label="Effacer"
-                  initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >

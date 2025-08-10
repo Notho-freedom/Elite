@@ -6,8 +6,10 @@ import ChatMenu from '../ChatMenu';
 import EnhancedMessageBubble from './EnhancedMessageBubble';
 import EnhancedChatInput from './EnhancedChatInput';
 import TypingIndicator from '../TypingIndicator';
+import MediaViewer from '../MediaViewer';
 import { useApp } from '../../Context/AppContext';
 import { useAuth } from '../../Context/AuthContext';
+import { useMessageNotifications } from '../Notif';
 import { normalizeMessage } from '../../Enhanced/EliteDataEnricher';
 
 const EnhancedChatPage = () => {
@@ -17,11 +19,13 @@ const EnhancedChatPage = () => {
     theme,
     sendMessage,
     messages,
+    setMessages,
     setActiveCall,
     setShowProfile,
     isMobile
   } = useApp();
   const { user } = useAuth();
+  const { notifyMessageAction } = useMessageNotifications();
 
   // États locaux
   const [inputValue, setInputValue] = useState('');
@@ -32,14 +36,32 @@ const EnhancedChatPage = () => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [pinnedMessages, setPinnedMessages] = useState([]);
+  const [favoriteMessages, setFavoriteMessages] = useState([]);
+  const [lockedMessages, setLockedMessages] = useState([]);
+  const [hiddenMessages, setHiddenMessages] = useState([]);
+  const [selectedMessages, setSelectedMessages] = useState([]);
+  const [mediaViewerData, setMediaViewerData] = useState({ isOpen: false, media: [], initialIndex: 0 });
 
   // Refs
   const messagesEndRef = useRef(null);
   const chatHeaderRef = useRef(null);
+  const messageRefs = useRef(new Map());
 
   // Auto-scroll vers le bas
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollToMessage = (messageId) => {
+    const messageElement = messageRefs.current.get(messageId);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Highlight temporaire
+      messageElement.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+      setTimeout(() => {
+        messageElement.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+      }, 2000);
+    }
   };
 
   useEffect(() => {
@@ -62,65 +84,125 @@ const EnhancedChatPage = () => {
     switch (action) {
       case 'reply':
         setReplyingTo(message);
+        notifyMessageAction('reply');
         break;
         
       case 'edit':
         if (message.senderId === user.id) {
           setEditingMessage(message);
           setInputValue(message.text || '');
+          notifyMessageAction('edit');
         }
         break;
         
       case 'forward':
-        // TODO: Implémenter le transfert
-        console.log('Transférer message:', message);
+        // Copier le message pour transfert
+        const forwardData = {
+          text: message.text,
+          media: message.media,
+          originalSender: message.sender
+        };
+        localStorage.setItem('forwardMessage', JSON.stringify(forwardData));
+        notifyMessageAction('forward');
         break;
         
       case 'copy':
         if (message.text) {
           navigator.clipboard.writeText(message.text);
-          // TODO: Afficher notification de copie
+          notifyMessageAction('copy');
         }
         break;
         
       case 'favorite':
-        // TODO: Basculer l'état favori
-        console.log('Toggle favorite:', message);
+        const isFavorite = favoriteMessages.includes(message.id);
+        if (isFavorite) {
+          setFavoriteMessages(prev => prev.filter(id => id !== message.id));
+        } else {
+          setFavoriteMessages(prev => [...prev, message.id]);
+        }
+        notifyMessageAction('favorite', { isFavorite });
         break;
         
       case 'pin':
-        if (message.isPinned) {
+        const isPinned = pinnedMessages.includes(message.id);
+        if (isPinned) {
           setPinnedMessages(prev => prev.filter(id => id !== message.id));
         } else {
           setPinnedMessages(prev => [...prev, message.id]);
         }
+        notifyMessageAction('pin', { isPinned });
         break;
         
       case 'lock':
-        // TODO: Basculer l'état verrouillé
-        console.log('Toggle lock:', message);
+        const isLocked = lockedMessages.includes(message.id);
+        if (isLocked) {
+          setLockedMessages(prev => prev.filter(id => id !== message.id));
+        } else {
+          setLockedMessages(prev => [...prev, message.id]);
+        }
+        notifyMessageAction('lock', { isLocked });
         break;
         
       case 'download':
         if (message.media?.length > 0) {
-          // TODO: Télécharger les médias
-          console.log('Télécharger médias:', message.media);
+          message.media.forEach(async (media, index) => {
+            try {
+              const response = await fetch(media.url);
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `media-${Date.now()}-${index}.${media.type.split('/')[1]}`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+            } catch (error) {
+              console.error('Erreur téléchargement:', error);
+            }
+          });
+          notifyMessageAction('download');
         }
         break;
         
       case 'hide':
-        // TODO: Masquer le message
-        console.log('Masquer message:', message);
+        const isHidden = hiddenMessages.includes(message.id);
+        if (isHidden) {
+          setHiddenMessages(prev => prev.filter(id => id !== message.id));
+        } else {
+          setHiddenMessages(prev => [...prev, message.id]);
+        }
+        notifyMessageAction('hide', { isHidden });
         break;
         
       case 'info':
-        // TODO: Afficher les informations du message
-        console.log('Infos message:', message);
+        // Afficher les informations détaillées du message
+        const messageInfo = {
+          id: message.id,
+          sender: message.sender,
+          timestamp: message.timestamp,
+          edited: message.isEdited,
+          reactions: message.reactions?.length || 0,
+          mediaCount: message.media?.length || 0
+        };
+        console.log('Informations du message:', messageInfo);
+        // TODO: Ouvrir modal d'informations
         break;
         
       case 'delete':
-        // TODO: Supprimer le message
-        console.log('Supprimer message:', message);
+        if (window.confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) {
+          setMessages(prev => prev.filter(msg => msg.id !== message.id));
+          notifyMessageAction('delete');
+        }
+        break;
+        
+      case 'select':
+        const isSelected = selectedMessages.includes(message.id);
+        if (isSelected) {
+          setSelectedMessages(prev => prev.filter(id => id !== message.id));
+        } else {
+          setSelectedMessages(prev => [...prev, message.id]);
+        }
         break;
         
       default:
@@ -146,9 +228,13 @@ const EnhancedChatPage = () => {
 
     if (data.editId) {
       // Mode édition
-      // TODO: Mettre à jour le message existant
-      console.log('Mise à jour message:', data.editId, messageData);
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.editId 
+          ? { ...msg, text: messageData.text, isEdited: true, editedAt: messageData.timestamp }
+          : msg
+      ));
       setEditingMessage(null);
+      notifyMessageAction('edit');
     } else {
       // Nouveau message
       sendMessage(messageData.text || messageData, messageData.type || 'text');
@@ -157,6 +243,15 @@ const EnhancedChatPage = () => {
     // Reset des états
     setInputValue('');
     setReplyingTo(null);
+  };
+
+  // Ouvrir le visualiseur de médias
+  const openMediaViewer = (mediaList, initialIndex = 0) => {
+    setMediaViewerData({
+      isOpen: true,
+      media: mediaList,
+      initialIndex
+    });
   };
 
   // Démarrer un appel
@@ -177,8 +272,9 @@ const EnhancedChatPage = () => {
     setShowProfile(true);
   };
 
-  // Filtrer les messages selon la recherche
+  // Filtrer les messages selon la recherche et les messages cachés
   const filteredMessages = (messages || []).filter(msg => {
+    if (hiddenMessages.includes(msg.id)) return false;
     if (!searchQuery) return true;
     return normalizeMessage(msg).text?.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -187,8 +283,9 @@ const EnhancedChatPage = () => {
   const enrichedMessages = filteredMessages.map(msg => ({
     ...msg,
     isPinned: pinnedMessages.includes(msg.id),
-    isFavorite: msg.isFavorite || false,
-    isLocked: msg.isLocked || false,
+    isFavorite: favoriteMessages.includes(msg.id),
+    isLocked: lockedMessages.includes(msg.id),
+    isSelected: selectedMessages.includes(msg.id),
   }));
 
   // Variants pour les animations
@@ -242,6 +339,7 @@ const EnhancedChatPage = () => {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             theme={theme}
+            onClose={() => setShowSearch(false)}
           />
         )}
       </AnimatePresence>
@@ -273,16 +371,48 @@ const EnhancedChatPage = () => {
                       cursor-pointer hover:${theme.hoverBg}
                       max-w-[200px]
                     `}
-                    onClick={() => {
-                      // TODO: Scroll vers le message
-                      console.log('Scroll vers message épinglé:', msg.id);
-                    }}
+                    onClick={() => scrollToMessage(msg.id)}
                   >
                     <div className={`text-xs ${theme.textColor} truncate`}>
                       {msg.text || 'Média'}
                     </div>
                   </div>
                 ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Actions en masse pour les messages sélectionnés */}
+      <AnimatePresence>
+        {selectedMessages.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`${theme.headerBg} border-b ${theme.borderColor} px-4 py-2`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-sm ${theme.textColor}`}>
+                {selectedMessages.length} message(s) sélectionné(s)
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    selectedMessages.forEach(id => handleMessageAction('delete', { id }));
+                    setSelectedMessages([]);
+                  }}
+                  className="px-3 py-1 text-red-500 text-sm hover:bg-red-500/10 rounded"
+                >
+                  Supprimer
+                </button>
+                <button
+                  onClick={() => setSelectedMessages([])}
+                  className={`px-3 py-1 text-sm ${theme.textColor} hover:${theme.hoverBg} rounded`}
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -303,6 +433,7 @@ const EnhancedChatPage = () => {
           {enrichedMessages.map((message) => (
             <motion.div
               key={message.id}
+              ref={el => messageRefs.current.set(message.id, el)}
               variants={messageVariants}
               initial="hidden"
               animate="visible"
@@ -317,10 +448,7 @@ const EnhancedChatPage = () => {
                 <EnhancedMessageBubble
                   message={normalizeMessage(message)}
                   theme={theme}
-                  openMediaViewer={(index) => {
-                    // TODO: Ouvrir le visualiseur de médias
-                    console.log('Ouvrir média:', index);
-                  }}
+                  openMediaViewer={openMediaViewer}
                   onMessageAction={handleMessageAction}
                   currentUserId={user.id}
                 />
@@ -362,6 +490,18 @@ const EnhancedChatPage = () => {
         onCancelEdit={() => {
           setEditingMessage(null);
           setInputValue('');
+        }}
+      />
+
+      {/* Visualiseur de médias */}
+      <MediaViewer
+        isOpen={mediaViewerData.isOpen}
+        onClose={() => setMediaViewerData(prev => ({ ...prev, isOpen: false }))}
+        media={mediaViewerData.media}
+        initialIndex={mediaViewerData.initialIndex}
+        theme={theme}
+        onAction={(action, media) => {
+          notifyMessageAction(action, media);
         }}
       />
     </motion.div>
