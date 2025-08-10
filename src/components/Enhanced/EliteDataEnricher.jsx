@@ -258,62 +258,230 @@ export const createEliteDemoData = () => {
   return enrichDiscussionsWithEliteFeatures(demoDiscussions);
 };
 
-// Fonction pour créer des messages de démonstration Elite
-export const createEliteDemoMessages = () => {
-  const demoMessages = [
-    {
-      id: '1',
-      text: 'Salut ! Comment ça va ? 😊',
-      sender: 'other',
-      senderId: 'other',
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      isRead: true,
-      type: 'text',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: '2',
-      text: 'Très bien merci ! Et toi ?',
-      sender: 'me',
-      senderId: 'me',
-      timestamp: new Date(Date.now() - 3000000).toISOString(),
-      isRead: true,
-      type: 'text',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: '3',
-      text: 'Parfait ! On se voit bientôt ?',
-      sender: 'other',
-      senderId: 'other',
-      timestamp: new Date(Date.now() - 2400000).toISOString(),
-      isRead: true,
-      type: 'text',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: '4',
-      text: 'Oui, avec plaisir ! 😊',
-      sender: 'me',
-      senderId: 'me',
-      timestamp: new Date(Date.now() - 1800000).toISOString(),
-      isRead: true,
-      type: 'text',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: '5',
-      text: 'Super ! À bientôt alors !',
-      sender: 'other',
-      senderId: 'other',
-      timestamp: new Date(Date.now() - 1200000).toISOString(),
-      isRead: false,
-      type: 'text',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-    }
-  ];
+// Fonction pour créer des messages de démonstration variés selon le contact
+export const createEliteDemoMessagesForContact = (contactId, contactName) => {
+  const now = Date.now();
+  
+  // Messages différents selon le contact
+  const messageTemplates = {
+    '1': [ // Sarah Johnson
+      {
+        id: '1',
+        text: 'Salut ! Comment ça va ? 😊',
+        sender: 'them',
+        timestamp: new Date(now - 3600000).toISOString(),
+        reactions: [{ emoji: '👋', count: 1, users: ['me'] }]
+      },
+      {
+        id: '2',
+        text: 'Très bien merci ! Et toi ? Comment se passe ton projet Elite ?',
+        sender: 'me',
+        timestamp: new Date(now - 3000000).toISOString()
+      },
+      {
+        id: '3',
+        text: 'Parfait ! Le système de chat avec IA fonctionne super bien ! 🚀\nTu veux tester les nouvelles fonctionnalités ?',
+        sender: 'them',
+        timestamp: new Date(now - 2400000).toISOString(),
+        reactions: [
+          { emoji: '🤩', count: 1, users: ['me'] },
+          { emoji: '🔥', count: 1, users: ['me'] }
+        ]
+      },
+      {
+        id: '4',
+        text: 'Oui, avec plaisir ! J\'ai vu que vous avez ajouté les réactions emoji 😊',
+        sender: 'me',
+        timestamp: new Date(now - 1800000).toISOString()
+      },
+      {
+        id: '5',
+        text: 'Exactement ! Et aussi les messages épinglés, les réponses en fil, l\'édition...',
+        sender: 'them',
+        timestamp: new Date(now - 1500000).toISOString(),
+        isPinned: true
+      }
+    ],
+    
+    '2': [ // Équipe Développement
+      {
+        id: '1',
+        text: '🎉 Nouvelle fonctionnalité déployée !',
+        sender: 'them',
+        timestamp: new Date(now - 1800000).toISOString(),
+        isImportant: true
+      },
+      {
+        id: '2',
+        text: 'Super ! Quoi de neuf ?',
+        sender: 'me',
+        timestamp: new Date(now - 1700000).toISOString()
+      },
+      {
+        id: '3',
+        text: 'Système de chat avec IA intégrée ✨\n- Réponses automatiques\n- Personnalité adaptive\n- Mode démo complet',
+        sender: 'them',
+        timestamp: new Date(now - 1600000).toISOString(),
+        isPinned: true
+      },
+      {
+        id: '4',
+        text: 'Wow ! Ça a l\'air incroyable ! 🤖',
+        sender: 'me',
+        timestamp: new Date(now - 1500000).toISOString(),
+        reactions: [{ emoji: '🚀', count: 3, users: ['user1', 'user2', 'me'] }]
+      },
+      {
+        id: '5',
+        text: 'On a aussi ajouté la synchronisation temps réel et les paramètres avancés !',
+        sender: 'them',
+        timestamp: new Date(now - 1200000).toISOString()
+      }
+    ],
+    
+    '3': [ // Mike Chen
+      {
+        id: '1',
+        text: 'Hey ! Tu as vu la nouvelle démo Elite ? 🔥',
+        sender: 'them',
+        timestamp: new Date(now - 2400000).toISOString()
+      },
+      {
+        id: '2',
+        text: 'Pas encore ! Dis-moi tout !',
+        sender: 'me',
+        timestamp: new Date(now - 2300000).toISOString()
+      },
+      {
+        id: '3',
+        text: 'IA conversationnelle intégrée, interface moderne, fonctionnalités avancées... 🚀',
+        sender: 'them',
+        timestamp: new Date(now - 2200000).toISOString(),
+        isImportant: true
+      },
+      {
+        id: '4',
+        text: 'https://elite-technologies.com/demo\nRegarde ça !',
+        sender: 'them',
+        timestamp: new Date(now - 2000000).toISOString(),
+        hasLinks: true
+      },
+      {
+        id: '5',
+        text: 'Impressionnant ! 🤩 On se voit demain pour en discuter ?',
+        sender: 'me',
+        timestamp: new Date(now - 1800000).toISOString(),
+        replyTo: '4'
+      },
+      {
+        id: '6',
+        text: 'Parfait ! 14h au bureau ? ☕',
+        sender: 'them',
+        timestamp: new Date(now - 900000).toISOString(),
+        reactions: [{ emoji: '👍', count: 1, users: ['me'] }]
+      }
+    ],
+    
+    '4': [ // Annonces Elite
+      {
+        id: '1',
+        text: '🚀 NOUVEAUTÉ ELITE CHAT 🚀\n\nDécouvrez notre système de messagerie révolutionnaire !',
+        sender: 'them',
+        timestamp: new Date(now - 7200000).toISOString(),
+        isImportant: true,
+        isPinned: true
+      },
+      {
+        id: '2',
+        text: '✨ Fonctionnalités highlights :\n• IA conversationnelle\n• Interface moderne\n• Synchronisation temps réel\n• Réactions & réponses\n• Messages épinglés',
+        sender: 'them',
+        timestamp: new Date(now - 7000000).toISOString()
+      },
+      {
+        id: '3',
+        text: '💰 Nouvelle fonctionnalité de monétisation disponible pour les utilisateurs Elite !',
+        sender: 'them',
+        timestamp: new Date(now - 3600000).toISOString(),
+        reactions: [
+          { emoji: '💰', count: 12, users: ['user1', 'user2', 'user3'] },
+          { emoji: '🔥', count: 8, users: ['user4', 'user5'] }
+        ]
+      },
+      {
+        id: '4',
+        text: '📊 Statistiques de performance :\n• +300% d\'engagement\n• +250% de temps passé\n• +400% de satisfaction utilisateur',
+        sender: 'them',
+        timestamp: new Date(now - 1800000).toISOString(),
+        isImportant: true
+      }
+    ],
+    
+    '5': [ // Emma Wilson
+      {
+        id: '1',
+        text: 'Merci pour votre aide avec le projet ! 🙏',
+        sender: 'them',
+        timestamp: new Date(now - 1200000).toISOString()
+      },
+      {
+        id: '2',
+        text: 'Avec plaisir ! Comment ça avance ?',
+        sender: 'me',
+        timestamp: new Date(now - 1100000).toISOString()
+      },
+      {
+        id: '3',
+        text: 'Super bien ! L\'IA répond parfaitement, c\'est exactement ce qu\'on voulait ! ✨',
+        sender: 'them',
+        timestamp: new Date(now - 1000000).toISOString(),
+        reactions: [{ emoji: '🎯', count: 1, users: ['me'] }]
+      },
+      {
+        id: '4',
+        text: 'Génial ! Tu as testé toutes les fonctionnalités ?',
+        sender: 'me',
+        timestamp: new Date(now - 900000).toISOString()
+      },
+      {
+        id: '5',
+        text: 'Oui ! Les réactions, les réponses, l\'édition... Tout fonctionne parfaitement ! 🚀',
+        sender: 'them',
+        timestamp: new Date(now - 600000).toISOString(),
+        isImportant: true
+      },
+      {
+        id: '6',
+        text: 'Parfait ! On va pouvoir présenter ça en confiance ! 💪',
+        sender: 'me',
+        timestamp: new Date(now - 300000).toISOString()
+      }
+    ]
+  };
+  
+  // Récupérer les messages pour ce contact ou utiliser des messages par défaut
+  const templates = messageTemplates[contactId] || messageTemplates['1'];
+  
+  // Générer les messages avec les bonnes propriétés
+  return templates.map(template => ({
+    ...template,
+    senderId: template.sender === 'them' ? contactId : 'me',
+    isRead: template.sender === 'them' ? true : template.isRead !== false,
+    type: template.type || 'text',
+    avatar: template.sender === 'them' 
+      ? `https://images.unsplash.com/photo-${1400000000000 + parseInt(contactId) * 100000000}?w=150&h=150&fit=crop&crop=face`
+      : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    reactions: template.reactions || [],
+    isPinned: template.isPinned || false,
+    isImportant: template.isImportant || false,
+    mentions: template.mentions || [],
+    hasLinks: template.hasLinks || false,
+    replyTo: template.replyTo || null
+  }));
+};
 
-  return enrichMessagesWithEliteFeatures(demoMessages);
+// Fonction pour créer des messages de démonstration Elite (compatibilité)
+export const createEliteDemoMessages = () => {
+  return createEliteDemoMessagesForContact('1', 'Sarah Johnson');
 };
 
 // Composant de démonstration (optionnel)
@@ -322,3 +490,28 @@ const EliteDataEnricher = () => {
 };
 
 export default EliteDataEnricher;
+
+
+export function normalizeMessage(raw) {
+  let parsedContent = {};
+
+  try {
+    parsedContent = JSON.parse(raw.content || "{}");
+  } catch (e) {
+    console.error("Erreur parsing content", e, raw.content);
+    parsedContent = { text: raw.content || "", media: [] };
+  }
+
+  return {
+    id: raw.id,
+    discussionId: raw.discussion_id,
+    senderId: raw.senderId,
+    sender: parsedContent.sender || null,
+    text: parsedContent.text || "",
+    media: Array.isArray(parsedContent.media) ? parsedContent.media : [],
+    replyTo: parsedContent.replyTo || raw.reply_to_id || null,
+    timestamp: parsedContent.timestamp || raw.created_at,
+    isRead: parsedContent.isRead ?? false,
+    isEdited: parsedContent.isEdited ?? false
+  };
+}

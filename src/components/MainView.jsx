@@ -1,11 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import CallHistory from "./CallHistory";
-import DiscussionList from "./DiscussionList";
 import EliteDiscussionList from './Enhanced/EliteDiscussionList';
-import ChatPage from './ChatPage';
 import EnhancedChatPage from './chat/Enhanced/EnhancedChatPage';
 import CallInterface from './Elite/Calls/CallInterface';
-import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
 import StatusInterface from './Elite/Status/StatusInterface';
@@ -14,11 +11,10 @@ import GroupInterface from './Elite/Groups/GroupInterface';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
 import { useAuth } from './Context/AuthContext';
-import GroupList from './Groups/GroupList';
-import SettingsList from './Settings/SettingsList';
 import FeatureNotification from './Enhanced/FeatureNotification';
-import StatusList from './Status/StatusList';
 import { useState, useEffect } from 'react';
+import Profile from './chat/Profile';
+import AvailableUsersList from './UserDiscovery/AvailableUsersList';
 
 const MainView = () => {
   const {
@@ -169,6 +165,19 @@ const MainView = () => {
                   <NativeFeatures />
                 </motion.div>
               )}
+
+              {activeTab === TABS.WORLD && (
+                <motion.div
+                  key="native"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <AvailableUsersList />
+                </motion.div>
+              )}
+
             </AnimatePresence>
           </motion.div>
           <motion.div 

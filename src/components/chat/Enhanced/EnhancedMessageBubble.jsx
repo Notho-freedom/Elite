@@ -9,6 +9,7 @@ import MessageStates from './MessageStates';
 import MessageDropdown from './MessageDropdown';
 import { useMemo } from 'react';
 
+
 const EnhancedMessageBubble = ({ 
   message, 
   theme, 
@@ -16,6 +17,7 @@ const EnhancedMessageBubble = ({
   onMessageAction,
   currentUserId 
 }) => {
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
 
@@ -76,7 +78,7 @@ const EnhancedMessageBubble = ({
           isSingleEmoji && 'bg-transparent p-0',
           !isSingleEmoji && !isSingleMedia && [
             'rounded-2xl px-3 py-2 max-w-xs md:max-w-md lg:max-w-lg',
-            message.sender === 'me' 
+            message.senderId == currentUserId 
               ? `${theme.accentBg} text-white ml-auto` 
               : `${theme.messageBg} ${theme.textColor}`
           ],
@@ -88,15 +90,15 @@ const EnhancedMessageBubble = ({
         {message.replyTo && (
           <div className={`
             mb-2 p-2 rounded-lg border-l-4 border-blue-500
-            ${message.sender === 'me' ? 'bg-white/10' : theme.headerBg}
+            ${message.senderId == currentUserId ? 'bg-white/10' : theme.headerBg}
           `}>
             <div className={`text-xs font-medium mb-1 ${
-              message.sender === 'me' ? 'text-white/80' : theme.secondaryText
+              message.senderId == currentUserId ? 'text-white/80' : theme.secondaryText
             }`}>
               {message.replyTo.senderName || 'Contact'}
             </div>
             <div className={`text-sm ${
-              message.sender === 'me' ? 'text-white/70' : theme.secondaryText
+              message.senderId == currentUserId ? 'text-white/70' : theme.secondaryText
             } truncate`}>
               {message.replyTo.text || 'Média'}
             </div>
@@ -134,7 +136,7 @@ const EnhancedMessageBubble = ({
             {formatText && (
               <div className={clsx(
                 'text-sm',
-                message.sender === 'me' ? 'text-white' : theme.textColor
+                message.senderId == currentUserId ? 'text-white' : theme.textColor
               )}>
                 {formatText}
               </div>
@@ -143,7 +145,7 @@ const EnhancedMessageBubble = ({
             {/* Métadonnées du message */}
             <div className={clsx(
               'flex items-center justify-end gap-1 mt-1 text-xs',
-              message.sender === 'me' ? 'text-white/70' : theme.secondaryText
+              message.senderId == currentUserId ? 'text-white/70' : theme.secondaryText
             )}>
               {/* Heure d'édition si modifié */}
               {message.isEdited && (
@@ -162,7 +164,7 @@ const EnhancedMessageBubble = ({
               </span>
 
               {/* Statut de lecture (messages envoyés uniquement) */}
-              {message.sender === 'me' && (
+              {message.senderId == currentUserId && (
                 <BsCheck2All 
                   className={clsx(
                     'w-4 h-4',
@@ -190,7 +192,7 @@ const EnhancedMessageBubble = ({
             <FaReply className="w-3 h-3" />
           </motion.button>
           
-          {message.sender === 'me' && (
+          {message.senderId == currentUserId && (
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}

@@ -7,6 +7,8 @@ import EnhancedMessageBubble from './EnhancedMessageBubble';
 import EnhancedChatInput from './EnhancedChatInput';
 import TypingIndicator from '../TypingIndicator';
 import { useApp } from '../../Context/AppContext';
+import { useAuth } from '../../Context/AuthContext';
+import { normalizeMessage } from '../../Enhanced/EliteDataEnricher';
 
 const EnhancedChatPage = () => {
   const {
@@ -19,6 +21,7 @@ const EnhancedChatPage = () => {
     setShowProfile,
     isMobile
   } = useApp();
+  const { user } = useAuth();
 
   // États locaux
   const [inputValue, setInputValue] = useState('');
@@ -62,7 +65,7 @@ const EnhancedChatPage = () => {
         break;
         
       case 'edit':
-        if (message.sender === 'me') {
+        if (message.senderId === user.id) {
           setEditingMessage(message);
           setInputValue(message.text || '');
         }
@@ -177,7 +180,7 @@ const EnhancedChatPage = () => {
   // Filtrer les messages selon la recherche
   const filteredMessages = (messages || []).filter(msg => {
     if (!searchQuery) return true;
-    return msg.text?.toLowerCase().includes(searchQuery.toLowerCase());
+    return normalizeMessage(msg).text?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   // Enrichir les messages avec les états
@@ -197,7 +200,7 @@ const EnhancedChatPage = () => {
 
   if (!activeChat) {
     return (
-      <div className={`flex-1 flex items-center justify-center ${theme.bgColor}`}>
+      <div className={`flex-1 flex items-center justify-center mt-[40%] ${theme.bgColor}`}>
         <div className="text-center">
           <div className={`text-6xl mb-4 ${theme.secondaryText}`}>💬</div>
           <h3 className={`text-xl font-medium ${theme.textColor} mb-2`}>
@@ -305,21 +308,21 @@ const EnhancedChatPage = () => {
               animate="visible"
               exit="exit"
               transition={{ duration: 0.2 }}
-              className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.senderId === user.id ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`
-                ${message.sender === 'me' ? 'ml-10' : 'mr-10'} 
+                ${message.senderId === user.id ? 'ml-10' : 'mr-10'} 
                 max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%]
               `}>
                 <EnhancedMessageBubble
-                  message={message}
+                  message={normalizeMessage(message)}
                   theme={theme}
                   openMediaViewer={(index) => {
                     // TODO: Ouvrir le visualiseur de médias
                     console.log('Ouvrir média:', index);
                   }}
                   onMessageAction={handleMessageAction}
-                  currentUserId="me"
+                  currentUserId={user.id}
                 />
               </div>
             </motion.div>

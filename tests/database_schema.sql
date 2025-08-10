@@ -249,10 +249,3 @@ CREATE POLICY "Users can view their own notifications" ON public.notifications
 
 CREATE POLICY "Users can update their own notifications" ON public.notifications
     FOR UPDATE USING (user_id = auth.uid());
-
--- Données de test (optionnel)
-INSERT INTO public.users (id, name, avatar_url, status) VALUES
-    ('00000000-0000-0000-0000-000000000001', 'John Doe', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face', 'online'),
-    ('00000000-0000-0000-0000-000000000002', 'Jane Smith', 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face', 'online'),
-    ('00000000-0000-0000-0000-000000000003', 'Bob Johnson', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face', 'offline')
-ON CONFLICT (id) DO NOTHING;

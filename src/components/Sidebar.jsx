@@ -57,7 +57,7 @@ const Sidebar = () => {
     { id: TABS.GROUPS, icon: <FaUsers size={17} />, label: 'Groupes & Rooms' },
     { id: TABS.CALLS, icon: <FaPhoneAlt size={17} />, label: 'Appels' },
     { id: TABS.STATUS, icon: <FaCircleNotch size={17} />, label: 'Statuts' },
-    { id: 'world', icon: <FaGlobe size={17} />, label: 'World Page', isAction: true },
+    { id: TABS.WORLD, icon: <FaGlobe size={17} />, label: 'World Page'},
   ];
 
   // Onglets centraux - Fonctionnalités rapides
@@ -82,9 +82,6 @@ const Sidebar = () => {
     switch (tabId) {
       case 'toggle':
         console.log('Toggle menu');
-        break;
-      case 'world':
-        console.log('Ouvrir World Page - Affichage des utilisateurs par zone');
         break;
       case 'search':
         console.log('Ouvrir recherche globale - contacts, messages, groupes');
