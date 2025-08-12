@@ -8,6 +8,7 @@ import LinkPreview from '../LinkPreview';
 import MessageStates from './MessageStates';
 import MessageDropdown from './MessageDropdown';
 import ReplyPreviewBubble from './ReplyPreviewBubble';
+import EliteMessageReactions from './EliteMessageReactions';
 import { useMemo } from 'react';
 
 
@@ -17,7 +18,9 @@ const EnhancedMessageBubble = ({
   openMediaViewer, 
   onMessageAction,
   currentUserId,
-  onScrollToMessage 
+  onScrollToMessage,
+  onAddReaction,
+  onRemoveReaction
 }) => {
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -207,6 +210,16 @@ const EnhancedMessageBubble = ({
           )}
         </div>
       </div>
+
+      {/* Réactions ELITE */}
+      <EliteMessageReactions
+        message={message}
+        currentUserId={currentUserId}
+        theme={theme}
+        onAddReaction={onAddReaction}
+        onRemoveReaction={onRemoveReaction}
+        isCurrentUser={message.senderId === currentUserId}
+      />
 
       {/* Dropdown de contexte */}
       <MessageDropdown

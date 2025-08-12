@@ -85,9 +85,12 @@ export function formatReactions(reactions) {
   
   return reactions.map(reaction => ({
     emoji: reaction.emoji,
+    userId: reaction.userId || reaction.user_id,
+    user_id: reaction.userId || reaction.user_id,
     users: reaction.users || [],
-    count: reaction.users?.length || 0,
+    count: reaction.users?.length || 1,
     userIds: reaction.users || [],
+    created_at: reaction.created_at,
     // Compatibilité avec les anciens formats
     id: `reaction-${reaction.emoji}`,
     messageId: reaction.messageId || reaction.message_id

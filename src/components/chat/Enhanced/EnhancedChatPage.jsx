@@ -10,7 +10,7 @@ import MediaViewer from '../MediaViewer';
 import { useApp } from '../../Context/AppContext';
 import { useAuth } from '../../Context/AuthContext';
 import { useMessageNotifications } from '../Notif';
-// import { normalizeMessage } from '../../Enhanced/EliteDataEnricher'; // Plus utilisé - formatage automatique
+import { normalizeMessage } from '../../Enhanced/EliteDataEnricher';
 import { db, supabase } from '../../../lib/supabase';
 
 const EnhancedChatPage = () => {
@@ -45,6 +45,42 @@ const EnhancedChatPage = () => {
   const [hiddenMessages, setHiddenMessages] = useState([]);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [mediaViewerData, setMediaViewerData] = useState({ isOpen: false, media: [], initialIndex: 0 });
+
+  // 🧪 Fonction pour ajouter des réactions de test (à supprimer en production)
+  const addTestReactionsToMessages = (messages) => {
+    return messages.map((message, index) => {
+      // Ajouter des réactions à quelques messages pour la démo
+      const shouldHaveReactions = index % 2 === 0; // Un message sur 2
+      
+      if (!shouldHaveReactions || message.reactions?.length > 0) return message;
+
+      const testReactions = [];
+      const emojis = ['👍', '❤️', '😂', '😮', '🎉', '🔥'];
+      const testUsers = [
+        'f077c2b4-8f6a-406e-b98c-48ff14fba862', // User de test
+        '900f0fee-44a9-4854-8a0c-9672309a1311', // Autre user de test  
+        user?.id // Utilisateur actuel
+      ].filter(Boolean);
+
+      // Ajouter 1-3 réactions aléatoires
+      const numReactions = Math.floor(Math.random() * 3) + 1;
+      const shuffledEmojis = [...emojis].sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < numReactions && i < shuffledEmojis.length; i++) {
+        const emoji = shuffledEmojis[i];
+        const randomUser = testUsers[Math.floor(Math.random() * testUsers.length)];
+        
+        testReactions.push({
+          emoji,
+          userId: randomUser,
+          user_id: randomUser,
+          created_at: new Date(Date.now() - Math.random() * 86400000).toISOString()
+        });
+      }
+
+      return { ...message, reactions: testReactions };
+    });
+  };
 
   // Refs
   const messagesEndRef = useRef(null);
@@ -316,6 +352,79 @@ const EnhancedChatPage = () => {
     }
   };
 
+  // 🎉 Gestion des réactions ELITE
+  const handleAddReaction = async (messageId, emoji) => {
+    try {
+      console.log('✨ Ajout réaction:', { messageId, emoji, userId: user?.id });
+      
+      // Mettre à jour localement d'abord pour l'expérience utilisateur
+      setRealMessages(prevMessages => 
+        prevMessages.map(msg => {
+          if (msg.id === messageId) {
+            const existingReactions = msg.reactions || [];
+            const userReactionIndex = existingReactions.findIndex(r => r.userId === user?.id || r.user_id === user?.id);
+            
+            let newReactions;
+            if (userReactionIndex >= 0) {
+              // Remplacer la réaction existante
+              newReactions = [...existingReactions];
+              newReactions[userReactionIndex] = { 
+                userId: user?.id, 
+                user_id: user?.id, 
+                emoji, 
+                created_at: new Date().toISOString() 
+              };
+            } else {
+              // Ajouter nouvelle réaction
+              newReactions = [...existingReactions, { 
+                userId: user?.id, 
+                user_id: user?.id, 
+                emoji, 
+                created_at: new Date().toISOString() 
+              }];
+            }
+            
+            return { ...msg, reactions: newReactions };
+          }
+          return msg;
+        })
+      );
+
+      // TODO: Appel API pour sauvegarder en DB
+      // await db.addReaction(messageId, user.id, emoji);
+      
+      notifyMessageAction('reaction', { emoji, action: 'add' });
+    } catch (error) {
+      console.error('❌ Erreur ajout réaction:', error);
+    }
+  };
+
+  const handleRemoveReaction = async (messageId, emoji) => {
+    try {
+      console.log('🗑️ Suppression réaction:', { messageId, emoji, userId: user?.id });
+      
+      // Mettre à jour localement
+      setRealMessages(prevMessages => 
+        prevMessages.map(msg => {
+          if (msg.id === messageId) {
+            const filteredReactions = (msg.reactions || []).filter(r => 
+              !((r.userId === user?.id || r.user_id === user?.id) && r.emoji === emoji)
+            );
+            return { ...msg, reactions: filteredReactions };
+          }
+          return msg;
+        })
+      );
+
+      // TODO: Appel API pour supprimer de la DB
+      // await db.removeReaction(messageId, user.id, emoji);
+      
+      notifyMessageAction('reaction', { emoji, action: 'remove' });
+    } catch (error) {
+      console.error('❌ Erreur suppression réaction:', error);
+    }
+  };
+
   // Gestion de l'envoi de messages avec Vercel Blob
   const handleSend = async (e, data) => {
     e.preventDefault();
@@ -431,8 +540,11 @@ const EnhancedChatPage = () => {
     return normalizeMessage(msg).text?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  // 🧪 Ajouter des réactions de test pour la démo
+  const messagesWithTestReactions = addTestReactionsToMessages(filteredMessages);
+
   // Enrichir les messages avec les états
-  const enrichedMessages = filteredMessages.map(msg => ({
+  const enrichedMessages = messagesWithTestReactions.map(msg => ({
     ...msg,
     isPinned: pinnedMessages.includes(msg.id),
     isFavorite: favoriteMessages.includes(msg.id),
@@ -605,6 +717,8 @@ const EnhancedChatPage = () => {
                   onMessageAction={handleMessageAction}
                   currentUserId={user?.id}
                   onScrollToMessage={scrollToMessage}
+                  onAddReaction={handleAddReaction}
+                  onRemoveReaction={handleRemoveReaction}
                 />
               </div>
             </motion.div>
