@@ -10,7 +10,8 @@ import MediaViewer from '../MediaViewer';
 import { useApp } from '../../Context/AppContext';
 import { useAuth } from '../../Context/AuthContext';
 import { useMessageNotifications } from '../Notif';
-import { normalizeMessage } from '../../Enhanced/EliteDataEnricher';
+// import { normalizeMessage } from '../../Enhanced/EliteDataEnricher'; // Plus utilisé - formatage automatique
+import { db, supabase } from '../../../lib/supabase';
 
 const EnhancedChatPage = () => {
   const {
@@ -29,10 +30,13 @@ const EnhancedChatPage = () => {
 
   // États locaux
   const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState([]);
+  const [realMessages, setRealMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [pinnedMessages, setPinnedMessages] = useState([]);
@@ -66,18 +70,102 @@ const EnhancedChatPage = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, realMessages]);
 
-  // Simulation du typing indicator
+  // Charger les messages réels depuis Supabase
   useEffect(() => {
-    if (inputValue.trim()) {
-      setIsTyping(true);
-      const timer = setTimeout(() => setIsTyping(false), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setIsTyping(false);
-    }
-  }, [inputValue]);
+    const loadMessages = async () => {
+      if (!activeChat?.id || !user?.id) return;
+      
+      setLoadingMessages(true);
+      try {
+        const { data: messagesData, error } = await db.getMessages(activeChat.id);
+        
+        if (error) {
+          console.error('Erreur chargement messages:', error);
+        } else {
+          // Transformer les données Supabase vers le format attendu
+          const transformedMessages = messagesData.map(msg => ({
+            id: msg.id,
+            text: msg.content || '',
+            content: msg.content || '',
+            senderId: msg.sender_id,
+            timestamp: msg.created_at,
+            isRead: msg.status === 'read',
+            isEdited: msg.is_edited || false,
+            media: msg.media_url ? [{
+              id: `media-${msg.id}`,
+              url: msg.media_url,
+              type: msg.media_type || 'image',
+              name: msg.media_name,
+              size: msg.media_size
+            }] : [],
+            replyTo: msg.reply_to_id ? {
+              id: msg.reply_to_id,
+              text: 'Message référencé'
+            } : null
+          }));
+          
+          setRealMessages(transformedMessages);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des messages:', error);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    loadMessages();
+  }, [activeChat?.id, user?.id]);
+
+  // Écouter les typing indicators en temps réel
+  useEffect(() => {
+    if (!activeChat?.id || !user?.id) return;
+
+    const typingChannel = supabase
+      .channel(`typing_indicators_${activeChat.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'typing_indicators',
+          filter: `discussion_id=eq.${activeChat.id}`
+        },
+        (payload) => {
+          console.log('Typing indicator change:', payload);
+          
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const newTyping = payload.new;
+            // Ne pas afficher notre propre typing indicator
+            if (newTyping.user_id !== user.id) {
+              setTypingUsers(prev => {
+                const filtered = prev.filter(t => t.user_id !== newTyping.user_id);
+                return [...filtered, newTyping];
+              });
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const deletedTyping = payload.old;
+            setTypingUsers(prev => prev.filter(t => t.user_id !== deletedTyping.user_id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Nettoyer les typing indicators expirés toutes les 5 secondes
+    const cleanupInterval = setInterval(() => {
+      const now = new Date();
+      setTypingUsers(prev => prev.filter(t => {
+        const startedAt = new Date(t.started_at);
+        return (now - startedAt) < 5000; // Expirer après 5 secondes
+      }));
+    }, 5000);
+
+    return () => {
+      supabase.removeChannel(typingChannel);
+      clearInterval(cleanupInterval);
+    };
+  }, [activeChat?.id, user?.id]);
 
   // Gestion des actions sur les messages
   const handleMessageAction = (action, message) => {
@@ -210,34 +298,78 @@ const EnhancedChatPage = () => {
     }
   };
 
-  // Gestion de l'envoi de messages
-  const handleSend = (e, data) => {
+  // Gestion de l'envoi de messages avec Supabase
+  const handleSend = async (e, data) => {
     e.preventDefault();
     
     if (!data.message?.trim() && !data.media?.length) return;
+    if (!activeChat?.id || !user?.id) return;
 
     const messageData = {
-      text: data.message,
-      media: data.media || [],
-      replyTo: data.replyTo,
-      timestamp: new Date().toISOString(),
-      sender: 'me',
-      isRead: false,
-      isEdited: !!data.editId
+      content: data.message,
+      message_type: data.media?.length > 0 ? 'media' : 'text',
+      reply_to_id: data.replyTo?.id || null,
+      media: data.media || []
     };
 
     if (data.editId) {
       // Mode édition
-      setMessages(prev => prev.map(msg => 
-        msg.id === data.editId 
-          ? { ...msg, text: messageData.text, isEdited: true, editedAt: messageData.timestamp }
-          : msg
-      ));
-      setEditingMessage(null);
-      notifyMessageAction('edit');
+      try {
+        const { error } = await supabase
+          .from('messages')
+          .update({
+            content: data.message,
+            is_edited: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', data.editId)
+          .eq('sender_id', user.id); // Sécurité : seul l'expéditeur peut éditer
+
+        if (error) {
+          console.error('Erreur édition message:', error);
+        } else {
+          // Mettre à jour localement
+          setRealMessages(prev => prev.map(msg => 
+            msg.id === data.editId 
+              ? { ...msg, content: data.message, text: data.message, isEdited: true }
+              : msg
+          ));
+          setEditingMessage(null);
+          notifyMessageAction('edit');
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'édition:', error);
+      }
     } else {
       // Nouveau message
-      sendMessage(messageData.text || messageData, messageData.type || 'text');
+      try {
+        const { data: savedMessage, error } = await db.sendMessage(activeChat.id, user.id, messageData);
+        
+        if (error) {
+          console.error('Erreur envoi message:', error);
+        } else {
+          // Ajouter le nouveau message localement
+          const newMessage = {
+            id: savedMessage.id,
+            text: savedMessage.content,
+            content: savedMessage.content,
+            senderId: user.id,
+            timestamp: savedMessage.created_at,
+            isRead: false,
+            media: savedMessage.media_url ? [{
+              id: `media-${savedMessage.id}`,
+              url: savedMessage.media_url,
+              type: savedMessage.media_type || 'image'
+            }] : data.media || [],
+            replyTo: data.replyTo
+          };
+          
+          setRealMessages(prev => [...prev, newMessage]);
+          notifyMessageAction('send');
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi:', error);
+      }
     }
 
     // Reset des états
@@ -272,8 +404,11 @@ const EnhancedChatPage = () => {
     setShowProfile(true);
   };
 
+  // Utiliser les vrais messages si disponibles, sinon les messages mock
+  const currentMessages = realMessages.length > 0 ? realMessages : (messages || []);
+  
   // Filtrer les messages selon la recherche et les messages cachés
-  const filteredMessages = (messages || []).filter(msg => {
+  const filteredMessages = currentMessages.filter(msg => {
     if (hiddenMessages.includes(msg.id)) return false;
     if (!searchQuery) return true;
     return normalizeMessage(msg).text?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -446,7 +581,7 @@ const EnhancedChatPage = () => {
                 max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%]
               `}>
                 <EnhancedMessageBubble
-                  message={normalizeMessage(message)}
+                  message={message}
                   theme={theme}
                   openMediaViewer={openMediaViewer}
                   onMessageAction={handleMessageAction}
@@ -457,9 +592,9 @@ const EnhancedChatPage = () => {
           ))}
         </AnimatePresence>
 
-        {/* Indicateur de frappe */}
+        {/* Indicateur de frappe - afficher seulement les autres utilisateurs */}
         <AnimatePresence>
-          {isTyping && (
+          {typingUsers.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -467,7 +602,7 @@ const EnhancedChatPage = () => {
               className="flex justify-start"
             >
               <div className="mr-10">
-                <TypingIndicator theme={theme} />
+                <TypingIndicator theme={theme} users={typingUsers} />
               </div>
             </motion.div>
           )}

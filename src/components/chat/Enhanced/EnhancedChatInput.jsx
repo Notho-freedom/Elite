@@ -11,6 +11,9 @@ import MediaPreviewModal from '../Input/MediaPreview';
 import LinkPreview from '../LinkPreview';
 import ReplyPreview from './ReplyPreview';
 import EmojiPickerWrapper from '../EmojiPickerWrapper';
+import { useAuth } from '../../Context/AuthContext';
+import { useApp } from '../../Context/AppContext';
+import { supabase } from '../../../lib/supabase';
 
 const EnhancedChatInput = memo(({ 
   inputValue, 
@@ -39,6 +42,11 @@ const EnhancedChatInput = memo(({
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  
+  // Pour les typing indicators
+  const { user } = useAuth();
+  const { activeChat } = useApp();
+  const typingTimeoutRef = useRef(null);
 
   // Calcul de la hauteur de la textarea
   const resizeTextarea = useCallback(() => {
@@ -222,6 +230,90 @@ const EnhancedChatInput = memo(({
   const lineCount = textareaRef.current 
     ? Math.floor(textareaRef.current.scrollHeight / parseInt(getComputedStyle(textareaRef.current).lineHeight))
     : 1;
+
+  // Gestion des typing indicators
+  const handleTypingIndicator = useCallback((value) => {
+    if (!user?.id || !activeChat?.id) return;
+
+    // Si l'utilisateur tape quelque chose
+    if (value.trim()) {
+      // Envoyer l'événement "typing start" seulement s'il n'y a pas déjà un timeout actif
+      if (!typingTimeoutRef.current) {
+        insertTypingIndicator();
+      }
+
+      // Nettoyer le timeout précédent
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Définir un nouveau timeout pour arrêter le typing après 2 secondes d'inactivité
+      typingTimeoutRef.current = setTimeout(() => {
+        handleStopTyping();
+      }, 2000);
+    } else {
+      // Si le champ est vide, arrêter immédiatement
+      handleStopTyping();
+    }
+  }, [user?.id, activeChat?.id]);
+
+  const insertTypingIndicator = async () => {
+    try {
+      const { error } = await supabase
+        .from('typing_indicators')
+        .upsert({
+          discussion_id: activeChat.id,
+          user_id: user.id,
+          started_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Erreur ajout typing indicator:', error);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du typing indicator:', error);
+    }
+  };
+
+  const handleStopTyping = useCallback(() => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    if (user?.id && activeChat?.id) {
+      removeTypingIndicator();
+    }
+  }, [user?.id, activeChat?.id]);
+
+  const removeTypingIndicator = async () => {
+    try {
+      const { error } = await supabase
+        .from('typing_indicators')
+        .delete()
+        .eq('discussion_id', activeChat.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Erreur suppression typing indicator:', error);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression du typing indicator:', error);
+    }
+  };
+
+  // Nettoyer les typing indicators quand on quitte le composant
+  useEffect(() => {
+    return () => {
+      handleStopTyping();
+    };
+  }, [handleStopTyping]);
+
+  // Nettoyer les typing indicators quand on change de discussion
+  useEffect(() => {
+    // Nettoyer les anciens indicators quand on change de discussion
+    handleStopTyping();
+  }, [activeChat?.id, handleStopTyping]);
 
   const hasContent = inputValue.trim() || previewMedia.length > 0;
 
@@ -424,7 +516,10 @@ const EnhancedChatInput = memo(({
             autoComplete='on'
             autoCorrect='on'
             autoCapitalize='on'
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              handleTypingIndicator(e.target.value);
+            }}
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             onKeyDown={(e) => {
@@ -437,6 +532,9 @@ const EnhancedChatInput = memo(({
               setIsFocused(true);
               setShowEmojiPicker(false);
               setShowAttachMenu(false);
+            }}
+            onBlur={() => {
+              handleStopTyping();
             }}
             className={`
               flex-1 py-2 px-4

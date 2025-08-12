@@ -1,8 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import CallHistory from "./CallHistory";
-import DiscussionList from "./DiscussionList";
 import EliteDiscussionList from './Enhanced/EliteDiscussionList';
-import ChatPage from './ChatPage';
 import EnhancedChatPage from './chat/Enhanced/EnhancedChatPage';
 import CallInterface from './Elite/Calls/CallInterface';
 import Profile from "./chat/Profile";

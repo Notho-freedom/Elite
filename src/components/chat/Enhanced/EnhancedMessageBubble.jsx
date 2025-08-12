@@ -21,26 +21,28 @@ const EnhancedMessageBubble = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
 
-  const isSingleEmoji = useMemo(() => 
-    message.text?.match(/^\p{Emoji}$/u) && !message.media?.length,
-    [message.text, message.media]
-  );
+  const isSingleEmoji = useMemo(() => {
+    const textContent = message.text || message.content;
+    return textContent?.match(/^\p{Emoji}$/u) && !message.media?.length;
+  }, [message.text, message.content, message.media]);
   
-  const isSingleMedia = useMemo(() => 
-    message.media?.length === 1 && !message.text,
-    [message.media, message.text]
-  );
+  const isSingleMedia = useMemo(() => {
+    const textContent = message.text || message.content;
+    return message.media?.length === 1 && !textContent;
+  }, [message.media, message.text, message.content]);
 
   const detectedLinks = useMemo(() => {
-    if (!message.text) return [];
+    const textContent = message.text || message.content;
+    if (!textContent) return [];
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return message.text.match(urlRegex) || [];
-  }, [message.text]);
+    return textContent.match(urlRegex) || [];
+  }, [message.text, message.content]);
 
   const formatText = useMemo(() => {
-    if (!message.text) return null;
+    const textContent = message.text || message.content;
+    if (!textContent) return null;
     
-    return message.text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => (
+    return textContent.split(/(https?:\/\/[^\s]+)/g).map((part, index) => (
       detectedLinks.includes(part) ? (
         <div key={index} className="w-full my-1 overflow-hidden rounded-lg">
           <LinkPreview url={part} theme={theme} sender={message.sender} />
@@ -55,7 +57,7 @@ const EnhancedMessageBubble = ({
         </span>
       )
     ));
-  }, [message.text, detectedLinks, theme, message.sender]);
+  }, [message.text, message.content, detectedLinks, theme, message.sender]);
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -132,13 +134,13 @@ const EnhancedMessageBubble = ({
               </div>
             )}
 
-            {/* Texte formaté */}
-            {formatText && (
+            {/* Texte formaté - afficher le contenu du message */}
+            {(message.text || message.content) && (
               <div className={clsx(
-                'text-sm',
+                'text-sm break-words',
                 message.senderId == currentUserId ? 'text-white' : theme.textColor
               )}>
-                {formatText}
+                {formatText || message.content || message.text}
               </div>
             )}
 
@@ -157,10 +159,16 @@ const EnhancedMessageBubble = ({
               
               {/* Heure */}
               <span>
-                {new Date(message.timestamp).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
+                {message.timestamp ? 
+                  new Date(message.timestamp).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  }) :
+                  message.time || new Date().toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })
+                }
               </span>
 
               {/* Statut de lecture (messages envoyés uniquement) */}

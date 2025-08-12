@@ -78,20 +78,40 @@ export const AppProvider = ({ children }) => {
 
   // Charger toutes les données de l'utilisateur
   const loadUserData = async () => {
-    if (!user) return;
+    if (!user?.id) {
+      console.log('❌ Aucun utilisateur connecté pour charger les données');
+      return;
+    }
 
     try {
+      console.log('🔄 Chargement des données utilisateur pour:', user.id);
       setLoadingData(true);
       setDataError(null);
 
       // Charger les discussions
-      const { data: discussionsData, error: discussionsError } = await db.getDiscussions(user.id);
-      if (discussionsError) throw discussionsError;
+      console.log('📨 Chargement des discussions...');
+      const { data: discussionsData, error: discussionsError, warning } = await db.getDiscussions(user.id);
+      
+      if (discussionsError && !warning) {
+        console.error('❌ Erreur discussions:', discussionsError);
+        throw discussionsError;
+      }
+      
+      if (warning) {
+        console.warn('⚠️ Avertissement discussions:', warning);
+      }
+      
+      console.log('✅ Discussions chargées:', discussionsData?.length || 0, 'discussions');
       setRealDiscussions(discussionsData || []);
 
       // Charger l'historique des appels
+      console.log('📞 Chargement de l\'historique des appels...');
       const { data: callHistoryData, error: callHistoryError } = await calls.getCallHistory(user.id);
-      if (callHistoryError) throw callHistoryError;
+      if (callHistoryError) {
+        console.error('❌ Erreur appels:', callHistoryError);
+        throw callHistoryError;
+      }
+      console.log('✅ Historique appels chargé:', callHistoryData?.length || 0, 'appels');
       setRealCallHistory(callHistoryData || []);
 
       // Mettre à jour les notifications
@@ -148,22 +168,36 @@ export const AppProvider = ({ children }) => {
     }
 
     try {
+      console.log('📤 AppContext.sendMessage - Données reçues:', { messageContent, messageType, activeChat: activeChat.id });
+      
       if (isAuthenticated) {
         // Mode Supabase - envoyer selon la nouvelle structure
         let messageData;
         
         if (typeof messageContent === 'string') {
           // Message texte simple
-          messageData = messageContent;
+          messageData = {
+            content: messageContent.trim(),
+            message: messageContent.trim(),
+            text: messageContent.trim()
+          };
         } else if (messageContent && typeof messageContent === 'object') {
           // Message complexe avec texte et/ou médias
           messageData = {
-            message: messageContent.text || messageContent.message || '',
+            content: messageContent.text || messageContent.message || messageContent.content || '',
+            message: messageContent.text || messageContent.message || messageContent.content || '',
+            text: messageContent.text || messageContent.message || messageContent.content || '',
             media: messageContent.media || []
           };
         } else {
-          messageData = '';
+          messageData = {
+            content: '',
+            message: '',
+            text: ''
+          };
         }
+        
+        console.log('🔄 Données normalisées pour envoi:', messageData);
 
         const { data, error } = await db.sendMessage(
           activeChat.id,
@@ -172,6 +206,8 @@ export const AppProvider = ({ children }) => {
         );
 
         if (error) throw error;
+
+        console.log('✅ Message envoyé avec succès:', data);
 
         // Ajouter les nouveaux messages à la liste locale
         if (data && Array.isArray(data)) {

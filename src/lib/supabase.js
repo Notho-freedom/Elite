@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { formatMessageForUI, transformReactions } from './messageFormatter.js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -79,29 +80,59 @@ export const auth = {
 export const db = {
   // Récupérer les discussions avec le dernier message formaté
   getDiscussions: async (userId) => {
-    const { data, error } = await supabase
-      .from('discussions')
-      .select(`
-        *,
-        participants:discussion_participants(
-          user_id,
-          users(id, name, avatar_url, status)
-        ),
-        last_message:messages(
-          id,
-          content,
-          message_type,
-          media_url,
-          created_at,
-          sender:users(name)
-        )
-      `)
-      .eq('participants.user_id', userId)
-      .order('updated_at', { ascending: false })
-    
-    if (error) {
-      console.error('Erreur lors de la récupération des discussions:', error);
-      return { data: [], error };
+    let data = [];
+    let error = null;
+
+    try {
+      const response = await supabase
+        .from('discussions')
+        .select(`
+          *,
+          participants:discussion_participants(
+            user_id,
+            users(id, name, avatar_url, status)
+          ),
+          last_message:messages(
+            id,
+            content,
+            message_type,
+            media_url,
+            created_at,
+            sender:users(name)
+          )
+        `)
+        .eq('participants.user_id', userId)
+        .order('updated_at', { ascending: false });
+      
+      data = response.data;
+      error = response.error;
+      
+      if (error) {
+        // Gestion spéciale pour la récursion RLS
+        if (error.code === '42P17') {
+          console.warn('⚠️ Récursion RLS détectée - utilisation du mode dégradé');
+          console.warn('📝 Appliquez le correctif RLS : voir SOLUTION_IMMEDIATE.sql');
+          
+          // Mode dégradé : retourner des données mockées avec un indicateur d'erreur
+          return { 
+            data: [], 
+            error: null, // Ne pas bloquer l'app
+            warning: 'RLS_RECURSION_DETECTED',
+            message: 'Politiques RLS à corriger - Mode démonstration activé'
+          };
+        }
+        
+        console.error('Erreur lors de la récupération des discussions:', error);
+        return { data: [], error };
+      }
+    } catch (networkError) {
+      console.warn('Erreur réseau Supabase - mode hors ligne activé:', networkError);
+      return { 
+        data: [], 
+        error: null,
+        warning: 'NETWORK_ERROR',
+        message: 'Mode hors ligne - Vérifiez votre connexion'
+      };
     }
 
     // Transformer les données pour correspondre au format attendu
@@ -150,6 +181,9 @@ export const db = {
 
   // Récupérer les messages d'une discussion (ordre chronologique)
   getMessages: async (discussionId, limit = 50, offset = 0) => {
+    // Récupérer l'utilisateur actuel
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    
     const { data, error } = await supabase
       .from('messages')
       .select(`
@@ -166,39 +200,10 @@ export const db = {
       return { data: [], error };
     }
 
-    // Transformer les données pour correspondre au format attendu du front-end
-    const transformedData = data?.map(message => {
-      const transformedMessage = {
-        id: message.id,
-        text: message.content || '',
-        sender: message.sender_id === 'current_user' ? 'me' : message.sender?.name || 'Utilisateur',
-        senderId: message.sender_id,
-        avatar: message.sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        timestamp: message.created_at,
-        time: formatMessageTime(message.created_at),
-        type: message.message_type || 'text',
-        isRead: true, // À implémenter selon la logique métier
-        reactions: [], // À implémenter
-        replyTo: message.reply_to ? {
-          id: message.reply_to.id,
-          text: message.reply_to.content,
-          sender: message.reply_to.sender?.name
-        } : null
-      };
-
-      // Ajouter les médias si présents
-      if (message.media_url && message.message_type !== 'text') {
-        transformedMessage.media = [{
-          id: `media-${message.id}`,
-          url: message.media_url,
-          type: message.message_type,
-          size: null, // À implémenter si nécessaire
-          duration: null // À implémenter pour audio/video
-        }];
-      }
-
-      return transformedMessage;
-    }) || [];
+    // Transformer les données avec le nouveau formateur universel
+    const transformedData = data?.map(message => 
+      formatMessageForUI(message, currentUser?.id)
+    ) || [];
 
     return { data: transformedData, error: null };
   },
@@ -208,38 +213,71 @@ export const db = {
     try {
       const messages = [];
       
-      // Si c'est un message avec texte et médias, on les sépare
-      if (typeof messageData === 'object' && messageData.message && messageData.media?.length > 0) {
-        // D'abord envoyer le message texte s'il y en a un
-        if (messageData.message.trim()) {
-          const textMessage = {
-            discussion_id: discussionId,
-            sender_id: senderId,
-            content: messageData.message.trim(),
-            message_type: 'text'
-          };
+      console.log('🚀 Envoi message - Données reçues:', { discussionId, senderId, messageData });
+      
+      // Normaliser les données d'entrée
+      let content = '';
+      let mediaList = [];
+      
+      if (typeof messageData === 'string') {
+        content = messageData.trim();
+      } else if (messageData && typeof messageData === 'object') {
+        content = (messageData.message || messageData.text || messageData.content || '').trim();
+        mediaList = messageData.media || [];
+      }
+      
+      console.log('📝 Contenu normalisé:', { content, mediaList: mediaList.length });
+      
+      // Envoyer le message texte si présent
+      if (content) {
+        const textMessage = {
+          discussion_id: discussionId,
+          sender_id: senderId,
+          content: content,
+          message_type: 'text',
+          status: 'sent',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        console.log('💬 Insertion message texte:', textMessage);
           
-          const { data: textData, error: textError } = await supabase
-            .from('messages')
-            .insert(textMessage)
-            .select(`
-              *,
-              sender:users(id, name, avatar_url)
-            `);
-            
-          if (textError) throw textError;
-          messages.push(...textData);
+        const { data: textData, error: textError } = await supabase
+          .from('messages')
+          .insert(textMessage)
+          .select(`
+            *,
+            sender:users(id, name, avatar_url)
+          `);
+          
+        if (textError) {
+          console.error('❌ Erreur insertion texte:', textError);
+          throw textError;
         }
         
-        // Ensuite envoyer chaque média comme un message séparé
-        for (const media of messageData.media) {
+        console.log('✅ Message texte inséré:', textData);
+        messages.push(...textData);
+      }
+      
+      // Envoyer les médias si présents
+      if (mediaList && mediaList.length > 0) {
+        for (const [index, media] of mediaList.entries()) {
           const mediaMessage = {
             discussion_id: discussionId,
             sender_id: senderId,
-            content: '', // Pas de texte pour les médias purs
+            content: media.caption || '', // Légende du média
             message_type: getMessageTypeFromMedia(media),
-            media_url: media.url || media.blob ? URL.createObjectURL(media.blob) : null
+            media_url: media.url || null,
+            media_type: media.type || null,
+            media_size: media.size || null,
+            media_name: media.name || `media_${index + 1}`,
+            thumbnail_url: media.thumbnail || null,
+            status: 'sent',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           };
+          
+          console.log(`📎 Insertion média ${index + 1}:`, mediaMessage);
           
           const { data: mediaData, error: mediaError } = await supabase
             .from('messages')
@@ -249,28 +287,19 @@ export const db = {
               sender:users(id, name, avatar_url)
             `);
             
-          if (mediaError) throw mediaError;
+          if (mediaError) {
+            console.error(`❌ Erreur insertion média ${index + 1}:`, mediaError);
+            throw mediaError;
+          }
+          
+          console.log(`✅ Média ${index + 1} inséré:`, mediaData);
           messages.push(...mediaData);
         }
-      } else {
-        // Message simple (texte seulement)
-        const simpleMessage = {
-          discussion_id: discussionId,
-          sender_id: senderId,
-          content: typeof messageData === 'string' ? messageData : messageData.message || messageData.text,
-          message_type: 'text'
-        };
-        
-        const { data, error } = await supabase
-          .from('messages')
-          .insert(simpleMessage)
-          .select(`
-            *,
-            sender:users(id, name, avatar_url)
-          `);
-          
-        if (error) throw error;
-        messages.push(...data);
+      }
+      
+      // Vérifier qu'au moins un message a été créé
+      if (messages.length === 0) {
+        throw new Error('Aucun contenu à envoyer (texte ou média requis)');
       }
 
       // Mettre à jour le timestamp de la discussion
@@ -279,28 +308,16 @@ export const db = {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', discussionId);
 
-      // Transformer les messages pour le front-end
-      const transformedMessages = messages.map(message => ({
-        id: message.id,
-        text: message.content || '',
-        sender: 'me',
-        senderId: message.sender_id,
-        avatar: message.sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        timestamp: message.created_at,
-        time: formatMessageTime(message.created_at),
-        type: message.message_type || 'text',
-        isRead: false,
-        reactions: [],
-        media: message.media_url ? [{
-          id: `media-${message.id}`,
-          url: message.media_url,
-          type: message.message_type
-        }] : undefined
-      }));
+      // Transformer les messages avec le formateur universel
+      const transformedMessages = messages.map(message => 
+        formatMessageForUI(message, senderId)
+      );
+      
+      console.log('🎯 Messages transformés pour UI:', transformedMessages);
 
       return { data: transformedMessages, error: null };
     } catch (error) {
-      console.error('Erreur lors de l\'envoi du message:', error);
+      console.error('❌ Erreur lors de l\'envoi du message:', error);
       return { data: null, error };
     }
   },
@@ -460,23 +477,50 @@ export const calls = {
 
   // Récupérer l'historique des appels
   getCallHistory: async (userId) => {
-    const { data, error } = await supabase
-      .from('calls')
-      .select(`
-        *,
-        discussion:discussions(name),
-        initiator:users(id, name, avatar_url),
-        participants:call_participants(
-          user_id,
-          users(id, name, avatar_url)
-        )
-      `)
-      .or(`initiator_id.eq.${userId}`)
-      .order('created_at', { ascending: false })
-    
-    if (error) {
-      console.error('Erreur lors de la récupération de l\'historique des appels:', error);
-      return { data: [], error };
+    let data = [];
+    let error = null;
+
+    try {
+      const response = await supabase
+        .from('calls')
+        .select(`
+          *,
+          discussion:discussions(name),
+          initiator:users(id, name, avatar_url),
+          participants:call_participants(
+            user_id,
+            users(id, name, avatar_url)
+          )
+        `)
+        .or(`initiator_id.eq.${userId}`)
+        .order('created_at', { ascending: false });
+      
+      data = response.data;
+      error = response.error;
+      
+      if (error) {
+        // Gestion spéciale pour la récursion RLS
+        if (error.code === '42P17') {
+          console.warn('⚠️ Récursion RLS détectée sur les appels - mode dégradé');
+          return { 
+            data: [], 
+            error: null,
+            warning: 'RLS_RECURSION_CALLS',
+            message: 'Historique des appels indisponible - Corrigez les politiques RLS'
+          };
+        }
+        
+        console.error('Erreur lors de la récupération de l\'historique des appels:', error);
+        return { data: [], error };
+      }
+    } catch (networkError) {
+      console.warn('Erreur réseau appels:', networkError);
+      return { 
+        data: [], 
+        error: null,
+        warning: 'NETWORK_ERROR',
+        message: 'Historique des appels indisponible hors ligne'
+      };
     }
 
     // Transformer les données pour correspondre au format attendu

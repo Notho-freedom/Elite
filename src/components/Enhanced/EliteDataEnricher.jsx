@@ -327,23 +327,91 @@ export default EliteDataEnricher;
 export function normalizeMessage(raw) {
   let parsedContent = {};
 
-  try {
-    parsedContent = JSON.parse(raw.content || "{}");
-  } catch (e) {
-    console.error("Erreur parsing content", e, raw.content);
-    parsedContent = { text: raw.content || "", media: [] };
+  // Gestion intelligente du contenu : JSON ou texte simple
+  if (raw.content) {
+    // Vérifier si c'est du JSON valide
+    if (raw.content.trim().startsWith('{') && raw.content.trim().endsWith('}')) {
+      try {
+        parsedContent = JSON.parse(raw.content);
+      } catch (e) {
+        console.warn("Contenu JSON malformé, traitement comme texte:", raw.content);
+        parsedContent = { text: raw.content, media: [] };
+      }
+    } else {
+      // C'est du texte simple, pas du JSON
+      parsedContent = { text: raw.content, media: [] };
+    }
+  } else {
+    // Pas de contenu
+    parsedContent = { text: "", media: [] };
+  }
+
+  // Gérer les médias depuis les champs de base de données
+  const media = [];
+  if (raw.media_url) {
+    media.push({
+      id: `media-${raw.id}`,
+      url: raw.media_url,
+      type: raw.message_type || 'file',
+      mediaType: raw.media_type,
+      size: raw.media_size,
+      name: raw.media_name,
+      thumbnail: raw.thumbnail_url
+    });
   }
 
   return {
     id: raw.id,
     discussionId: raw.discussion_id,
-    senderId: raw.senderId,
-    sender: parsedContent.sender || null,
-    text: parsedContent.text || "",
-    media: Array.isArray(parsedContent.media) ? parsedContent.media : [],
+    senderId: raw.sender_id || raw.senderId,
+    sender: raw.sender?.name || parsedContent.sender || 'Utilisateur',
+    senderName: raw.sender?.name || 'Utilisateur',
+    avatar: raw.sender?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    
+    // Contenu - support double format
+    text: parsedContent.text || raw.content || "",
+    content: parsedContent.text || raw.content || "",
+    
+    // Médias depuis la DB ou depuis le JSON
+    media: media.length > 0 ? media : (Array.isArray(parsedContent.media) ? parsedContent.media : []),
+    hasMedia: media.length > 0 || (parsedContent.media && parsedContent.media.length > 0),
+    
+    // Type et statut
+    type: raw.message_type || 'text',
+    messageType: raw.message_type || 'text',
+    status: raw.status || 'sent',
+    
+    // Métadonnées
     replyTo: parsedContent.replyTo || raw.reply_to_id || null,
-    timestamp: parsedContent.timestamp || raw.created_at,
-    isRead: parsedContent.isRead ?? false,
-    isEdited: parsedContent.isEdited ?? false
+    timestamp: raw.created_at || parsedContent.timestamp,
+    time: formatMessageTime(raw.created_at),
+    createdAt: raw.created_at,
+    
+    // États
+    isRead: parsedContent.isRead ?? (raw.status === 'read'),
+    isEdited: parsedContent.isEdited ?? Boolean(raw.is_edited),
+    isDeleted: Boolean(raw.is_deleted),
+    isPinned: Boolean(raw.is_pinned),
+    isImportant: Boolean(raw.is_important),
+    
+    // Réactions et interactions
+    reactions: raw.reactions ? (Array.isArray(raw.reactions) ? raw.reactions : []) : [],
+    mentions: raw.mentions ? (Array.isArray(raw.mentions) ? raw.mentions : []) : []
   };
+}
+
+// Fonction helper pour formater l'heure (si pas déjà importée)
+function formatMessageTime(timestamp) {
+  if (!timestamp) return '';
+  
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Europe/Paris'
+    });
+  } catch (error) {
+    return '';
+  }
 }

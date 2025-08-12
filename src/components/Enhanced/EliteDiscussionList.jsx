@@ -16,11 +16,13 @@ import { IoMdNotifications, IoMdNotificationsOff } from 'react-icons/io';
 import { MdVerified, MdBlock, MdReport, MdSecurity } from 'react-icons/md';
 import { DiscussionStates } from '../chat/Enhanced/MessageStates';
 import { useApp } from '../Context/AppContext';
+import { useAuth } from '../Context/AuthContext';
 import { useDiscussionActions } from '../../lib/eliteStoreSimple';
 import { useActionNotifications } from '../Elite/Actions/ActionNotification';
 import CreateDiscussionModal from '../Elite/Creation/CreateDiscussionModal';
 import EliteWallet from '../Elite/Wallet/EliteWallet';
 import CallButtons from '../Elite/Calls/CallButtons';
+import { db, supabase } from '../../lib/supabase';
 
 // Composants de filtres avancés
 const FilterSection = ({ activeFilter, onFilterChange, theme, discussions, isShowingFilters, toggleFilters }) => {
@@ -452,6 +454,8 @@ const EliteDiscussionList = () => {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   
   const { 
     realDiscussions, 
@@ -460,16 +464,16 @@ const EliteDiscussionList = () => {
     setActiveChat, 
     isMobile, 
     activeChat, 
-    isAuthenticated, 
-    user 
+    isAuthenticated 
   } = useApp();
+  const { user } = useAuth();
   
   // Actions Elite
   const discussionActions = useDiscussionActions();
   const { showNotification, NotificationContainer } = useActionNotifications();
   
   // Utiliser les données réelles si disponibles, sinon les données mockées
-  const discussions = realDiscussions.length == 0 ? realDiscussions : mockDiscussions;
+  const discussions = realDiscussions.length > 0 ? realDiscussions : mockDiscussions;
 
   const handleFilterChange = useCallback((newFilter) => {
     setFilter(newFilter);
@@ -576,6 +580,62 @@ const EliteDiscussionList = () => {
     }
   }, [discussionActions, showNotification]);
 
+  // Créer une nouvelle discussion avec un utilisateur
+  const createDiscussion = useCallback(async (targetUserId) => {
+    if (!user?.id || !targetUserId) {
+      console.log('❌ IDs manquants pour créer discussion:', { userId: user?.id, targetUserId });
+      return;
+    }
+
+    try {
+      console.log('🔨 Création discussion entre:', user.id, 'et', targetUserId);
+      const { data, error } = await db.createDiscussion([user.id, targetUserId]);
+      
+      if (error) {
+        console.error('❌ Erreur création discussion:', error);
+        alert(`Erreur lors de la création de la discussion: ${error.message || error}`);
+      } else {
+        console.log('✅ Discussion créée avec succès:', data);
+        setShowCreateModal(false);
+        alert('Discussion créée avec succès !');
+        
+        // Forcer le rechargement de la page pour voir la nouvelle discussion
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la création de la discussion:', error);
+      alert(`Erreur lors de la création de la discussion: ${error.message || error}`);
+    }
+  }, [user?.id]);
+
+  // Charger la liste des utilisateurs disponibles
+  const loadAvailableUsers = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setLoadingUsers(true);
+    try {
+      console.log('👥 Chargement des utilisateurs pour créer une discussion...');
+      const { data, error } = await db.getUsers(user.id);
+
+      if (error) {
+        console.error('❌ Erreur chargement utilisateurs:', error);
+      } else {
+        console.log(`✅ ${data?.length || 0} utilisateurs trouvés:`, data);
+        setAvailableUsers(data || []);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des utilisateurs:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [user?.id]);
+
+  // Ouvrir le modal de création
+  const handleCreateDiscussion = useCallback(() => {
+    setShowCreateModal(true);
+    loadAvailableUsers();
+  }, [loadAvailableUsers]);
+
   const handleQuickAction = useCallback((action, discussion) => {
     console.log(`Action rapide ${action} sur:`, discussion?.name);
     
@@ -643,11 +703,16 @@ const EliteDiscussionList = () => {
             <h1 className={`text-xl font-bold ${t.textColor}`}>
               Discussions
             </h1>
-            {realDiscussions.length === 0 && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                Mode Demo
-              </span>
-            )}
+                    {realDiscussions.length === 0 && (
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+              Mode Demo
+            </span>
+            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+              {user?.id ? `User ID: ${user.id.slice(0, 8)}...` : 'Non connecté'}
+            </span>
+          </div>
+        )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -676,7 +741,7 @@ const EliteDiscussionList = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateModal(true)}
+              onClick={handleCreateDiscussion}
               className={`p-2 rounded-full ${t.accentBg} text-white`}
               title="Nouvelle discussion"
             >
@@ -731,21 +796,29 @@ const EliteDiscussionList = () => {
         </AnimatePresence>
       </div>
 
-      {/* Message d'information si mode demo */}
-      {realDiscussions.length === 0 && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-2 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800"
-        >
+      {/* Message d'information et debug */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-4 mt-2 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800"
+      >
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
             <p className={`text-sm ${t.textColor}`}>
-              Mode démonstration Elite - Connectez-vous à Supabase pour voir vos vraies discussions
+              {realDiscussions.length === 0 
+                ? 'Mode démonstration Elite - Aucune discussion trouvée'
+                : `${realDiscussions.length} discussion(s) chargée(s)`
+              }
             </p>
           </div>
-        </motion.div>
-      )}
+          <div className="text-xs text-gray-600 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+            Debug: User ID: {user?.id || 'Non connecté'} | 
+            Discussions réelles: {realDiscussions.length} | 
+            Discussions mock: {mockDiscussions.length}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Filtres avancés */}
       <FilterSection 
@@ -827,12 +900,85 @@ const EliteDiscussionList = () => {
       {/* Notifications d'actions */}
       <NotificationContainer theme={t} />
       
-      {/* Modal de création */}
-      <CreateDiscussionModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        theme={t}
-      />
+      {/* Modal de création simplifié */}
+      {showCreateModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className={`${t.bgColor} rounded-lg w-full max-w-md mx-4 p-6 shadow-xl border ${t.borderColor}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className={`text-lg font-semibold ${t.textColor}`}>Nouvelle discussion</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className={`p-2 rounded-full ${t.hoverBg}`}
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <p className={`text-sm ${t.secondaryText} mb-4`}>
+              Sélectionnez un utilisateur pour commencer une discussion
+            </p>
+            
+            <div className="max-h-64 overflow-y-auto">
+              {loadingUsers ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                  <span className={`ml-2 ${t.textColor}`}>Chargement...</span>
+                </div>
+              ) : availableUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className={`${t.secondaryText}`}>Aucun utilisateur disponible</p>
+                  <p className={`text-xs ${t.secondaryText} mt-2`}>
+                    Invitez des amis à rejoindre Elite Chat !
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {availableUsers.map((targetUser) => (
+                    <motion.button
+                      key={targetUser.id}
+                      onClick={() => createDiscussion(targetUser.id)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg ${t.hoverBg} hover:scale-[1.02] transition-all`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="relative">
+                        <img
+                          src={targetUser.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
+                          alt={targetUser.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                        {targetUser.is_online && (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        )}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className={`font-medium ${t.textColor}`}>
+                          {targetUser.name}
+                        </div>
+                        <div className={`text-sm ${t.secondaryText}`}>
+                          @{targetUser.username} • {targetUser.is_online ? 'En ligne' : 'Hors ligne'}
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
       
       {/* Elite Wallet */}
       <EliteWallet
