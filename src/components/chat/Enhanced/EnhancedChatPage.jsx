@@ -348,8 +348,13 @@ const EnhancedChatPage = () => {
           console.error('❌ Erreur envoi message:', result.error);
         } else {
           console.log('✅ Message envoyé avec succès:', result);
-          // Recharger les messages pour voir le nouveau message
-          loadMessages();
+          // Rafraîchir automatiquement les messages
+          if (activeChat?.id && user?.id) {
+            const { data: updatedMessages } = await db.getMessages(activeChat.id, 50, 0);
+            if (updatedMessages) {
+              setRealMessages(updatedMessages);
+            }
+          }
           notifyMessageAction('send');
         }
       } catch (error) {
