@@ -34,6 +34,7 @@
     "@supabase/supabase-js": "^2.53.0",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",
+    "dompurify": "^3.0.9",
     "emoji-picker-react": "^4.12.2",
     "framer-motion": "^12.12.2",
     "globe.gl": "^2.43.0",
