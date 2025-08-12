@@ -84,29 +84,22 @@ const EnhancedChatPage = () => {
         if (error) {
           console.error('Erreur chargement messages:', error);
         } else {
-          // Transformer les données Supabase vers le format attendu
-          const transformedMessages = messagesData.map(msg => ({
-            id: msg.id,
-            text: msg.content || '',
-            content: msg.content || '',
-            senderId: msg.sender_id,
-            timestamp: msg.created_at,
-            isRead: msg.status === 'read',
-            isEdited: msg.is_edited || false,
-            media: msg.media_url ? [{
-              id: `media-${msg.id}`,
-              url: msg.media_url,
-              type: msg.media_type || 'image',
-              name: msg.media_name,
-              size: msg.media_size
-            }] : [],
-            replyTo: msg.reply_to_id ? {
-              id: msg.reply_to_id,
-              text: 'Message référencé'
-            } : null
-          }));
+          // Les messages sont déjà formatés par messageFormatter.js
+          console.log('📥 Messages reçus depuis DB:', messagesData);
+          console.log('👤 Utilisateur actuel:', user?.id);
           
-          setRealMessages(transformedMessages);
+          // Debug pour chaque message
+          messagesData.forEach((msg, i) => {
+            console.log(`📨 Message ${i + 1}:`, {
+              id: msg.id,
+              senderId: msg.senderId,
+              content: msg.text || msg.content,
+              isCurrentUser: msg.senderId === user?.id,
+              senderInfo: msg.sender
+            });
+          });
+          
+          setRealMessages(messagesData);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des messages:', error);
@@ -565,19 +558,19 @@ const EnhancedChatPage = () => {
         )}
         
         <AnimatePresence mode="popLayout">
-          {enrichedMessages.map((message) => (
+          {enrichedMessages.map((message, index) => (
             <motion.div
-              key={message.id}
-              ref={el => messageRefs.current.set(message.id, el)}
+              key={message.id || `temp-message-${index}-${Date.now()}`}
+              ref={el => messageRefs.current.set(message.id || `temp-${index}`, el)}
               variants={messageVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
               transition={{ duration: 0.2 }}
-              className={`flex ${message.senderId === user.id ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`
-                ${message.senderId === user.id ? 'ml-10' : 'mr-10'} 
+                ${message.senderId === user?.id ? 'ml-10' : 'mr-10'} 
                 max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%]
               `}>
                 <EnhancedMessageBubble
@@ -585,7 +578,7 @@ const EnhancedChatPage = () => {
                   theme={theme}
                   openMediaViewer={openMediaViewer}
                   onMessageAction={handleMessageAction}
-                  currentUserId={user.id}
+                  currentUserId={user?.id}
                 />
               </div>
             </motion.div>

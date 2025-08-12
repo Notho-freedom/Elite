@@ -80,7 +80,7 @@ const EnhancedMessageBubble = ({
           isSingleEmoji && 'bg-transparent p-0',
           !isSingleEmoji && !isSingleMedia && [
             'rounded-2xl px-3 py-2 max-w-xs md:max-w-md lg:max-w-lg',
-            message.senderId == currentUserId 
+            message.senderId === currentUserId 
               ? `${theme.accentBg} text-white ml-auto` 
               : `${theme.messageBg} ${theme.textColor}`
           ],
@@ -95,12 +95,12 @@ const EnhancedMessageBubble = ({
             ${message.senderId == currentUserId ? 'bg-white/10' : theme.headerBg}
           `}>
             <div className={`text-xs font-medium mb-1 ${
-              message.senderId == currentUserId ? 'text-white/80' : theme.secondaryText
+              message.senderId === currentUserId ? 'text-white/80' : theme.secondaryText
             }`}>
               {message.replyTo.senderName || 'Contact'}
             </div>
             <div className={`text-sm ${
-              message.senderId == currentUserId ? 'text-white/70' : theme.secondaryText
+              message.senderId === currentUserId ? 'text-white/70' : theme.secondaryText
             } truncate`}>
               {message.replyTo.text || 'Média'}
             </div>
@@ -138,7 +138,7 @@ const EnhancedMessageBubble = ({
             {(message.text || message.content) && (
               <div className={clsx(
                 'text-sm break-words',
-                message.senderId == currentUserId ? 'text-white' : theme.textColor
+                message.senderId === currentUserId ? 'text-white' : theme.textColor
               )}>
                 {formatText || message.content || message.text}
               </div>
@@ -147,7 +147,7 @@ const EnhancedMessageBubble = ({
             {/* Métadonnées du message */}
             <div className={clsx(
               'flex items-center justify-end gap-1 mt-1 text-xs',
-              message.senderId == currentUserId ? 'text-white/70' : theme.secondaryText
+              message.senderId === currentUserId ? 'text-white/70' : theme.secondaryText
             )}>
               {/* Heure d'édition si modifié */}
               {message.isEdited && (
