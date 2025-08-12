@@ -179,26 +179,108 @@ img, video {
   }
 }
 
-/* 💬 Styles pour les réponses - highlight des messages */
-@keyframes highlight-pulse {
-  0% { background-color: rgba(59, 130, 246, 0.15); }
-  50% { background-color: rgba(59, 130, 246, 0.3); }
-  100% { background-color: rgba(59, 130, 246, 0.15); }
+/* ✨ Styles ELITE pour les réponses et messages */
+
+/* Animation de highlight ELITE */
+@keyframes elite-highlight-pulse {
+  0% { 
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+  }
+  50% { 
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(139, 92, 246, 0.2) 100%);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+  }
+  100% { 
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+  }
 }
 
 .highlight-message {
-  animation: highlight-pulse 2s ease-in-out;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  animation: elite-highlight-pulse 2s ease-in-out;
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Styles pour les previews de réponse */
-.reply-preview-bubble {
-  border-left: 3px solid;
-  backdrop-filter: blur(8px);
+/* Effet de brillance pour les éléments ELITE */
+@keyframes elite-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-.reply-preview-bubble:hover {
-  transform: translateX(2px);
-  transition: transform 0.2s ease;
+.elite-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: elite-shimmer 2s ease-in-out infinite;
+}
+
+/* Glassmorphism pour les bulles de réponse */
+.elite-glass {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+/* Effet de particules flottantes */
+@keyframes elite-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
+}
+
+.elite-particle {
+  animation: elite-float 3s ease-in-out infinite;
+}
+
+/* Effet de glow pour les icônes */
+.elite-icon-glow {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+  transition: filter 0.3s ease;
+}
+
+.elite-icon-glow:hover {
+  filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.8));
+}
+
+/* Gradients animés pour les arrière-plans */
+@keyframes elite-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.elite-animated-gradient {
+  background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #06b6d4, #10b981);
+  background-size: 400% 400%;
+  animation: elite-gradient-shift 4s ease infinite;
+}
+
+/* Effet de morphing pour les boutons */
+.elite-morph {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.elite-morph:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.elite-morph:active {
+  transform: scale(0.95);
+  transition: all 0.1s ease;
 }
