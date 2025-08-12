@@ -230,17 +230,20 @@ export const AppProvider = ({ children }) => {
             content: messageContent.text || messageContent.message || messageContent.content || '',
             message: messageContent.text || messageContent.message || messageContent.content || '',
             text: messageContent.text || messageContent.message || messageContent.content || '',
-            media: uploadedMedia
+            media: uploadedMedia,
+            reply_to_id: messageContent.replyTo || null
           };
         } else {
           messageData = {
             content: '',
             message: '',
-            text: ''
+            text: '',
+            reply_to_id: messageContent.replyTo || null
           };
         }
         
         console.log('🔄 Données normalisées pour envoi:', messageData);
+        console.log('📨 ReplyTo ID transmis:', messageData.reply_to_id);
 
         const { data, error } = await db.sendMessage(
           activeChat.id,

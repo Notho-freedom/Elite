@@ -56,16 +56,41 @@ const EnhancedChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Scroll vers un message spécifique (version simplifiée et fonctionnelle)
   const scrollToMessage = (messageId) => {
-    const messageElement = messageRefs.current.get(messageId);
-    if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Highlight temporaire
-      messageElement.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
-      setTimeout(() => {
-        messageElement.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
-      }, 2000);
+    console.log('🎯 Tentative de scroll vers le message:', messageId);
+    
+    if (!messageId) {
+      console.warn('❌ MessageId manquant');
+      return;
     }
+    
+    // Chercher l'élément dans le DOM avec un délai pour s'assurer qu'il est rendu
+    setTimeout(() => {
+      const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+      
+      if (messageElement) {
+        console.log('✅ Message trouvé, scroll en cours...');
+        
+        // Scroll smooth vers le message
+        messageElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        
+        // Effet de highlight temporaire
+        messageElement.classList.add('highlight-message');
+        setTimeout(() => {
+          messageElement.classList.remove('highlight-message');
+        }, 2000);
+        
+      } else {
+        console.warn('❌ Message non trouvé dans le DOM:', messageId);
+        // Debug: lister tous les messages disponibles
+        const allMessages = document.querySelectorAll('[data-message-id]');
+        console.log('📋 Messages disponibles:', Array.from(allMessages).map(el => el.getAttribute('data-message-id')));
+      }
+    }, 100);
   };
 
   useEffect(() => {
@@ -394,6 +419,8 @@ const EnhancedChatPage = () => {
     setShowProfile(true);
   };
 
+
+
   // Utiliser les vrais messages si disponibles, sinon les messages mock
   const currentMessages = realMessages.length > 0 ? realMessages : (messages || []);
   
@@ -558,6 +585,7 @@ const EnhancedChatPage = () => {
           {enrichedMessages.map((message, index) => (
             <motion.div
               key={message.id || `temp-message-${index}-${Date.now()}`}
+              data-message-id={message.id}
               ref={el => messageRefs.current.set(message.id || `temp-${index}`, el)}
               variants={messageVariants}
               initial="hidden"
@@ -576,6 +604,7 @@ const EnhancedChatPage = () => {
                   openMediaViewer={openMediaViewer}
                   onMessageAction={handleMessageAction}
                   currentUserId={user?.id}
+                  onScrollToMessage={scrollToMessage}
                 />
               </div>
             </motion.div>

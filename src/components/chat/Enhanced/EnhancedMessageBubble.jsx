@@ -7,6 +7,7 @@ import MediaDisplay from '../MediaDisplay';
 import LinkPreview from '../LinkPreview';
 import MessageStates from './MessageStates';
 import MessageDropdown from './MessageDropdown';
+import ReplyPreviewBubble from './ReplyPreviewBubble';
 import { useMemo } from 'react';
 
 
@@ -15,7 +16,8 @@ const EnhancedMessageBubble = ({
   theme, 
   openMediaViewer, 
   onMessageAction,
-  currentUserId 
+  currentUserId,
+  onScrollToMessage 
 }) => {
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -89,22 +91,14 @@ const EnhancedMessageBubble = ({
         onContextMenu={handleContextMenu}
       >
         {/* Message en réponse à un autre */}
+        {/* Preview de réponse avec nouveau composant */}
         {message.replyTo && (
-          <div className={`
-            mb-2 p-2 rounded-lg border-l-4 border-blue-500
-            ${message.senderId == currentUserId ? 'bg-white/10' : theme.headerBg}
-          `}>
-            <div className={`text-xs font-medium mb-1 ${
-              message.senderId === currentUserId ? 'text-white/80' : theme.secondaryText
-            }`}>
-              {message.replyTo.senderName || 'Contact'}
-            </div>
-            <div className={`text-sm ${
-              message.senderId === currentUserId ? 'text-white/70' : theme.secondaryText
-            } truncate`}>
-              {message.replyTo.text || 'Média'}
-            </div>
-          </div>
+          <ReplyPreviewBubble 
+            replyToMessage={message.replyTo}
+            theme={theme}
+            isCurrentUser={message.senderId === currentUserId}
+            onClick={() => onScrollToMessage && onScrollToMessage(message.replyTo.id)}
+          />
         )}
 
         {/* États du message */}

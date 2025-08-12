@@ -178,3 +178,27 @@ img, video {
     height: -webkit-fill-available;
   }
 }
+
+/* 💬 Styles pour les réponses - highlight des messages */
+@keyframes highlight-pulse {
+  0% { background-color: rgba(59, 130, 246, 0.15); }
+  50% { background-color: rgba(59, 130, 246, 0.3); }
+  100% { background-color: rgba(59, 130, 246, 0.15); }
+}
+
+.highlight-message {
+  animation: highlight-pulse 2s ease-in-out;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+/* Styles pour les previews de réponse */
+.reply-preview-bubble {
+  border-left: 3px solid;
+  backdrop-filter: blur(8px);
+}
+
+.reply-preview-bubble:hover {
+  transform: translateX(2px);
+  transition: transform 0.2s ease;
+}

@@ -159,7 +159,15 @@ export function formatReplyTo(replyData) {
     sender: replyData.sender?.name || 'Utilisateur',
     senderName: replyData.sender?.name || 'Utilisateur',
     type: replyData.message_type || replyData.type || 'text',
-    timestamp: replyData.created_at
+    timestamp: replyData.created_at,
+    
+    // Support des médias dans les réponses
+    media: formatMedia(replyData),
+    hasMedia: Boolean(replyData.media_url || replyData.media?.length),
+    mediaUrl: replyData.media_url,
+    mediaType: replyData.media_type,
+    mediaName: replyData.media_name,
+    thumbnailUrl: replyData.thumbnail_url
   };
 }
 

@@ -189,7 +189,17 @@ export const db = {
       .select(`
         *,
         sender:users(id, name, avatar_url),
-        reply_to:reply_to_id(id, content, sender:users(name))
+        reply_to:reply_to_id(
+          id, 
+          content, 
+          message_type,
+          media_url,
+          media_type,
+          media_name,
+          thumbnail_url,
+          created_at,
+          sender:users(id, name, avatar_url)
+        )
       `)
       .eq('discussion_id', discussionId)
       .order('created_at', { ascending: true }) // Plus anciens en premier, récents en bas
@@ -228,6 +238,10 @@ export const db = {
       
       console.log('📝 Contenu normalisé:', { content, mediaList: mediaList.length });
       
+      // Récupérer reply_to_id si présent
+      const replyToId = messageData.reply_to_id || null;
+      console.log('📨 Reply To ID détecté:', replyToId);
+      
       // Envoyer le message texte si présent
       if (content) {
         const textMessage = {
@@ -235,6 +249,7 @@ export const db = {
           sender_id: senderId,
           content: content,
           message_type: 'text',
+          reply_to_id: replyToId,
           status: 'sent',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -272,6 +287,7 @@ export const db = {
             media_size: media.size || null,
             media_name: media.name || `media_${index + 1}`,
             thumbnail_url: media.thumbnail || null,
+            reply_to_id: replyToId,
             status: 'sent',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
