@@ -15,6 +15,7 @@ export const TABS = {
   CALLS: 'calls',
   SETTINGS: 'settings',
   NATIVE: 'native',
+  WORLD: 'world',
 };
 
 const AppContext = createContext();

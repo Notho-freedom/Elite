@@ -187,6 +187,50 @@ class UserService {
   }
 
   /**
+   * Récupérer tous les utilisateurs (liste intégrale)
+   * @param {Object} filters - Filtres optionnels
+   */
+  async getAllUsers(filters = {}) {
+    try {
+      console.log('🔄 userService.getAllUsers: Début avec filtres:', filters);
+      let query = supabase
+        .from('users')
+        .select('*');
+
+      // Appliquer les filtres optionnels
+      if (filters.isOnline) {
+        query = query.eq('is_online', true);
+      }
+
+      if (filters.isActive) {
+        query = query.neq('status', 'offline');
+      }
+
+      if (filters.search) {
+        query = query.or(`name.ilike.%${filters.search}%,username.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+      }
+
+      // Ordonner par dernière activité
+      query = query.order('last_seen', { ascending: false });
+
+      console.log('📊 userService.getAllUsers: Exécution de la requête...');
+      const { data, error } = await query;
+      console.log('📊 userService.getAllUsers: Données reçues:', data?.length || 0, 'erreur:', error);
+
+      if (error) {
+        console.error('❌ userService.getAllUsers: Erreur lors de la récupération de tous les utilisateurs:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ userService.getAllUsers: Succès, retour de', data?.length || 0, 'utilisateurs');
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('💥 userService.getAllUsers: Exception:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Récupérer les discussions de l'utilisateur (nouveau schéma)
    * @param {string} currentUserId - ID de l'utilisateur courant
    */
