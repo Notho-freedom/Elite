@@ -84,29 +84,22 @@ const EnhancedChatPage = () => {
         if (error) {
           console.error('Erreur chargement messages:', error);
         } else {
-          // Transformer les données Supabase vers le format attendu
-          const transformedMessages = messagesData.map(msg => ({
-            id: msg.id,
-            text: msg.content || '',
-            content: msg.content || '',
-            senderId: msg.sender_id,
-            timestamp: msg.created_at,
-            isRead: msg.status === 'read',
-            isEdited: msg.is_edited || false,
-            media: msg.media_url ? [{
-              id: `media-${msg.id}`,
-              url: msg.media_url,
-              type: msg.media_type || 'image',
-              name: msg.media_name,
-              size: msg.media_size
-            }] : [],
-            replyTo: msg.reply_to_id ? {
-              id: msg.reply_to_id,
-              text: 'Message référencé'
-            } : null
-          }));
+          // Les messages sont déjà formatés par messageFormatter.js
+          console.log('📥 Messages reçus depuis DB:', messagesData);
+          console.log('👤 Utilisateur actuel:', user?.id);
           
-          setRealMessages(transformedMessages);
+          // Debug pour chaque message
+          messagesData.forEach((msg, i) => {
+            console.log(`📨 Message ${i + 1}:`, {
+              id: msg.id,
+              senderId: msg.senderId,
+              content: msg.text || msg.content,
+              isCurrentUser: msg.senderId === user?.id,
+              senderInfo: msg.sender
+            });
+          });
+          
+          setRealMessages(messagesData);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des messages:', error);
@@ -298,18 +291,23 @@ const EnhancedChatPage = () => {
     }
   };
 
-  // Gestion de l'envoi de messages avec Supabase
+  // Gestion de l'envoi de messages avec Vercel Blob
   const handleSend = async (e, data) => {
     e.preventDefault();
     
     if (!data.message?.trim() && !data.media?.length) return;
     if (!activeChat?.id || !user?.id) return;
 
-    const messageData = {
-      content: data.message,
-      message_type: data.media?.length > 0 ? 'media' : 'text',
-      reply_to_id: data.replyTo?.id || null,
-      media: data.media || []
+    console.log('🚀 DÉBUT handleSend - EnhancedChatPage');
+    console.log('📤 Données reçues:', data);
+
+    // Préparer les données pour AppContext.sendMessage
+    const messageContent = {
+      text: data.message || '',
+      message: data.message || '',
+      content: data.message || '',
+      media: data.media || [],
+      replyTo: data.replyTo?.id || null
     };
 
     if (data.editId) {
@@ -341,37 +339,24 @@ const EnhancedChatPage = () => {
         console.error('Erreur lors de l\'édition:', error);
       }
     } else {
-      // Nouveau message
+      // Nouveau message via AppContext avec Vercel Blob
       try {
-        const { data: savedMessage, error } = await db.sendMessage(activeChat.id, user.id, messageData);
+        console.log('📨 Envoi via AppContext.sendMessage avec VercelBlob');
+        const result = await sendMessage(messageContent);
         
-        if (error) {
-          console.error('Erreur envoi message:', error);
+        if (result.error) {
+          console.error('❌ Erreur envoi message:', result.error);
         } else {
-          // Ajouter le nouveau message localement
-          const newMessage = {
-            id: savedMessage.id,
-            text: savedMessage.content,
-            content: savedMessage.content,
-            senderId: user.id,
-            timestamp: savedMessage.created_at,
-            isRead: false,
-            media: savedMessage.media_url ? [{
-              id: `media-${savedMessage.id}`,
-              url: savedMessage.media_url,
-              type: savedMessage.media_type || 'image'
-            }] : data.media || [],
-            replyTo: data.replyTo
-          };
-          
-          setRealMessages(prev => [...prev, newMessage]);
+          console.log('✅ Message envoyé avec succès:', result);
+          // Recharger les messages pour voir le nouveau message
+          loadMessages();
           notifyMessageAction('send');
         }
       } catch (error) {
-        console.error('Erreur lors de l\'envoi:', error);
+        console.error('❌ Erreur lors de l\'envoi:', error);
       }
     }
-
+    
     // Reset des états
     setInputValue('');
     setReplyingTo(null);
@@ -565,19 +550,19 @@ const EnhancedChatPage = () => {
         )}
         
         <AnimatePresence mode="popLayout">
-          {enrichedMessages.map((message) => (
+          {enrichedMessages.map((message, index) => (
             <motion.div
-              key={message.id}
-              ref={el => messageRefs.current.set(message.id, el)}
+              key={message.id || `temp-message-${index}-${Date.now()}`}
+              ref={el => messageRefs.current.set(message.id || `temp-${index}`, el)}
               variants={messageVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
               transition={{ duration: 0.2 }}
-              className={`flex ${message.senderId === user.id ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`
-                ${message.senderId === user.id ? 'ml-10' : 'mr-10'} 
+                ${message.senderId === user?.id ? 'ml-10' : 'mr-10'} 
                 max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%]
               `}>
                 <EnhancedMessageBubble
@@ -585,7 +570,7 @@ const EnhancedChatPage = () => {
                   theme={theme}
                   openMediaViewer={openMediaViewer}
                   onMessageAction={handleMessageAction}
-                  currentUserId={user.id}
+                  currentUserId={user?.id}
                 />
               </div>
             </motion.div>

@@ -5,6 +5,7 @@ import { useMediaQuery } from 'react-responsive';
 import { useAuth } from './AuthContext';
 import { db, calls } from '../../lib/supabase';
 import { createEliteDemoMessages, enrichMessagesWithEliteFeatures } from '../Enhanced/EliteDataEnricher';
+import { SimpleMediaService } from '../../services/simpleMediaService.js';
 
 // Enum pour éviter les strings magiques
 export const TABS = {
@@ -183,11 +184,53 @@ export const AppProvider = ({ children }) => {
           };
         } else if (messageContent && typeof messageContent === 'object') {
           // Message complexe avec texte et/ou médias
+          
+          // 🚀 Upload des médias vers Supabase Storage
+          let uploadedMedia = [];
+          if (messageContent.media && messageContent.media.length > 0) {
+            console.log('🎬 DÉBUT UPLOAD MÉDIAS - AppContext');
+            console.log('📤 Nombre de médias à uploader:', messageContent.media.length);
+            console.log('📋 Détail des médias:', messageContent.media);
+            
+            try {
+              for (const [index, mediaItem] of messageContent.media.entries()) {
+                console.log(`🔄 Traitement média ${index + 1}/${messageContent.media.length}:`, mediaItem);
+                
+                if (mediaItem.file) {
+                  console.log(`📤 Upload du fichier ${index + 1}:`, mediaItem.file.name);
+                  
+                  // Upload avec service simple et compression locale
+                  const uploadResult = await SimpleMediaService.uploadFile(
+                    mediaItem.file,
+                    user.id,
+                    { compress: true, quality: 0.8 }
+                  );
+                  
+                  console.log(`✅ Média ${index + 1} uploadé:`, uploadResult);
+                  uploadedMedia.push(uploadResult);
+                  
+                  // Nettoyer l'URL blob temporaire
+                  if (mediaItem.url && mediaItem.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(mediaItem.url);
+                  }
+                } else if (mediaItem.url && !mediaItem.url.startsWith('blob:')) {
+                  // Média déjà uploadé (édition par exemple)
+                  uploadedMedia.push(mediaItem);
+                }
+              }
+              
+              console.log('✅ Médias uploadés:', uploadedMedia);
+                          } catch (uploadError) {
+                console.error('❌ Erreur upload simple:', uploadError);
+                return { success: false, error: `Erreur upload: ${uploadError.message}` };
+              }
+          }
+          
           messageData = {
             content: messageContent.text || messageContent.message || messageContent.content || '',
             message: messageContent.text || messageContent.message || messageContent.content || '',
             text: messageContent.text || messageContent.message || messageContent.content || '',
-            media: messageContent.media || []
+            media: uploadedMedia
           };
         } else {
           messageData = {

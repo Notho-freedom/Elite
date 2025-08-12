@@ -34,6 +34,7 @@
     "@lottiefiles/dotlottie-react": "^0.14.0",
     "@lottiefiles/react-lottie-player": "^3.6.0",
     "@supabase/supabase-js": "^2.53.0",
+    "@vercel/blob": "^1.1.1",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
