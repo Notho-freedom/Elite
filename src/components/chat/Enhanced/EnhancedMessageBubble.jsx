@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { BsCheck2All } from 'react-icons/bs';
 import { FaReply, FaEdit } from 'react-icons/fa';
 import clsx from 'clsx';
-import MediaDisplay from '../MediaDisplay';
+import EnhancedMediaDisplay from './EnhancedMediaDisplay';
+import EnhancedVoiceMessage from './EnhancedVoiceMessage';
 import LinkPreview from '../LinkPreview';
 import MessageStates from './MessageStates';
 import MessageDropdown from './MessageDropdown';
@@ -25,6 +26,7 @@ const EnhancedMessageBubble = ({
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
+  const [isMessageHovered, setIsMessageHovered] = useState(false);
 
   const isSingleEmoji = useMemo(() => {
     const textContent = message.text || message.content;
@@ -92,6 +94,8 @@ const EnhancedMessageBubble = ({
           isSingleMedia && 'bg-transparent p-0 max-w-xs md:max-w-md'
         )}
         onContextMenu={handleContextMenu}
+        onMouseEnter={() => setIsMessageHovered(true)}
+        onMouseLeave={() => setIsMessageHovered(false)}
       >
         {/* Message en réponse à un autre */}
         {/* Preview de réponse avec nouveau composant */}
@@ -123,10 +127,25 @@ const EnhancedMessageBubble = ({
                 !isSingleMedia && 'mb-2',
                 isSingleMedia && 'rounded-2xl overflow-hidden'
               )}>
-                <MediaDisplay 
+                <EnhancedMediaDisplay 
                   media={message.media} 
-                  isSingleMedia={isSingleMedia}
-                  openMediaViewer={openMediaViewer}
+                  theme={theme}
+                  onMediaClick={openMediaViewer}
+                  maxPreview={isSingleMedia ? 1 : 4}
+                  showDownload={true}
+                />
+              </div>
+            )}
+
+            {/* Message vocal */}
+            {message.type === 'voice' && message.audio_url && (
+              <div className="mb-2">
+                <EnhancedVoiceMessage
+                  message={message}
+                  theme={theme}
+                  isCurrentUser={message.senderId === currentUserId}
+                  onDelete={() => handleMessageAction('delete', message)}
+                  onDownload={() => handleMessageAction('download', message)}
                 />
               </div>
             )}
@@ -219,6 +238,7 @@ const EnhancedMessageBubble = ({
         onAddReaction={onAddReaction}
         onRemoveReaction={onRemoveReaction}
         isCurrentUser={message.senderId === currentUserId}
+        isMessageHovered={isMessageHovered}
       />
 
       {/* Dropdown de contexte */}

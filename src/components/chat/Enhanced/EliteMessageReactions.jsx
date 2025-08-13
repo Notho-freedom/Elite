@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiSparkles, HiOutlinePlus } from 'react-icons/hi2';
 import { FaHeart, FaLaugh, FaAngry, FaSadCry, FaThumbsUp, FaSurprise } from 'react-icons/fa';
@@ -7,17 +7,38 @@ import clsx from 'clsx';
 /**
  * ✨ Composant de réactions ELITE
  * Design moderne avec glassmorphism et animations fluides
+ * Affichage au survol avec synchronisation Supabase
  */
-const EliteMessageReactions = ({ 
-  message, 
-  currentUserId, 
+const EliteMessageReactions = ({
+  message,
+  currentUserId,
   theme,
   onAddReaction,
   onRemoveReaction,
-  isCurrentUser
+  isCurrentUser,
+  isMessageHovered
 }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [hoveredReaction, setHoveredReaction] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Afficher automatiquement le picker au survol du message
+  useEffect(() => {
+    if (isMessageHovered && !showReactionPicker) {
+      const timer = setTimeout(() => {
+        setShowReactionPicker(true);
+      }, 200); // Délai de 200ms pour un affichage rapide
+      
+      return () => clearTimeout(timer);
+    } else if (!isMessageHovered && !isHovered && showReactionPicker) {
+      // Ne fermer que si ni le message ni les réactions ne sont survolés
+      const timer = setTimeout(() => {
+        setShowReactionPicker(false);
+      }, 1500); // Délai de 1.5s pour garder le picker ouvert plus longtemps
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isMessageHovered, isHovered, showReactionPicker]);
 
   // Réactions populaires avec icônes et gradients
   const popularReactions = [
@@ -31,10 +52,12 @@ const EliteMessageReactions = ({
 
   // Analyser les réactions du message
   const reactionStats = useMemo(() => {
-    if (!message.reactions || message.reactions.length === 0) return [];
+    if (!message.reactions || message.reactions.length === 0) {
+      return [];
+    }
     
     const stats = {};
-    message.reactions.forEach(reaction => {
+    message.reactions.forEach((reaction) => {
       const emoji = reaction.emoji || reaction;
       if (stats[emoji]) {
         stats[emoji].count++;
@@ -127,12 +150,28 @@ const EliteMessageReactions = ({
     setShowReactionPicker(false);
   };
 
-  if (reactionStats.length === 0 && !showReactionPicker) {
+  // Debug: Log des données reçues
+  console.log('🔍 EliteMessageReactions Debug:', {
+    messageId: message.id,
+    reactions: message.reactions,
+    reactionStats: reactionStats,
+    showReactionPicker,
+    isHovered,
+    currentUserId,
+    isCurrentUser
+  });
+
+  // Ne rien afficher si pas de réactions et pas de picker ouvert et pas de survol du message
+  if (reactionStats.length === 0 && !showReactionPicker && !isHovered && !isMessageHovered) {
     return null;
   }
 
   return (
-    <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mt-2 relative`}>
+    <div 
+      className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mt-2 relative`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="flex items-center gap-2 flex-wrap">
         {/* Réactions existantes */}
         <AnimatePresence>
@@ -155,7 +194,7 @@ const EliteMessageReactions = ({
                 onMouseEnter={() => setHoveredReaction(stat)}
                 onMouseLeave={() => setHoveredReaction(null)}
                 className={`
-                  relative flex items-center gap-1 px-2 py-1 rounded-full
+                  relative flex items-center gap-1 px-1.5 py-0.5 rounded-full
                   transition-all duration-300 ease-out
                   ${styles.shadow} ${styles.textColor}
                   backdrop-blur-sm group overflow-hidden
@@ -169,9 +208,9 @@ const EliteMessageReactions = ({
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                 
                 {/* Emoji et compteur */}
-                <span className="text-sm relative z-10">{stat.emoji}</span>
+                <span className="text-xs relative z-10">{stat.emoji}</span>
                 {stat.count > 1 && (
-                  <span className="text-xs font-medium relative z-10">
+                  <span className="text-[10px] font-medium relative z-10">
                     {stat.count}
                   </span>
                 )}
@@ -200,32 +239,34 @@ const EliteMessageReactions = ({
           })}
         </AnimatePresence>
 
-        {/* Bouton d'ajout de réaction */}
-        <motion.button
-          whileHover={{ scale: 1.1, rotate: 90 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowReactionPicker(!showReactionPicker)}
-          className={`
-            relative p-1.5 rounded-full
-            transition-all duration-300 ease-out
-            ${isCurrentUser ? 'text-white/70 hover:text-white' : theme.mode === 'dark' ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}
-            backdrop-blur-sm group
-          `}
-          style={{
-            background: isCurrentUser 
-              ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
-              : theme.mode === 'dark'
-                ? 'linear-gradient(135deg, rgba(75,85,99,0.2) 0%, rgba(55,65,81,0.1) 100%)'
-                : 'linear-gradient(135deg, rgba(243,244,246,0.6) 0%, rgba(229,231,235,0.4) 100%)',
-            border: isCurrentUser 
-              ? '1px solid rgba(255,255,255,0.2)'
-              : theme.mode === 'dark'
-                ? '1px solid rgba(75,85,99,0.3)'
-                : '1px solid rgba(209,213,219,0.3)'
-          }}
-        >
-          <HiOutlinePlus className="w-3 h-3" />
-        </motion.button>
+        {/* Bouton d'ajout de réaction - visible au survol du composant, du message, ou si des réactions existent */}
+        {(isHovered || isMessageHovered || reactionStats.length > 0) && (
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowReactionPicker(!showReactionPicker)}
+            className={`
+              relative p-1 rounded-full
+              transition-all duration-300 ease-out
+              ${isCurrentUser ? 'text-white/70 hover:text-white' : theme.mode === 'dark' ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}
+              backdrop-blur-sm group
+            `}
+                          style={{
+                background: isCurrentUser 
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                  : theme.mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(75,85,99,0.2) 0%, rgba(55,65,81,0.1) 100%)'
+                    : 'linear-gradient(135deg, rgba(243,244,246,0.6) 0%, rgba(229,231,235,0.4) 100%)',
+                border: isCurrentUser 
+                  ? '1px solid rgba(255,255,255,0.2)'
+                  : theme.mode === 'dark'
+                    ? '1px solid rgba(75,85,99,0.3)'
+                    : '1px solid rgba(209,213,219,0.3)'
+              }}
+          >
+            <HiOutlinePlus className="w-2.5 h-2.5" />
+          </motion.button>
+        )}
       </div>
 
       {/* Picker de réactions ELITE */}
@@ -242,18 +283,19 @@ const EliteMessageReactions = ({
             }}
             className={`
               absolute ${isCurrentUser ? 'right-0' : 'left-0'} top-full mt-2
-              p-3 rounded-xl ${pickerStyles.backdropBlur}
-              z-50 shadow-2xl
+              p-2 rounded-lg backdrop-blur-xl
+              z-50 shadow-2xl border border-white/20
             `}
             style={{
-              background: pickerStyles.background,
-              border: pickerStyles.border
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)'
             }}
           >
             {/* Effet de brillance */}
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {popularReactions.map((reaction, index) => (
                 <motion.button
                   key={reaction.emoji}
@@ -264,16 +306,16 @@ const EliteMessageReactions = ({
                     transition: { delay: index * 0.05 }
                   }}
                   whileHover={{ 
-                    scale: 1.3, 
-                    y: -5,
+                    scale: 1.2, 
+                    y: -3,
                     transition: { duration: 0.2 }
                   }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleQuickReaction(reaction.emoji)}
                   className={`
-                    relative p-2 rounded-lg
+                    relative p-1.5 rounded-md
                     bg-gradient-to-r ${reaction.gradient}
-                    text-white shadow-lg
+                    text-white shadow-md
                     transition-all duration-300
                     group overflow-hidden
                   `}
@@ -282,13 +324,13 @@ const EliteMessageReactions = ({
                   {/* Effet shimmer */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
                   
-                  <span className="text-lg relative z-10">{reaction.emoji}</span>
+                  <span className="text-sm relative z-10">{reaction.emoji}</span>
                   
                   {/* Label au survol */}
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     whileHover={{ opacity: 1, y: 0 }}
-                    className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-medium px-2 py-1 bg-black/80 text-white rounded whitespace-nowrap"
+                    className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium px-2 py-1 bg-black/80 text-white rounded whitespace-nowrap"
                   >
                     {reaction.name}
                   </motion.div>

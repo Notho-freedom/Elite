@@ -11,6 +11,7 @@ import MediaPreviewModal from '../Input/MediaPreview';
 import LinkPreview from '../LinkPreview';
 import ReplyPreview from './ReplyPreview';
 import EmojiPickerWrapper from '../EmojiPickerWrapper';
+import EnhancedVoiceMessage from './EnhancedVoiceMessage';
 import { useAuth } from '../../Context/AuthContext';
 import { useApp } from '../../Context/AppContext';
 import { supabase } from '../../../lib/supabase';
@@ -42,6 +43,7 @@ const EnhancedChatInput = memo(({
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [voiceMessage, setVoiceMessage] = useState(null);
   
   // Pour les typing indicators
   const { user } = useAuth();
@@ -92,6 +94,39 @@ const EnhancedChatInput = memo(({
       textareaRef.current.style.height = '36px';
     }
   }, []);
+
+  // Gestion des messages vocaux
+  const handleStartRecording = useCallback(() => {
+    setIsRecording(true);
+    setRecordingTime(0);
+  }, []);
+
+  const handleStopRecording = useCallback(() => {
+    setIsRecording(false);
+  }, []);
+
+  const handleCancelRecording = useCallback(() => {
+    setIsRecording(false);
+    setRecordingTime(0);
+    setVoiceMessage(null);
+  }, []);
+
+  const handleSendVoice = useCallback((blob, url) => {
+    setVoiceMessage({ blob, url });
+    setIsRecording(false);
+    setRecordingTime(0);
+    
+    // Envoyer le message vocal
+    if (handleSend) {
+      const voiceData = {
+        type: 'voice',
+        audio: blob,
+        audio_url: url,
+        duration: recordingTime
+      };
+      handleSend(voiceData);
+    }
+  }, [handleSend, recordingTime]);
 
   // Gestion de la soumission
   const handleSubmit = useCallback((e) => {
@@ -507,6 +542,27 @@ const EnhancedChatInput = memo(({
             onChange={handleFileChange}
           />
 
+          {/* Composant de message vocal */}
+          <AnimatePresence>
+            {isRecording && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-3"
+              >
+                <EnhancedVoiceMessage
+                  isRecording={isRecording}
+                  onStartRecording={handleStartRecording}
+                  onStopRecording={handleStopRecording}
+                  onCancelRecording={handleCancelRecording}
+                  onSendVoice={handleSendVoice}
+                  theme={theme}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Zone de texte */}
           <textarea
             ref={textareaRef}
@@ -561,7 +617,7 @@ const EnhancedChatInput = memo(({
             type={hasContent ? 'submit' : 'button'} 
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={hasContent ? undefined : startRecording}
+            onClick={hasContent ? undefined : handleStartRecording}
             className={`
               p-2 rounded-full text-lg
               ${theme.accentBg} ${theme.accentText}

@@ -12,6 +12,7 @@ import { useAuth } from '../../Context/AuthContext';
 import { useMessageNotifications } from '../Notif';
 import { normalizeMessage } from '../../Enhanced/EliteDataEnricher';
 import { db, supabase } from '../../../lib/supabase';
+import DiscussionSettingsPanel from './DiscussionSettingsPanel';
 
 const EnhancedChatPage = () => {
   const {
@@ -45,40 +46,26 @@ const EnhancedChatPage = () => {
   const [hiddenMessages, setHiddenMessages] = useState([]);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [mediaViewerData, setMediaViewerData] = useState({ isOpen: false, media: [], initialIndex: 0 });
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [discussionBackground, setDiscussionBackground] = useState('default');
 
-  // 🧪 Fonction pour ajouter des réactions de test (à supprimer en production)
-  const addTestReactionsToMessages = (messages) => {
-    return messages.map((message, index) => {
-      // Ajouter des réactions à quelques messages pour la démo
-      const shouldHaveReactions = index % 2 === 0; // Un message sur 2
-      
-      if (!shouldHaveReactions || message.reactions?.length > 0) return message;
+  // Gestion des paramètres de discussion
+  const handleBackgroundChange = (bgId) => {
+    setDiscussionBackground(bgId);
+    console.log('🎨 Changement d\'arrière-plan:', bgId);
+  };
 
-      const testReactions = [];
-      const emojis = ['👍', '❤️', '😂', '😮', '🎉', '🔥'];
-      const testUsers = [
-        'f077c2b4-8f6a-406e-b98c-48ff14fba862', // User de test
-        '900f0fee-44a9-4854-8a0c-9672309a1311', // Autre user de test  
-        user?.id // Utilisateur actuel
-      ].filter(Boolean);
+  const handleThemeChange = (themeId) => {
+    console.log('🎨 Changement de thème:', themeId);
+    // Ici vous pouvez intégrer avec votre système de thèmes existant
+  };
 
-      // Ajouter 1-3 réactions aléatoires
-      const numReactions = Math.floor(Math.random() * 3) + 1;
-      const shuffledEmojis = [...emojis].sort(() => Math.random() - 0.5);
-      
-      for (let i = 0; i < numReactions && i < shuffledEmojis.length; i++) {
-        const emoji = shuffledEmojis[i];
-        const randomUser = testUsers[Math.floor(Math.random() * testUsers.length)];
-        
-        testReactions.push({
-          emoji,
-          userId: randomUser,
-          user_id: randomUser,
-          created_at: new Date(Date.now() - Math.random() * 86400000).toISOString()
-        });
-      }
-
-      return { ...message, reactions: testReactions };
+  // 🎯 Fonction pour enrichir les messages avec les réactions existantes
+  const enrichMessagesWithReactions = (messages) => {
+    return messages.map((message) => {
+      // S'assurer que hasReactions est correctement défini
+      const hasReactions = message.reactions && message.reactions.length > 0;
+      return { ...message, hasReactions };
     });
   };
 
@@ -352,7 +339,7 @@ const EnhancedChatPage = () => {
     }
   };
 
-  // 🎉 Gestion des réactions ELITE
+  // 🎉 Gestion des réactions ELITE avec synchronisation Supabase
   const handleAddReaction = async (messageId, emoji) => {
     try {
       console.log('✨ Ajout réaction:', { messageId, emoji, userId: user?.id });
@@ -384,15 +371,29 @@ const EnhancedChatPage = () => {
               }];
             }
             
-            return { ...msg, reactions: newReactions };
+            return { ...msg, reactions: newReactions, hasReactions: true };
           }
           return msg;
         })
       );
 
-      // TODO: Appel API pour sauvegarder en DB
-      // await db.addReaction(messageId, user.id, emoji);
+      // 🚀 Synchronisation avec Supabase
+      const { error } = await db.addReaction(messageId, user?.id, emoji);
       
+      if (error) {
+        console.error('❌ Erreur synchronisation Supabase:', error);
+        // Revenir à l'état précédent en cas d'erreur
+        setRealMessages(prevMessages => 
+          prevMessages.map(msg => {
+            if (msg.id === messageId) {
+              return { ...msg, reactions: msg.reactions?.filter(r => !(r.userId === user?.id && r.emoji === emoji)) || [] };
+            }
+          })
+        );
+        return;
+      }
+      
+      console.log('✅ Réaction synchronisée avec Supabase');
       notifyMessageAction('reaction', { emoji, action: 'add' });
     } catch (error) {
       console.error('❌ Erreur ajout réaction:', error);
@@ -403,22 +404,48 @@ const EnhancedChatPage = () => {
     try {
       console.log('🗑️ Suppression réaction:', { messageId, emoji, userId: user?.id });
       
-      // Mettre à jour localement
+      // Mettre à jour localement d'abord
       setRealMessages(prevMessages => 
         prevMessages.map(msg => {
           if (msg.id === messageId) {
             const filteredReactions = (msg.reactions || []).filter(r => 
               !((r.userId === user?.id || r.user_id === user?.id) && r.emoji === emoji)
             );
-            return { ...msg, reactions: filteredReactions };
+            return { 
+              ...msg, 
+              reactions: filteredReactions, 
+              hasReactions: filteredReactions.length > 0 
+            };
           }
           return msg;
         })
       );
 
-      // TODO: Appel API pour supprimer de la DB
-      // await db.removeReaction(messageId, user.id, emoji);
+      // 🚀 Synchronisation avec Supabase
+      const { error } = await db.removeReaction(messageId, user?.id, emoji);
       
+      if (error) {
+        console.error('❌ Erreur synchronisation Supabase:', error);
+        // Revenir à l'état précédent en cas d'erreur
+        setRealMessages(prevMessages => 
+          prevMessages.map(msg => {
+            if (msg.id === messageId) {
+              // Restaurer la réaction supprimée
+              const restoredReactions = [...(msg.reactions || []), { 
+                userId: user?.id, 
+                user_id: user?.id, 
+                emoji, 
+                created_at: new Date().toISOString() 
+              }];
+              return { ...msg, reactions: restoredReactions, hasReactions: true };
+            }
+            return msg;
+          })
+        );
+        return;
+      }
+      
+      console.log('✅ Réaction supprimée et synchronisée avec Supabase');
       notifyMessageAction('reaction', { emoji, action: 'remove' });
     } catch (error) {
       console.error('❌ Erreur suppression réaction:', error);
@@ -540,11 +567,11 @@ const EnhancedChatPage = () => {
     return normalizeMessage(msg).text?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // 🧪 Ajouter des réactions de test pour la démo
-  const messagesWithTestReactions = addTestReactionsToMessages(filteredMessages);
+  // 🎯 Enrichir les messages avec les réactions existantes
+  const messagesWithReactions = enrichMessagesWithReactions(filteredMessages);
 
   // Enrichir les messages avec les états
-  const enrichedMessages = messagesWithTestReactions.map(msg => ({
+  const enrichedMessages = messagesWithReactions.map(msg => ({
     ...msg,
     isPinned: pinnedMessages.includes(msg.id),
     isFavorite: favoriteMessages.includes(msg.id),
@@ -575,9 +602,33 @@ const EnhancedChatPage = () => {
     );
   }
 
+  // Styles d'arrière-plan de discussion ELITE
+  const getDiscussionBackground = () => {
+    switch (discussionBackground) {
+      case 'midnight':
+        return 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 bg-[radial-gradient(circle_at_20%_50%,rgba(120,119,198,0.3)_0%,transparent_50%),radial-gradient(circle_at_80%_20%,rgba(255,119,198,0.3)_0%,transparent_50%)]';
+      case 'aurora':
+        return 'bg-gradient-to-br from-emerald-50 via-teal-100 to-cyan-100 bg-[radial-gradient(circle_at_25%_25%,rgba(16,185,129,0.15)_0%,transparent_50%),radial-gradient(circle_at_75%_75%,rgba(6,182,212,0.15)_0%,transparent_50%)]';
+      case 'sunset':
+        return 'bg-gradient-to-br from-orange-50 via-amber-100 to-pink-100 bg-[radial-gradient(circle_at_30%_70%,rgba(251,146,60,0.2)_0%,transparent_50%),radial-gradient(circle_at_70%_30%,rgba(236,72,153,0.2)_0%,transparent_50%)]';
+      case 'cosmic':
+        return 'bg-gradient-to-br from-indigo-50 via-purple-100 to-pink-100 bg-[radial-gradient(circle_at_40%_40%,rgba(99,102,241,0.15)_0%,transparent_50%),radial-gradient(circle_at_60%_60%,rgba(168,85,247,0.15)_0%,transparent_50%)]';
+      case 'forest':
+        return 'bg-gradient-to-br from-green-50 via-emerald-100 to-teal-100 bg-[radial-gradient(circle_at_25%_75%,rgba(34,197,94,0.15)_0%,transparent_50%),radial-gradient(circle_at_75%_25%,rgba(20,184,166,0.15)_0%,transparent_50%)]';
+      case 'ocean':
+        return 'bg-gradient-to-br from-cyan-50 via-blue-100 to-indigo-100 bg-[radial-gradient(circle_at_20%_80%,rgba(6,182,212,0.2)_0%,transparent_50%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.2)_0%,transparent_50%)]';
+      case 'lavender':
+        return 'bg-gradient-to-br from-violet-50 via-purple-100 to-fuchsia-100 bg-[radial-gradient(circle_at_30%_30%,rgba(139,92,246,0.15)_0%,transparent_50%),radial-gradient(circle_at_70%_70%,rgba(217,70,239,0.15)_0%,transparent_50%)]';
+      case 'desert':
+        return 'bg-gradient-to-br from-amber-50 via-orange-100 to-red-100 bg-[radial-gradient(circle_at_40%_60%,rgba(245,158,11,0.2)_0%,transparent_50%),radial-gradient(circle_at_60%_40%,rgba(239,68,68,0.2)_0%,transparent_50%)]';
+      default:
+        return 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1)_0%,transparent_50%),radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.1)_0%,transparent_50%)]';
+    }
+  };
+
   return (
     <motion.div 
-      className={`flex-1 flex flex-col h-screen ${theme.bgColor} relative`}
+      className={`flex-1 flex flex-col h-screen relative ${getDiscussionBackground()}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -594,6 +645,7 @@ const EnhancedChatPage = () => {
         chatHeaderRef={chatHeaderRef}
         isTyping={isTyping}
         onProfileOpen={handleProfileOpen}
+        onOpenSettings={() => setShowSettingsPanel(true)}
       />
 
       {/* Barre de recherche */}
@@ -771,6 +823,16 @@ const EnhancedChatPage = () => {
         onAction={(action, media) => {
           notifyMessageAction(action, media);
         }}
+      />
+
+      {/* Panel de paramètres de discussion */}
+      <DiscussionSettingsPanel
+        isVisible={showSettingsPanel}
+        onClose={() => setShowSettingsPanel(false)}
+        discussion={activeChat}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        onBackgroundChange={handleBackgroundChange}
       />
     </motion.div>
   );

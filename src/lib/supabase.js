@@ -402,6 +402,119 @@ export const db = {
     }
 
     return { data, error: null };
+  },
+
+  // 🎉 Gestion des réactions ELITE
+  addReaction: async (messageId, userId, emoji) => {
+    try {
+      console.log('✨ Ajout réaction Supabase:', { messageId, userId, emoji });
+      
+      // Récupérer le message actuel
+      const { data: currentMessage, error: fetchError } = await supabase
+        .from('messages')
+        .select('reactions')
+        .eq('id', messageId)
+        .single();
+      
+      if (fetchError) {
+        console.error('❌ Erreur récupération message:', fetchError);
+        return { error: fetchError };
+      }
+      
+      // Préparer les nouvelles réactions
+      const currentReactions = currentMessage.reactions || [];
+      let newReactions;
+      
+      // Vérifier si l'utilisateur a déjà une réaction sur ce message
+      const existingReactionIndex = currentReactions.findIndex(r => r.userId === userId);
+      
+      if (existingReactionIndex >= 0) {
+        // Remplacer la réaction existante
+        newReactions = [...currentReactions];
+        newReactions[existingReactionIndex] = { 
+          emoji, 
+          userId, 
+          user_id: userId,
+          created_at: new Date().toISOString() 
+        };
+      } else {
+        // Ajouter nouvelle réaction
+        newReactions = [...currentReactions, { 
+          emoji, 
+          userId, 
+          user_id: userId,
+          created_at: new Date().toISOString() 
+        }];
+      }
+      
+      // Mettre à jour le message avec les nouvelles réactions
+      const { data, error } = await supabase
+        .from('messages')
+        .update({ 
+          reactions: newReactions,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', messageId)
+        .select();
+      
+      if (error) {
+        console.error('❌ Erreur mise à jour réactions:', error);
+        return { error };
+      }
+      
+      console.log('✅ Réaction ajoutée avec succès:', data);
+      return { data, error: null };
+      
+    } catch (error) {
+      console.error('❌ Erreur ajout réaction:', error);
+      return { error };
+    }
+  },
+
+  removeReaction: async (messageId, userId, emoji) => {
+    try {
+      console.log('🗑️ Suppression réaction Supabase:', { messageId, userId, emoji });
+      
+      // Récupérer le message actuel
+      const { data: currentMessage, error: fetchError } = await supabase
+        .from('messages')
+        .select('reactions')
+        .eq('id', messageId)
+        .single();
+      
+      if (fetchError) {
+        console.error('❌ Erreur récupération message:', fetchError);
+        return { error: fetchError };
+      }
+      
+      // Filtrer la réaction à supprimer
+      const currentReactions = currentMessage.reactions || [];
+      const newReactions = currentReactions.filter(r => 
+        !(r.userId === userId && r.emoji === emoji)
+      );
+      
+      // Mettre à jour le message
+      const { data, error } = await supabase
+        .from('messages')
+        .update({ 
+          reactions: newReactions,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', messageId)
+        .select();
+      
+      if (error) {
+        console.error('❌ Erreur suppression réaction:', error);
+        return { error };
+      }
+      
+      console.log('✅ Réaction supprimée avec succès:', data);
+      return { data, error: null };
+      
+    } catch (error) {
+      console.error('❌ Erreur suppression réaction:', error);
+      return { error };
+    }
   }
 }
 
