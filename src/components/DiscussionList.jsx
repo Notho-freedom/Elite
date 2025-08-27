@@ -1,8 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { FaFilter, FaSearch, FaTimes, FaChevronCircleDown, FaCamera } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import DiscussionItem from './DiscussionItem';
 import { useApp } from './Context/AppContext';
+import { databaseService } from '../firebase/database';
+import { useUserProfiles, useUserPresence } from '../firebase';
+
 
 const FILTERS = { ALL: 'all', UNREAD: 'unread', ONLINE: 'online' };
 
@@ -70,7 +73,66 @@ const DiscussionList = () => {
   const [filter, setFilter] = useState(FILTERS.ALL);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const { sortedDiscussions: discussions, theme: t, setActiveChat, isMobile } = useApp();
+  const [allUsers, setAllUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  
+  const { 
+    conversations, 
+    conversationsLoading, 
+    theme: t, 
+    setActiveChat, 
+    isMobile,
+    user,
+    debugUsers
+  } = useApp();
+
+  // Récupérer tous les utilisateurs de l'application depuis Firestore
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      if (!user) return;
+      
+      try {
+        setUsersLoading(true);
+        const users = await databaseService.getAllUsers();
+        // Filtrer l'utilisateur actuel de la liste
+        const filteredUsers = users.filter(u => u.uid !== user.uid);
+        setAllUsers(filteredUsers);
+      } catch (error) {
+        console.error('Erreur récupération utilisateurs:', error);
+        setAllUsers([]);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    fetchAllUsers();
+    
+    // Debug: vérifier les utilisateurs après chargement
+    if (user) {
+      setTimeout(() => {
+        debugUsers();
+      }, 2000);
+    }
+  }, [user, debugUsers]);
+
+  // Récupérer les profils des utilisateurs
+  const userIds = useMemo(() => allUsers.map(u => u.uid), [allUsers]);
+  const { profiles: userProfiles, loading: profilesLoading } = useUserProfiles(userIds);
+  
+  // Écouter la présence des utilisateurs
+  const { presence: userPresence } = useUserPresence(userIds);
+
+  // Fonction utilitaire pour formater l'heure d'affichage
+  const formatDisplayTime = (date) => {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (diffDays === 1) return 'Hier';
+    if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
+    return date.toLocaleDateString();
+  };
 
   const toggleSearch = useCallback(() => {
     setIsSearching((prev) => !prev);
@@ -80,10 +142,99 @@ const DiscussionList = () => {
   const handleFilterClick = useCallback((f) => () => setFilter(f), []);
   const handleAddFilter = useCallback(() => alert('Fonction "Ajouter un filtre" à implémenter 😎'), []);
 
-  const filteredDiscussions = useMemo(() => {
-    return discussions
+  // Gérer le clic sur une discussion
+  const handleDiscussionClick = useCallback(async (discussion) => {
+    if (!discussion.hasConversation) {
+      try {
+        // Créer une nouvelle conversation dans Firebase
+        const conversationId = await databaseService.createConversation([
+          user.uid,
+          discussion.otherParticipantId
+        ]);
+        console.log('Nouvelle conversation créée:', conversationId);
+        
+        // Mettre à jour la discussion avec l'ID de conversation
+        const updatedDiscussion = {
+          ...discussion,
+          id: conversationId,
+          hasConversation: true
+        };
+        setActiveChat(updatedDiscussion);
+      } catch (error) {
+        console.error('Erreur création conversation:', error);
+        // En cas d'erreur, utiliser la discussion virtuelle
+        setActiveChat(discussion);
+      }
+    } else {
+      setActiveChat(discussion);
+    }
+  }, [setActiveChat, user]);
+
+  // Transformer les conversations et ajouter tous les utilisateurs
+  const transformedConversations = useMemo(() => {
+    if (!user || usersLoading || profilesLoading) return [];
+
+    // Créer un map des conversations existantes par participant
+    const existingConversations = new Map();
+    if (conversations) {
+      conversations.forEach(conversation => {
+        const otherParticipantId = conversation.participants.find(p => p !== user.uid);
+        if (otherParticipantId) {
+          existingConversations.set(otherParticipantId, conversation);
+        }
+      });
+    }
+
+    // Créer des discussions pour tous les utilisateurs
+    return allUsers.map(userProfile => {
+      const existingConversation = existingConversations.get(userProfile.uid);
+      const userPresenceData = userPresence[userProfile.uid];
+      const profile = userProfiles[userProfile.uid] || userProfile;
+      
+      if (existingConversation) {
+        // Conversation existante
+        return {
+          id: existingConversation.id,
+          name: profile.displayName || `Utilisateur ${userProfile.uid.slice(-4)}`,
+          avatar: profile.photoURL || `https://ui-avatars.com/api/?name=${profile.displayName?.slice(0, 1) || 'U'}&background=random&color=fff`,
+          lastMessage: existingConversation.lastMessage || 'Aucun message',
+          time: existingConversation.lastMessageTime?.toDate?.() || new Date(),
+          timeDisplay: formatDisplayTime(existingConversation.lastMessageTime?.toDate?.() || new Date()),
+          unread: existingConversation.unreadCount?.[user.uid] || 0,
+          isRead: existingConversation.unreadCount?.[user.uid] === 0,
+          isReceived: true,
+          isOnline: userPresenceData?.online || profile.isOnline || false,
+          actu: profile.status === 'disponible' || false,
+          otherParticipantId: userProfile.uid,
+          userProfile: profile,
+          hasConversation: true
+        };
+      } else {
+        // Nouvelle conversation virtuelle
+        return {
+          id: `virtual-${userProfile.uid}`,
+          name: profile.displayName || `Utilisateur ${userProfile.uid.slice(-4)}`,
+          avatar: profile.photoURL || `https://ui-avatars.com/api/?name=${profile.displayName?.slice(0, 1) || 'U'}&background=random&color=fff`,
+          lastMessage: 'Cliquez pour commencer une conversation',
+          time: new Date(),
+          timeDisplay: 'Maintenant',
+          unread: 0,
+          isRead: true,
+          isReceived: false,
+          isOnline: userPresenceData?.online || profile.isOnline || false,
+          actu: profile.status === 'disponible' || false,
+          otherParticipantId: userProfile.uid,
+          userProfile: profile,
+          hasConversation: false
+        };
+      }
+    });
+  }, [conversations, user, userProfiles, userPresence, allUsers, usersLoading, profilesLoading]);
+
+  const filteredConversations = useMemo(() => {
+    return transformedConversations
       .filter((d) => {
-        if (filter === FILTERS.UNREAD) return d.unread;
+        if (filter === FILTERS.UNREAD) return d.unread > 0;
         if (filter === FILTERS.ONLINE) return d.isOnline;
         return true;
       })
@@ -91,7 +242,7 @@ const DiscussionList = () => {
         const q = searchQuery.toLowerCase();
         return !q || d.name.toLowerCase().includes(q) || (d.lastMessage?.toLowerCase().includes(q));
       });
-  }, [filter, discussions, searchQuery]);
+  }, [filter, transformedConversations, searchQuery]);
 
   return (
     <div className={`${t.w} ${t.bgColor} h-screen flex flex-col`}>
@@ -179,34 +330,40 @@ const DiscussionList = () => {
         </motion.button>
       </motion.div>
 
-      {/* Liste des discussions */}
-      <div className={`flex-1 overflow-y-auto overflow-x-hidden mt-2 ${isMobile ? 'mb-[12vh]':' mb-[1vh]'}`}>
-        <AnimatePresence mode="popLayout">
-          {filteredDiscussions.length > 0 ? (
-            filteredDiscussions.map((discussion, index) => (
-              <motion.div
-                key={discussion.id}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                variants={itemVariants}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-              >
-                <DiscussionItem
-                  discussion={discussion}
-                  onClick={() => setActiveChat(discussion)}
-                  highlight={
-                    !!searchQuery &&
-                    (discussion.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      discussion.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()))
-                  }
-                />
-              </motion.div>
-            ))
-          ) : (
-            <EmptyState filter={filter} searchQuery={searchQuery} />
-          )}
-        </AnimatePresence>
+             {/* Liste des discussions */}
+       <div className={`flex-1 overflow-y-auto overflow-x-hidden mt-2 ${isMobile ? 'mb-[12vh]':' mb-[1vh]'}`}>
+         {conversationsLoading || usersLoading || profilesLoading ? (
+           <motion.div className={`p-4 text-center ${t.secondaryText}`} variants={itemVariants}>
+             Chargement des utilisateurs...
+           </motion.div>
+         ) : (
+          <AnimatePresence mode="popLayout">
+            {filteredConversations.length > 0 ? (
+              filteredConversations.map((discussion, index) => (
+                <motion.div
+                  key={discussion.id}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={itemVariants}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                >
+                                     <DiscussionItem
+                     discussion={discussion}
+                     onClick={() => handleDiscussionClick(discussion)}
+                     highlight={
+                       !!searchQuery &&
+                       (discussion.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         discussion.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()))
+                     }
+                   />
+                </motion.div>
+              ))
+            ) : (
+              <EmptyState filter={filter} searchQuery={searchQuery} />
+            )}
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );

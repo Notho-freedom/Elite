@@ -29,10 +29,10 @@ const ChatMessage = ({
         animate="visible"
         exit="exit"
         transition={{ duration: 0.2 }}
-        className={`mb-3 flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'} px-2`}
+        className={`mb-3 flex ${message.senderId === currentUserId ? 'justify-end' : 'justify-start'} px-2`}
       >
         <div 
-          className={`relative group ${message.sender === 'me' ? 'ml-10' : 'mr-10'} ${
+          className={`relative group ${message.senderId === currentUserId ? 'ml-10' : 'mr-10'} ${
             message.media?.length === 1 && !message.text ? 'flex justify-end' : 'lg:max-w-[40%] md:max-w-[75%] sm:max-w-[85%]'
           }`}
           style={{ 

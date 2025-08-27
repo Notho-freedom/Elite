@@ -16,7 +16,8 @@ const ChatPage = () => {
     activeChat, 
     setActiveChat, 
     setActiveCall, 
-    setShowProfile 
+    setShowProfile,
+    user
   } = useApp();
   
   const {
@@ -109,6 +110,7 @@ const ChatPage = () => {
               theme={theme}
               variants={messageVariants}
               activeChat={activeChat}
+              currentUserId={user?.uid}
             />
           ))}
           
