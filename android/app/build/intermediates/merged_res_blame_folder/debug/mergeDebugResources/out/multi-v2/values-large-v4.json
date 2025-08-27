@@ -1,27 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.parallele.app-mergeDebugResources-40:/values-large-v4/values-large-v4.xml",
+            "outputFile": "com.parallele.app-mergeDebugResources-25:/values-large-v4/values-large-v4.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\bdb7f09a324321a4abd8d4504b18169f\\transformed\\material-1.12.0\\res\\values-large-v4\\values-large-v4.xml",
-                    "from": {
-                        "startLines": "2,3,4,5",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "55,169,285,407",
-                        "endColumns": "113,115,121,133",
-                        "endOffsets": "164,280,402,536"
-                    },
-                    "to": {
-                        "startLines": "11,12,13,14",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "752,866,982,1104",
-                        "endColumns": "113,115,121,133",
-                        "endOffsets": "861,977,1099,1233"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\f5c373eb2fbf7adbf337fcbc45aaa527\\transformed\\appcompat-1.7.0\\res\\values-large-v4\\values-large-v4.xml",
+                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\eeee7f7cb7cae8f8b0be1d969c3a4dd1\\transformed\\appcompat-1.7.0\\res\\values-large-v4\\values-large-v4.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10",
                         "startColumns": "4,4,4,4,4,4,4,4,4",

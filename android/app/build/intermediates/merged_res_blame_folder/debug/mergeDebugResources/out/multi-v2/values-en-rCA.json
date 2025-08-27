@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.parallele.app-mergeDebugResources-40:/values-en-rCA/values-en-rCA.xml",
+            "outputFile": "com.parallele.app-mergeDebugResources-25:/values-en-rCA/values-en-rCA.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\b2f1ebf2ceab73ed863e67c4c2762e32\\transformed\\core-1.15.0\\res\\values-en-rCA\\values-en-rCA.xml",
+                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\2205c1cd9e1107523c169e56e1402f57\\transformed\\core-1.15.0\\res\\values-en-rCA\\values-en-rCA.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\f5c373eb2fbf7adbf337fcbc45aaa527\\transformed\\appcompat-1.7.0\\res\\values-en-rCA\\values-en-rCA.xml",
+                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\eeee7f7cb7cae8f8b0be1d969c3a4dd1\\transformed\\appcompat-1.7.0\\res\\values-en-rCA\\values-en-rCA.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",

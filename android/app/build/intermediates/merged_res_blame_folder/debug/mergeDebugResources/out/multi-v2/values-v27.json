@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.parallele.app-mergeDebugResources-40:/values-v27/values-v27.xml",
+            "outputFile": "com.parallele.app-mergeDebugResources-25:/values-v27/values-v27.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\3182a7f1ff342bdd826c9dbae9e16b6b\\transformed\\core-splashscreen-1.0.1\\res\\values-v27\\values-v27.xml",
+                    "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\0b18840eb5239d5747fd16f66d944632\\transformed\\core-splashscreen-1.0.1\\res\\values-v27\\values-v27.xml",
                     "from": {
                         "startLines": "2,3,4,7",
                         "startColumns": "4,4,4,4",

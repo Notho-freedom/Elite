@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
-    <string name="app_name">Parallele App</string>
+    <string name="app_name">Elite Chat</string>
     <string name="custom_url_scheme">com.parallele.app</string>
     <string name="package_name">com.parallele.app</string>
-    <string name="title_activity_main">Parallele App</string>
+    <string name="title_activity_main">Elite Chat</string>
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         
         <item name="colorPrimary">@color/colorPrimary</item>
