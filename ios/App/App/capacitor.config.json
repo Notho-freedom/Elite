@@ -20,7 +20,12 @@
 			"splashImmersive": true,
 			"layoutName": "launch_screen",
 			"useDialog": true
+		},
+		"Browser": {
+			"preferredBrowser": "system"
 		}
 	},
-	"packageClassList": []
+	"packageClassList": [
+		"CAPBrowserPlugin"
+	]
 }
