@@ -35,11 +35,106 @@
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" 
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/assets/index-aeb7c998.js"></script>
+    <script type="module" crossorigin src="/assets/index-0dad42e7.js"></script>
     <link rel="stylesheet" href="/assets/index-75fe5717.css">
   </head>
   <body class="bg-white text-black font-orbitron">
     <div id="root"></div>
+    <!-- Script pour gérer l'authentification web et les deep links -->
+    <script>
+      // Fonction pour gérer les redirections d'authentification depuis le navigateur
+      window.handleAuthRedirect = function(url) {
+        console.log('Redirection d\'authentification reçue:', url);
+        
+        // Extraire les paramètres d'authentification
+        try {
+          const urlObj = new URL(url);
+          const authParams = {};
+          
+          // Récupérer tous les paramètres de l'URL
+          urlObj.searchParams.forEach((value, key) => {
+            authParams[key] = value;
+          });
+          
+          // Stocker les paramètres d'authentification
+          if (authParams.apiKey || authParams.authDomain) {
+            localStorage.setItem('firebaseAuthRedirect', JSON.stringify(authParams));
+            
+            // Émettre un événement personnalisé pour notifier l'app
+            window.dispatchEvent(new CustomEvent('firebaseAuthRedirect', {
+              detail: authParams
+            }));
+            
+            console.log('Paramètres d\'authentification stockés et événement émis');
+          }
+        } catch (error) {
+          console.error('Erreur lors du traitement de la redirection:', error);
+        }
+      };
+
+      // Détecter si l'app est dans un environnement mobile
+      window.isMobileApp = function() {
+        return window.Capacitor && window.Capacitor.isNative;
+      };
+
+      // Gérer les liens externes pour l'authentification
+      document.addEventListener('click', function(e) {
+        if (e.target.tagName === 'A' && e.target.href) {
+          const url = e.target.href;
+          
+          // Si c'est un lien d'authentification Firebase et qu'on est dans l'app mobile
+          if (url.includes('firebaseapp.com') && window.isMobileApp()) {
+            e.preventDefault();
+            
+            // Ouvrir dans le navigateur externe
+            if (window.Capacitor && window.Capacitor.Plugins.Browser) {
+              window.Capacitor.Plugins.Browser.open({
+                url: url,
+                windowName: '_self'
+              });
+            } else {
+              // Fallback : ouvrir dans le navigateur par défaut
+              window.open(url, '_blank');
+            }
+          }
+        }
+      });
+
+      // Gérer les retours d'authentification depuis le navigateur externe
+      function handleAuthReturn() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const authResult = urlParams.get('authResult');
+        const error = urlParams.get('error');
+        const user = urlParams.get('user');
+        
+        if (authResult || error || user) {
+          console.log('Retour d\'authentification détecté:', { authResult, error, user });
+          
+          // Nettoyer l'URL
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+          
+          // Émettre un événement pour notifier l'app
+          window.dispatchEvent(new CustomEvent('authReturn', {
+            detail: { authResult, error, user }
+          }));
+          
+          // Si l'authentification a réussi, rafraîchir la page pour mettre à jour l'état
+          if (authResult === 'success' || user) {
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        }
+      }
+
+      // Vérifier les paramètres d'authentification au chargement
+      handleAuthReturn();
+
+      // Écouter les changements d'URL
+      window.addEventListener('popstate', handleAuthReturn);
+    </script>
+    
     
   </body>
 </html>

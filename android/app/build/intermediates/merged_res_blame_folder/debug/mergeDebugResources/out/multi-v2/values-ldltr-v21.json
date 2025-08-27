@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.parallele.app-mergeDebugResources-25:/values-ldltr-v21/values-ldltr-v21.xml",
+            "outputFile": "com.parallele.app-mergeDebugResources-26:/values-ldltr-v21/values-ldltr-v21.xml",
             "map": [
                 {
                     "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\eeee7f7cb7cae8f8b0be1d969c3a4dd1\\transformed\\appcompat-1.7.0\\res\\values-ldltr-v21\\values-ldltr-v21.xml",

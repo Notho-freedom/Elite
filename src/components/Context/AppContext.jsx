@@ -63,6 +63,65 @@ export const AppProvider = ({ children }) => {
     endCall: () => setActiveCall(null),
   };
 
+  // Gérer les redirections d'authentification web
+  useEffect(() => {
+    const handleAuthRedirect = async () => {
+      try {
+        // Vérifier s'il y a un résultat de redirection Firebase
+        const redirectUser = await authService.handleRedirectResult();
+        if (redirectUser) {
+          console.log('Utilisateur authentifié via redirection:', redirectUser);
+        }
+      } catch (error) {
+        console.error('Erreur lors du traitement de la redirection:', error);
+      }
+    };
+
+    // Appeler la fonction au chargement de l'app
+    handleAuthRedirect();
+
+    // Écouter les événements de redirection personnalisés
+    const handleCustomRedirect = (event) => {
+      console.log('Événement de redirection personnalisé reçu:', event.detail);
+      // Traiter les paramètres d'authentification si nécessaire
+    };
+
+    // Écouter les changements d'URL pour détecter les retours d'authentification
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authResult = urlParams.get('authResult');
+      const error = urlParams.get('error');
+      
+      if (authResult || error) {
+        console.log('Paramètres d\'authentification détectés dans l\'URL:', { authResult, error });
+        
+        // Nettoyer l'URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Traiter le résultat d'authentification
+        if (authResult) {
+          // L'utilisateur s'est authentifié avec succès
+          console.log('Authentification réussie via navigateur externe');
+          // L'état sera mis à jour automatiquement par Firebase
+        } else if (error) {
+          console.error('Erreur d\'authentification:', error);
+        }
+      }
+    };
+
+    // Vérifier l'URL au chargement
+    handleUrlChange();
+
+    // Écouter les changements d'URL
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('firebaseAuthRedirect', handleCustomRedirect);
+
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('firebaseAuthRedirect', handleCustomRedirect);
+    };
+  }, []);
+
   // Synchroniser les informations utilisateur
   useEffect(() => {
     const syncUserInfo = async () => {

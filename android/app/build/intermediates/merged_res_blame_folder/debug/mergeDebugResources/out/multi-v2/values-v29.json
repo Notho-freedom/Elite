@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.parallele.app-mergeDebugResources-25:/values-v29/values-v29.xml",
+            "outputFile": "com.parallele.app-mergeDebugResources-26:/values-v29/values-v29.xml",
             "map": [
                 {
                     "source": "C:\\Users\\bobim\\.gradle\\caches\\8.13\\transforms\\0b18840eb5239d5747fd16f66d944632\\transformed\\core-splashscreen-1.0.1\\res\\values-v29\\values-v29.xml",

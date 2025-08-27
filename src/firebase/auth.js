@@ -10,7 +10,9 @@ import {
   GithubAuthProvider,
   TwitterAuthProvider,
   FacebookAuthProvider,
-  OAuthProvider
+  OAuthProvider,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -29,7 +31,7 @@ githubProvider.addScope('user');
 twitterProvider.addScope('email');
 
 export const authService = {
-  // Authentification avec popup
+  // Authentification avec gestion des erreurs de sessionStorage
   async signInWithProvider(providerName) {
     let provider;
     switch (providerName) {
@@ -52,12 +54,111 @@ export const authService = {
         throw new Error('Provider non supporté');
     }
 
+    // Détecter si on est dans une app mobile
+    const isMobileApp = window.Capacitor && window.Capacitor.isNative;
+    
     try {
-      const result = await signInWithPopup(auth, provider);
-      await this.createUserProfile(result.user);
-      return result.user;
+      if (isMobileApp) {
+        // Sur mobile, essayer d'abord le popup, puis fallback vers le navigateur externe
+        try {
+          console.log('Tentative d\'authentification mobile avec popup...');
+          const result = await signInWithPopup(auth, provider);
+          await this.createUserProfile(result.user);
+          return result.user;
+        } catch (popupError) {
+          console.log('Popup échoué, utilisation du navigateur externe:', popupError.message);
+          
+          // Fallback vers le navigateur externe
+          const authUrl = await this.buildAuthUrl(provider, providerName);
+          
+          if (window.Capacitor && window.Capacitor.Plugins.Browser) {
+            await window.Capacitor.Plugins.Browser.open({
+              url: authUrl,
+              windowName: '_self'
+            });
+          } else {
+            window.open(authUrl, '_blank');
+          }
+          
+          return { success: true, method: 'external_browser' };
+        }
+      } else {
+        // Sur desktop, utiliser le popup
+        const result = await signInWithPopup(auth, provider);
+        await this.createUserProfile(result.user);
+        return result.user;
+      }
     } catch (error) {
       console.error('Erreur d\'authentification:', error);
+      
+      // Si c'est une erreur de sessionStorage, essayer le navigateur externe
+      if (error.message.includes('sessionStorage') || error.message.includes('missing initial state')) {
+        console.log('Erreur sessionStorage détectée, tentative avec navigateur externe...');
+        try {
+          const authUrl = await this.buildAuthUrl(provider, providerName);
+          window.open(authUrl, '_blank');
+          return { success: true, method: 'external_browser_fallback' };
+        } catch (fallbackError) {
+          console.error('Fallback échoué:', fallbackError);
+          throw error; // Relancer l'erreur originale
+        }
+      }
+      
+      throw error;
+    }
+  },
+
+  // Construire l'URL d'authentification pour le navigateur externe
+  async buildAuthUrl(provider, providerName) {
+    try {
+      // Utiliser une approche différente pour éviter les problèmes de sessionStorage
+      const authDomain = auth.config.authDomain;
+      const apiKey = auth.config.apiKey;
+      
+      // URL de base pour l'authentification Firebase
+      let authUrl = `https://${authDomain}/__/auth/handler?apiKey=${apiKey}`;
+      
+      // Ajouter les paramètres spécifiques au provider
+      switch (providerName) {
+        case 'google':
+          authUrl += '&providerId=google.com';
+          break;
+        case 'github':
+          authUrl += '&providerId=github.com';
+          break;
+        case 'facebook':
+          authUrl += '&providerId=facebook.com';
+          break;
+        case 'twitter':
+          authUrl += '&providerId=twitter.com';
+          break;
+        case 'apple':
+          authUrl += '&providerId=apple.com';
+          break;
+      }
+      
+      // Ajouter l'URL de retour vers l'app
+      authUrl += `&redirectUrl=${encodeURIComponent(window.location.origin)}`;
+      
+      return authUrl;
+    } catch (error) {
+      console.error('Erreur construction URL auth:', error);
+      // Fallback vers l'URL Firebase standard
+      return `https://${auth.config.authDomain}/__/auth/handler`;
+    }
+  },
+
+  // Gérer le résultat de l'authentification par redirection
+  async handleRedirectResult() {
+    try {
+      const result = await getRedirectResult(auth);
+      if (result) {
+        await this.createUserProfile(result.user);
+        return result.user;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erreur lors du traitement de la redirection:', error);
       throw error;
     }
   },
