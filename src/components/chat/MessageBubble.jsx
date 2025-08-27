@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import LottieEmoji from './LottieEmoji';
 
 
-const MessageBubble = ({ message, theme, openMediaViewer }) => {
+const MessageBubble = ({ message, theme, openMediaViewer, currentUserId }) => {
   const isSingleEmoji = useMemo(() => 
     message.text?.match(/^\p{Emoji}$/u) && !message.media?.length,
     [message.text, message.media]
@@ -53,7 +53,7 @@ const MessageBubble = ({ message, theme, openMediaViewer }) => {
           ? 'p-0 rounded-xl overflow-hidden max-w-[320px]'
           : [
               'px-3 py-2 rounded-2xl',
-              message.sender === 'me'
+              message.senderId === currentUserId
                 ? `${theme.accentBg} ${theme.textColor} ${theme.accentShadow} rounded-br-none shadow-md`
                 : `${theme.messageBg} rounded-bl-none ${theme.textColor} shadow-md shadow-gray-400/20 backdrop-blur-sm`
             ]
@@ -61,11 +61,11 @@ const MessageBubble = ({ message, theme, openMediaViewer }) => {
       {/* Triangle de la bulle */}
         <div className={clsx(
           'absolute top-0 w-3 h-3',
-          message.sender === 'me'
+          message.senderId === currentUserId
             ? `${theme.accentBg} right-0 -mr-3 clip-path-triangle-right`
             : `left-0 -ml-3 ${theme.bgColor} clip-path-triangle-left`
         )} style={{
-          filter: message.sender === 'me' ? 'none' : 'drop-shadow(-2px 0px 2px rgba(0,0,0,0.05))'
+          filter: message.senderId === currentUserId ? 'none' : 'drop-shadow(-2px 0px 2px rgba(0,0,0,0.05))'
         }} />
 
       {/* Contenu du message */}
@@ -104,11 +104,11 @@ const MessageBubble = ({ message, theme, openMediaViewer }) => {
       {/* Métadonnées */}
         <div className={clsx(
           'text-[11px] flex items-center justify-end space-x-1',
-          message.sender === 'me' ? 'text-blue-100' : theme.secondaryText,
+          message.senderId === currentUserId ? 'text-blue-100' : theme.secondaryText,
           !isSingleMedia ?  isSingleEmoji? 'absolute bottom-1 right-1 bg-black/60 px-1 rounded': 'mt-1' : 'absolute bottom-1 right-1 bg-black/60 px-1 rounded'
         )}>
           <span>{message.time}</span>
-          {message.sender === 'me' && (
+          {message.senderId === currentUserId && (
             <BsCheck2All className={clsx(
               "text-xs",
               message.isRead ? "text-blue-300" : "opacity-70"

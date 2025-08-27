@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaComments, FaCircleNotch, FaPhoneAlt, FaCog, FaUsers } from 'react-icons/fa';
+import { FaComments, FaCircleNotch, FaPhoneAlt, FaCog, FaUsers, FaSignOutAlt } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useApp, TABS } from './Context/AppContext';
 
@@ -41,6 +41,9 @@ const Sidebar = () => {
     isMobile,
     switchTab,
     notifications,
+    user,
+    userProfile,
+    signOut,
   } = useApp();
 
   const tabs = [
@@ -56,6 +59,14 @@ const Sidebar = () => {
     switchTab(tabId);
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
+  };
+
   if (!isLogin) return null;
 
   if (isMobile) {
@@ -67,7 +78,7 @@ const Sidebar = () => {
         className={`fixed -bottom-1 left-0 right-0 ${activeChat?.name ? 'hidden' : 'flex'} justify-center items-stretch h-[80px] sm:h-[14vh] p-0 gap-2
           ${theme.headerBg} ${theme.textColor} border-t ${theme.borderColor} z-50`}
       >
-        {tabs.slice(0, 4).map(tab => (
+        {tabs.slice(0, 3).map(tab => (
           <motion.button
             key={tab.id}
             whileTap={{ scale: 0.95 }}
@@ -100,6 +111,41 @@ const Sidebar = () => {
             </span>
           </motion.button>
         ))}
+
+        {/* Avatar utilisateur mobile */}
+        <motion.div
+          whileTap={{ scale: 0.95 }}
+          className="flex-1 flex flex-col items-center justify-center relative mb-1"
+        >
+          <div className="relative">
+            <div className="p-2 mb-1 rounded-full border-2 border-transparent hover:border-blue-400 transition">
+              <img
+                alt="Avatar utilisateur"
+                src={userProfile?.photoURL || user?.photoURL || `https://ui-avatars.com/api/?name=${userProfile?.displayName || user?.displayName || 'U'}&background=random&color=fff`}
+                className="w-6 h-6 rounded-full object-cover"
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${userProfile?.displayName || user?.displayName || 'U'}&background=random&color=fff`;
+                }}
+              />
+            </div>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+          </div>
+          <span className="text-xs font-medium sm:hidden opacity-80">Profil</span>
+        </motion.div>
+
+        {/* Bouton de déconnexion mobile */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSignOut}
+          className="flex-1 flex flex-col items-center justify-center transition-colors duration-200 relative mb-1"
+          title="Se déconnecter"
+          aria-label="Se déconnecter"
+        >
+          <div className="p-2 mb-1 rounded-full hover:bg-red-500 hover:text-white transition">
+            <FaSignOutAlt size={16} />
+          </div>
+          <span className="text-xs font-medium sm:hidden opacity-80">Déconnexion</span>
+        </motion.button>
       </motion.nav>
     );
   }
@@ -127,20 +173,41 @@ const Sidebar = () => {
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-blue-400 transition relative cursor-pointer"
-        title="Profil utilisateur"
-      >
-        <img
-          alt="User avatar"
-          src="https://storage.googleapis.com/a1aa/image/b3b21a49-79c4-48b8-083f-00e99da6ec57.jpg"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-      </motion.div>
+      <div className="flex flex-col items-center gap-3">
+        {/* Avatar utilisateur */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-blue-400 transition relative cursor-pointer"
+          title={userProfile?.displayName || user?.displayName || 'Profil utilisateur'}
+        >
+          <img
+            alt="Avatar utilisateur"
+            src={userProfile?.photoURL || user?.photoURL || `https://ui-avatars.com/api/?name=${userProfile?.displayName || user?.displayName || 'U'}&background=random&color=fff`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${userProfile?.displayName || user?.displayName || 'U'}&background=random&color=fff`;
+            }}
+          />
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+        </motion.div>
+
+        {/* Bouton de déconnexion */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSignOut}
+          className={`w-10 h-10 rounded-full flex items-center justify-center
+            transition duration-200
+            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500
+            ${theme.hoverBg} ${theme.textColor} hover:bg-red-500 hover:text-white`}
+          title="Se déconnecter"
+          aria-label="Se déconnecter"
+        >
+          <FaSignOutAlt size={16} />
+        </motion.button>
+      </div>
     </motion.nav>
   );
 };

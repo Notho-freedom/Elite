@@ -3,21 +3,25 @@ import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { GoldenParticles } from '../Particles/GoldenParticles';
 import { AuthProviders } from './Providers';
-import { TABS, useApp } from '../Context/AppContext'; // Chemin à adapter
+import { TABS, useApp } from '../Context/AppContext';
 
 export const SocialLogin = () => {
-  const { setIsLogin, switchTab, theme } = useApp();
+  const { signInWithProvider, switchTab, theme } = useApp();
   const [loadingProvider, setLoadingProvider] = useState(null);
 
   const handleAuth = async (provider) => {
     setLoadingProvider(provider);
     console.log(`🔐 Auth with: ${provider}`);
 
-    await new Promise(resolve => setTimeout(resolve, 2));
-
-    setLoadingProvider(null);
-    setIsLogin(true);
-    switchTab(TABS.CHATS);
+    try {
+      await signInWithProvider(provider);
+      switchTab(TABS.CHATS);
+    } catch (error) {
+      console.error('Erreur d\'authentification:', error);
+      // Ici vous pourriez afficher un message d'erreur à l'utilisateur
+    } finally {
+      setLoadingProvider(null);
+    }
   };
 
   return (
