@@ -1,6 +1,6 @@
 {
 	"appId": "com.parallele.app",
-	"appName": "Parallele App",
+	"appName": "Elite Chat",
 	"webDir": "dist",
 	"server": {
 		"androidScheme": "https"

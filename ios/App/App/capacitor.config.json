@@ -1,6 +1,6 @@
 {
 	"appId": "com.parallele.app",
-	"appName": "Parallele App",
+	"appName": "Elite Chat",
 	"webDir": "dist",
 	"server": {
 		"androidScheme": "https"
@@ -22,12 +22,5 @@
 			"useDialog": true
 		}
 	},
-	"packageClassList": [
-		"CAPCameraPlugin",
-		"DevicePlugin",
-		"GeolocationPlugin",
-		"PreferencesPlugin",
-		"PushNotificationsPlugin",
-		"SharePlugin"
-	]
+	"packageClassList": []
 }
