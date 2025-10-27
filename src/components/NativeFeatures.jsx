@@ -5,8 +5,10 @@ import { Preferences } from '@capacitor/preferences';
 import { Share } from '@capacitor/share';
 import { Device } from '@capacitor/device';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { useApp } from './Context/AppContext';
 
 const NativeFeatures = () => {
+  const { theme } = useApp();
   const [photo, setPhoto] = useState(null);
   const [location, setLocation] = useState(null);
   const [deviceInfo, setDeviceInfo] = useState(null);
@@ -122,123 +124,99 @@ const NativeFeatures = () => {
   };
 
   return (
-    <div className="native-features">
-      <h2>🚀 Fonctionnalités Natives</h2>
+    <div className={`p-6 ${theme.bgColor} ${theme.textColor} h-full overflow-y-auto`}>
+      <h2 className={`text-2xl font-bold mb-6 ${theme.textColor}`}>🚀 Fonctionnalités Natives</h2>
       
       {/* Informations de l'appareil */}
       {deviceInfo && (
-        <div className="device-info">
-          <h3>📱 Informations Appareil</h3>
-          <p><strong>Nom:</strong> {deviceInfo.name}</p>
-          <p><strong>Modèle:</strong> {deviceInfo.model}</p>
-          <p><strong>Plateforme:</strong> {deviceInfo.platform}</p>
-          <p><strong>Version:</strong> {deviceInfo.osVersion}</p>
+        <div className={`p-4 rounded-lg mb-6 ${theme.messageBg} ${theme.borderColor} border`}>
+          <h3 className={`text-lg font-semibold mb-3 ${theme.textColor}`}>📱 Informations Appareil</h3>
+          <div className={`space-y-2 ${theme.secondaryText}`}>
+            <p><strong className={theme.textColor}>Nom:</strong> {deviceInfo.name}</p>
+            <p><strong className={theme.textColor}>Modèle:</strong> {deviceInfo.model}</p>
+            <p><strong className={theme.textColor}>Plateforme:</strong> {deviceInfo.platform}</p>
+            <p><strong className={theme.textColor}>Version:</strong> {deviceInfo.osVersion}</p>
+          </div>
         </div>
       )}
 
       {/* Caméra */}
-      <div className="feature-section">
-        <h3>📸 Caméra</h3>
-        <button onClick={takePhoto} className="feature-btn">
+      <div className={`p-4 rounded-lg mb-6 ${theme.messageBg} ${theme.borderColor} border`}>
+        <h3 className={`text-lg font-semibold mb-3 ${theme.textColor}`}>📸 Caméra</h3>
+        <button 
+          onClick={takePhoto} 
+          className={`px-4 py-2 rounded-lg ${theme.buttonPrimary} transition-colors duration-200 hover:opacity-90`}
+        >
           Prendre une photo
         </button>
         {photo && (
-          <div className="photo-preview">
-            <img src={photo} alt="Photo prise" style={{ maxWidth: '200px' }} />
+          <div className="mt-4">
+            <img src={photo} alt="Photo prise" className="max-w-xs rounded-lg border" />
           </div>
         )}
       </div>
 
       {/* Géolocalisation */}
-      <div className="feature-section">
-        <h3>📍 Géolocalisation</h3>
-        <button onClick={getLocation} className="feature-btn">
+      <div className={`p-4 rounded-lg mb-6 ${theme.messageBg} ${theme.borderColor} border`}>
+        <h3 className={`text-lg font-semibold mb-3 ${theme.textColor}`}>📍 Géolocalisation</h3>
+        <button 
+          onClick={getLocation} 
+          className={`px-4 py-2 rounded-lg ${theme.buttonPrimary} transition-colors duration-200 hover:opacity-90`}
+        >
           Obtenir ma position
         </button>
         {location && (
-          <div className="location-info">
-            <p><strong>Latitude:</strong> {location.coords.latitude}</p>
-            <p><strong>Longitude:</strong> {location.coords.longitude}</p>
-            <p><strong>Précision:</strong> {location.coords.accuracy}m</p>
+          <div className={`mt-4 p-3 rounded-lg ${theme.bgColor} ${theme.borderColor} border`}>
+            <div className={`space-y-2 ${theme.secondaryText}`}>
+              <p><strong className={theme.textColor}>Latitude:</strong> {location.coords.latitude}</p>
+              <p><strong className={theme.textColor}>Longitude:</strong> {location.coords.longitude}</p>
+              <p><strong className={theme.textColor}>Précision:</strong> {location.coords.accuracy}m</p>
+            </div>
           </div>
         )}
       </div>
 
       {/* Stockage local */}
-      <div className="feature-section">
-        <h3>💾 Stockage Local</h3>
-        <button onClick={saveData} className="feature-btn">
+      <div className={`p-4 rounded-lg mb-6 ${theme.messageBg} ${theme.borderColor} border`}>
+        <h3 className={`text-lg font-semibold mb-3 ${theme.textColor}`}>💾 Stockage Local</h3>
+        <button 
+          onClick={saveData} 
+          className={`px-4 py-2 rounded-lg ${theme.buttonPrimary} transition-colors duration-200 hover:opacity-90`}
+        >
           Sauvegarder des données
         </button>
-        <p><strong>Données stockées:</strong> {storedData}</p>
+        <p className={`mt-3 ${theme.secondaryText}`}>
+          <strong className={theme.textColor}>Données stockées:</strong> {storedData}
+        </p>
       </div>
 
       {/* Partage */}
-      <div className="feature-section">
-        <h3>📤 Partage</h3>
-        <button onClick={shareContent} className="feature-btn">
+      <div className={`p-4 rounded-lg mb-6 ${theme.messageBg} ${theme.borderColor} border`}>
+        <h3 className={`text-lg font-semibold mb-3 ${theme.textColor}`}>📤 Partage</h3>
+        <button 
+          onClick={shareContent} 
+          className={`px-4 py-2 rounded-lg ${theme.buttonPrimary} transition-colors duration-200 hover:opacity-90`}
+        >
           Partager l'application
         </button>
       </div>
 
       {/* Notifications */}
-      <div className="feature-section">
-        <h3>🔔 Notifications Push</h3>
-        <button onClick={setupNotifications} className="feature-btn">
+      <div className={`p-4 rounded-lg mb-6 ${theme.messageBg} ${theme.borderColor} border`}>
+        <h3 className={`text-lg font-semibold mb-3 ${theme.textColor}`}>🔔 Notifications Push</h3>
+        <button 
+          onClick={setupNotifications} 
+          className={`px-4 py-2 rounded-lg ${theme.buttonPrimary} transition-colors duration-200 hover:opacity-90`}
+        >
           Configurer les notifications
         </button>
         {notificationStatus && (
-          <p><strong>Statut:</strong> {notificationStatus}</p>
+          <p className={`mt-3 ${theme.secondaryText}`}>
+            <strong className={theme.textColor}>Statut:</strong> {notificationStatus}
+          </p>
         )}
       </div>
 
-      <style jsx>{`
-        .native-features {
-          padding: 20px;
-          max-width: 600px;
-          margin: 0 auto;
-        }
-        
-        .feature-section {
-          margin: 20px 0;
-          padding: 15px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          background: #f9f9f9;
-        }
-        
-        .feature-btn {
-          background: #007bff;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 5px;
-          cursor: pointer;
-          margin: 5px 0;
-        }
-        
-        .feature-btn:hover {
-          background: #0056b3;
-        }
-        
-        .device-info {
-          background: #e3f2fd;
-          padding: 15px;
-          border-radius: 8px;
-          margin: 20px 0;
-        }
-        
-        .photo-preview {
-          margin: 10px 0;
-        }
-        
-        .location-info {
-          background: #f0f8ff;
-          padding: 10px;
-          border-radius: 5px;
-          margin: 10px 0;
-        }
-      `}</style>
     </div>
   );
 };

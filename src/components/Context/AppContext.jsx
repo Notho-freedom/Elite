@@ -4,6 +4,8 @@ import { useTheme } from './ThemeContext';
 import { useMediaQuery } from 'react-responsive';
 import { useAuth } from './AuthContext';
 import { db, calls } from '../../lib/supabase';
+import { createEliteDemoMessages, enrichMessagesWithEliteFeatures } from '../Enhanced/EliteDataEnricher';
+import { SimpleMediaService } from '../../services/simpleMediaService.js';
 
 // Enum pour éviter les strings magiques
 export const TABS = {
@@ -20,7 +22,7 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const { theme, mode, setMode, toggleTheme } = useTheme();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { discussions, loading, error, fetchRandomUsers, sortedDiscussions } = useFetchDiscussions();
+  const { discussions: mockDiscussions, loading, error, fetchRandomUsers, sortedDiscussions } = useFetchDiscussions();
   const isMobile = useMediaQuery({ maxWidth: 779 });
   
   // États pour les données réelles
@@ -29,6 +31,9 @@ export const AppProvider = ({ children }) => {
   const [realCallHistory, setRealCallHistory] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [dataError, setDataError] = useState(null);
+  
+  // Messages mockés pour le mode démonstration
+  const [mockMessages, setMockMessages] = useState([]);
 
   const [activeCall, setActiveCall] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.CHATS);
@@ -65,22 +70,49 @@ export const AppProvider = ({ children }) => {
     }
   }, [isAuthenticated, user]);
 
+  // Charger les données mockées au démarrage si pas d'utilisateur connecté
+  useEffect(() => {
+    if (!isAuthenticated && mockDiscussions.length === 0) {
+      fetchRandomUsers();
+    }
+  }, [isAuthenticated, mockDiscussions.length, fetchRandomUsers]);
+
   // Charger toutes les données de l'utilisateur
   const loadUserData = async () => {
-    if (!user) return;
+    if (!user?.id) {
+      console.log('❌ Aucun utilisateur connecté pour charger les données');
+      return;
+    }
 
     try {
+      console.log('🔄 Chargement des données utilisateur pour:', user.id);
       setLoadingData(true);
       setDataError(null);
 
       // Charger les discussions
-      const { data: discussionsData, error: discussionsError } = await db.getDiscussions(user.id);
-      if (discussionsError) throw discussionsError;
+      console.log('📨 Chargement des discussions...');
+      const { data: discussionsData, error: discussionsError, warning } = await db.getDiscussions(user.id);
+      
+      if (discussionsError && !warning) {
+        console.error('❌ Erreur discussions:', discussionsError);
+        throw discussionsError;
+      }
+      
+      if (warning) {
+        console.warn('⚠️ Avertissement discussions:', warning);
+      }
+      
+      console.log('✅ Discussions chargées:', discussionsData?.length || 0, 'discussions');
       setRealDiscussions(discussionsData || []);
 
       // Charger l'historique des appels
+      console.log('📞 Chargement de l\'historique des appels...');
       const { data: callHistoryData, error: callHistoryError } = await calls.getCallHistory(user.id);
-      if (callHistoryError) throw callHistoryError;
+      if (callHistoryError) {
+        console.error('❌ Erreur appels:', callHistoryError);
+        throw callHistoryError;
+      }
+      console.log('✅ Historique appels chargé:', callHistoryData?.length || 0, 'appels');
       setRealCallHistory(callHistoryData || []);
 
       // Mettre à jour les notifications
@@ -129,27 +161,170 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Envoyer un message
-  const sendMessage = async (content, messageType = 'text') => {
-    if (!activeChat || !user) return;
+  // Envoyer un message (adapté à la nouvelle structure)
+  const sendMessage = async (messageContent, messageType = 'text') => {
+    if (!activeChat || !user) {
+      console.warn('Pas de chat actif ou d\'utilisateur connecté');
+      return { success: false, error: 'Pas de chat actif' };
+    }
 
     try {
-      const { data, error } = await db.sendMessage(
-        activeChat.id,
-        user.id,
-        content,
-        messageType
-      );
-
-      if (error) throw error;
-
-      // Ajouter le message à la liste locale
-      setRealMessages(prev => [data[0], ...prev]);
+      console.log('📤 AppContext.sendMessage - Données reçues:', { messageContent, messageType, activeChat: activeChat.id });
       
-      // Recharger les discussions pour mettre à jour le dernier message
-      await loadUserData();
+      if (isAuthenticated) {
+        // Mode Supabase - envoyer selon la nouvelle structure
+        let messageData;
+        
+        if (typeof messageContent === 'string') {
+          // Message texte simple
+          messageData = {
+            content: messageContent.trim(),
+            message: messageContent.trim(),
+            text: messageContent.trim()
+          };
+        } else if (messageContent && typeof messageContent === 'object') {
+          // Message complexe avec texte et/ou médias
+          
+          // 🚀 Upload des médias vers Supabase Storage
+          let uploadedMedia = [];
+          if (messageContent.media && messageContent.media.length > 0) {
+            console.log('🎬 DÉBUT UPLOAD MÉDIAS - AppContext');
+            console.log('📤 Nombre de médias à uploader:', messageContent.media.length);
+            console.log('📋 Détail des médias:', messageContent.media);
+            
+            try {
+              for (const [index, mediaItem] of messageContent.media.entries()) {
+                console.log(`🔄 Traitement média ${index + 1}/${messageContent.media.length}:`, mediaItem);
+                
+                if (mediaItem.file) {
+                  console.log(`📤 Upload du fichier ${index + 1}:`, mediaItem.file.name);
+                  
+                  // Upload avec service simple et compression locale
+                  const uploadResult = await SimpleMediaService.uploadFile(
+                    mediaItem.file,
+                    user.id,
+                    { compress: true, quality: 0.8 }
+                  );
+                  
+                  console.log(`✅ Média ${index + 1} uploadé:`, uploadResult);
+                  uploadedMedia.push(uploadResult);
+                  
+                  // Nettoyer l'URL blob temporaire
+                  if (mediaItem.url && mediaItem.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(mediaItem.url);
+                  }
+                } else if (mediaItem.url && !mediaItem.url.startsWith('blob:')) {
+                  // Média déjà uploadé (édition par exemple)
+                  uploadedMedia.push(mediaItem);
+                }
+              }
+              
+              console.log('✅ Médias uploadés:', uploadedMedia);
+                          } catch (uploadError) {
+                console.error('❌ Erreur upload simple:', uploadError);
+                return { success: false, error: `Erreur upload: ${uploadError.message}` };
+              }
+          }
+          
+          messageData = {
+            content: messageContent.text || messageContent.message || messageContent.content || '',
+            message: messageContent.text || messageContent.message || messageContent.content || '',
+            text: messageContent.text || messageContent.message || messageContent.content || '',
+            media: uploadedMedia,
+            reply_to_id: messageContent.replyTo || null
+          };
+        } else {
+          messageData = {
+            content: '',
+            message: '',
+            text: '',
+            reply_to_id: messageContent.replyTo || null
+          };
+        }
+        
+        console.log('🔄 Données normalisées pour envoi:', messageData);
+        console.log('📨 ReplyTo ID transmis:', messageData.reply_to_id);
 
-      return { success: true, data };
+        const { data, error } = await db.sendMessage(
+          activeChat.id,
+          user.id,
+          messageData
+        );
+
+        if (error) throw error;
+
+        console.log('✅ Message envoyé avec succès:', data);
+
+        // Ajouter les nouveaux messages à la liste locale
+        if (data && Array.isArray(data)) {
+          setRealMessages(prev => [...prev, ...data]);
+        }
+        
+        // Recharger les discussions pour mettre à jour la liste
+        await loadUserData();
+
+        return { success: true, data };
+      } else {
+        // Mode démonstration
+        let demoMessage;
+        
+        if (typeof messageContent === 'string') {
+          demoMessage = {
+            id: Date.now().toString(),
+            text: messageContent,
+            sender: 'me',
+            senderId: 'demo-user',
+            timestamp: new Date().toISOString(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: 'text',
+            isRead: false,
+            reactions: [],
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+          };
+        } else if (messageContent && messageContent.media?.length > 0) {
+          // Messages avec médias - créer un message par média
+          const mediaMessages = [];
+          
+          // Message texte d'abord s'il y en a un
+          if (messageContent.text || messageContent.message) {
+            mediaMessages.push({
+              id: `${Date.now()}-text`,
+              text: messageContent.text || messageContent.message,
+              sender: 'me',
+              senderId: 'demo-user',
+              timestamp: new Date().toISOString(),
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              type: 'text',
+              isRead: false,
+              reactions: [],
+              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+            });
+          }
+          
+          // Puis un message par média
+          messageContent.media.forEach((media, index) => {
+            mediaMessages.push({
+              id: `${Date.now()}-media-${index}`,
+              text: '',
+              sender: 'me',
+              senderId: 'demo-user',
+              timestamp: new Date().toISOString(),
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              type: media.type || 'file',
+              isRead: false,
+              reactions: [],
+              media: [media],
+              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+            });
+          });
+          
+          setMockMessages(prev => [...prev, ...mediaMessages]);
+          return { success: true, data: mediaMessages };
+        }
+
+        setMockMessages(prev => [...prev, demoMessage]);
+        return { success: true, data: [demoMessage] };
+      }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
       return { success: false, error: error.message };
@@ -215,11 +390,33 @@ export const AppProvider = ({ children }) => {
   // Charger les messages quand une discussion est sélectionnée
   useEffect(() => {
     if (activeChat?.id) {
-      loadMessages(activeChat.id);
+      if (isAuthenticated && user) {
+        loadMessages(activeChat.id);
+      } else {
+        // Générer des messages mockés pour le mode démonstration
+        generateMockMessages(activeChat.id);
+      }
     } else {
       setRealMessages([]);
+      setMockMessages([]);
     }
-  }, [activeChat]);
+  }, [activeChat, isAuthenticated, user]);
+
+  // Générer des messages mockés pour une discussion
+  const generateMockMessages = (discussionId) => {
+    // Utiliser les messages de démonstration Elite
+    const eliteMessages = createEliteDemoMessages();
+    setMockMessages(eliteMessages);
+  };
+
+  // Fonction helper pour mettre à jour les messages (pour les actions comme édition, suppression)
+  const setMessages = useCallback((updater) => {
+    if (isAuthenticated) {
+      setRealMessages(updater);
+    } else {
+      setMockMessages(updater);
+    }
+  }, [isAuthenticated]);
 
   const value = {
     // Authentification
@@ -241,7 +438,9 @@ export const AppProvider = ({ children }) => {
     dataError,
     
     // Données mockées (pour la transition)
-    discussions, 
+    discussions: isAuthenticated ? realDiscussions : mockDiscussions, 
+    messages: isAuthenticated ? realMessages : mockMessages,
+    setMessages, // Nouvelle fonction helper
     fetchRandomUsers, 
     sortedDiscussions,
     

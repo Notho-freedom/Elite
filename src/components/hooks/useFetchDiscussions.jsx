@@ -1,5 +1,6 @@
 // hooks/useFetchDiscussions.js
 import { useState, useCallback } from 'react';
+import { enrichDiscussionsWithEliteFeatures, createEliteDemoData } from '../Enhanced/EliteDataEnricher';
 
 const useFetchDiscussions = () => {
   const [discussions, setDiscussions] = useState([]);
@@ -49,12 +50,14 @@ const useFetchDiscussions = () => {
         const fullName = `${user.name?.first ?? 'Unknown'} ${user.name?.last ?? 'User'}`;
         const unread = Math.random() > 0.5;
         const time = generateRandomTime();
+        const lastMessage = generateRandomMessage();
 
         return {
           id: idx + 1,
           name: fullName,
           avatar: user.picture?.medium ?? '',
-          lastMessage: generateRandomMessage(),
+          lastMessage: lastMessage,
+          lastMessageTime: time,
           time,
           timeDisplay: formatDisplayTime(time),
           unread,
@@ -64,7 +67,10 @@ const useFetchDiscussions = () => {
         };
       });
 
-      setDiscussions(users);
+      // Enrichir avec les fonctionnalités Elite
+      const enrichedUsers = enrichDiscussionsWithEliteFeatures(users);
+
+              setDiscussions(enrichedUsers);
       setError(null);
     } catch (err) {
       setError(err.message || 'Unexpected error');

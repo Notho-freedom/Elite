@@ -178,3 +178,233 @@ img, video {
     height: -webkit-fill-available;
   }
 }
+
+/* ✨ Styles ELITE pour les réponses et messages */
+
+/* Animation de highlight ELITE */
+@keyframes elite-highlight-pulse {
+  0% { 
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+  }
+  50% { 
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(139, 92, 246, 0.2) 100%);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+  }
+  100% { 
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+  }
+}
+
+.highlight-message {
+  animation: elite-highlight-pulse 2s ease-in-out;
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effet de brillance pour les éléments ELITE */
+@keyframes elite-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.elite-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: elite-shimmer 2s ease-in-out infinite;
+}
+
+/* Glassmorphism pour les bulles de réponse */
+.elite-glass {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+/* Effet de particules flottantes */
+@keyframes elite-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
+}
+
+.elite-particle {
+  animation: elite-float 3s ease-in-out infinite;
+}
+
+/* Effet de glow pour les icônes */
+.elite-icon-glow {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+  transition: filter 0.3s ease;
+}
+
+.elite-icon-glow:hover {
+  filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.8));
+}
+
+/* Gradients animés pour les arrière-plans */
+@keyframes elite-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.elite-animated-gradient {
+  background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #06b6d4, #10b981);
+  background-size: 400% 400%;
+  animation: elite-gradient-shift 4s ease infinite;
+}
+
+/* Effet de morphing pour les boutons */
+.elite-morph {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.elite-morph:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.elite-morph:active {
+  transform: scale(0.95);
+  transition: all 0.1s ease;
+}
+
+/* 🎉 Styles spécifiques pour les réactions ELITE */
+.elite-reaction-bubble {
+  position: relative;
+  overflow: hidden;
+}
+
+.elite-reaction-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  border-radius: inherit;
+  filter: blur(0.5px);
+  z-index: -1;
+}
+
+/* Animation de pulsation pour les nouvelles réactions */
+@keyframes elite-reaction-pulse {
+  0% { 
+    transform: scale(1); 
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% { 
+    transform: scale(1.05); 
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% { 
+    transform: scale(1); 
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.elite-reaction-new {
+  animation: elite-reaction-pulse 0.6s ease-out;
+}
+
+/* Effet de ripple pour les clics */
+@keyframes elite-ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.elite-ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.elite-ripple-effect::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.elite-ripple-effect:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Tooltip personnalisé pour les réactions */
+.elite-reaction-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.elite-reaction-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Animation pour le picker de réactions */
+@keyframes elite-picker-slide {
+  0% {
+    transform: translateY(10px) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.elite-reaction-picker {
+  animation: elite-picker-slide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gradient animé pour les boutons de réaction */
+.elite-reaction-button {
+  background: linear-gradient(45deg, transparent, transparent);
+  background-size: 200% 200%;
+  transition: all 0.3s ease;
+}
+
+.elite-reaction-button:hover {
+  background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
+  background-size: 200% 200%;
+  animation: elite-gradient-shift 2s ease infinite;
+}

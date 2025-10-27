@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import MainView from './components/MainView';
-import MainTopbar from './components/MainTopbar';
 import clsx from 'clsx';
 import { useApp } from './components/Context/AppContext';
 import { useAuth } from './components/Context/AuthContext';
@@ -21,22 +20,12 @@ const App = () => {
           <LoadingScreen theme={theme} />
         ) : (
           <div className="flex w-full h-full">
-            {isAuthenticated && user && (
-              <>
-                <MainTopbar
-                  appName="ELITE"
-                  theme={theme}
-                  onSettings={() => console.log("Open settings")}
-                  onUser={() => console.log("Open profile")}
-                  onAI={() => console.log("Summon SkyOS AI")}
-                />
-                <Sidebar />
-              </>
-            )}
-
-            <main className="flex-1 overflow-hidden">
-              <MainView />
-            </main>
+            <Sidebar />
+            <div className="flex-1 flex flex-col">
+              <main className="flex-1 overflow-hidden">
+                <MainView />
+              </main>
+            </div>
           </div>
         )}
       </AnimatePresence>

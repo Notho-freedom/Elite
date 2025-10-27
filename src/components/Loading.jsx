@@ -28,7 +28,7 @@ const Loading = ({title='E . L . I . T . E', text="Profitez d'une experience san
                         </h3>
                         <p className={clsx(
                             "text-[1.5vh] max-w-md mx-auto font-normal",
-                            `${theme.accentText}`
+                            `${theme.secondaryText}`
                         )}>
                             {text}
                         </p>

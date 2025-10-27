@@ -1,23 +1,28 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import CallHistory from "./CallHistory";
-import DiscussionList from "./DiscussionList";
-import ChatPage from './ChatPage';
+import EliteDiscussionList from './Enhanced/EliteDiscussionList';
+import EnhancedChatPage from './chat/Enhanced/EnhancedChatPage';
+import CallInterface from './Elite/Calls/CallInterface';
 import Profile from "./chat/Profile";
 import Entry from "./Entry";
 import Loading from './Loading';
-import Status from './Status/Status';
+import StatusInterface from './Elite/Status/StatusInterface';
 import NativeFeatures from './NativeFeatures';
+import GroupInterface from './Elite/Groups/GroupInterface';
 import { useApp, TABS } from './Context/AppContext';
 import { SocialLogin } from './Auth/SocialLogin';
-import CallScreen from './CallScreen';
 import { useAuth } from './Context/AuthContext';
+import GroupList from './Groups/GroupList';
+import SettingsList from './Settings/SettingsList';
+import FeatureNotification from './Enhanced/FeatureNotification';
+import StatusList from './Status/StatusList';
+import { useState, useEffect } from 'react';
 
 const MainView = () => {
   const {
     theme,
     activeTab,
     activeChat,
-    activeCall,
     isAuthenticated, 
     isMobile,
     showProfile, 
@@ -25,6 +30,20 @@ const MainView = () => {
   } = useApp();
   
   const { user } = useAuth();
+  const [groupInterfaceLoaded, setGroupInterfaceLoaded] = useState(false);
+
+  // Load group interface when needed
+  useEffect(() => {
+    if (activeTab === TABS.GROUPS && !groupInterfaceLoaded) {
+      console.log('Loading GroupInterface...');
+      setGroupInterfaceLoaded(true);
+    }
+  }, [activeTab, groupInterfaceLoaded]);
+
+  // Debug logging for active tab
+  useEffect(() => {
+    console.log('Active tab changed to:', activeTab);
+  }, [activeTab]);
 
   // Priorité absolue aux états critiques
   if (!isAuthenticated || !user) {
@@ -40,18 +59,6 @@ const MainView = () => {
     );
   }
   
-  if (activeCall) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="h-screen"
-      >
-        <CallScreen />
-      </motion.div>
-    );
-  }
   
   // Profil en modale animée
   return (
@@ -102,7 +109,7 @@ const MainView = () => {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <DiscussionList />
+                  <EliteDiscussionList />
                 </motion.div>
               )}
               {activeTab === TABS.CALLS && (
@@ -124,7 +131,18 @@ const MainView = () => {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Status />
+                  <StatusInterface />
+                </motion.div>
+              )}
+              {activeTab === TABS.GROUPS && (
+                <motion.div
+                  key="groups"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <GroupInterface />
                 </motion.div>
               )}
               {activeTab === TABS.SETTINGS && (
@@ -167,7 +185,7 @@ const MainView = () => {
                   transition={{ duration: 0.3 }}
                   className="h-full"
                 >
-                  <ChatPage />
+                  <EnhancedChatPage />
                 </motion.div>
               ) : (
                 <motion.div
@@ -201,7 +219,7 @@ const MainView = () => {
                 transition={{ duration: 0.3 }}
                 className="h-full"
               >
-                <ChatPage />
+                <EnhancedChatPage />
               </motion.div>
             ) : (
               <motion.div
@@ -221,7 +239,7 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <DiscussionList />
+                      <EliteDiscussionList />
                     </motion.div>
                   )}
                   {activeTab === TABS.CALLS && (
@@ -243,7 +261,18 @@ const MainView = () => {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <Status />
+                      <StatusInterface />
+                    </motion.div>
+                  )}
+                  {activeTab === TABS.GROUPS && (
+                    <motion.div
+                      key="groups-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <GroupInterface />
                     </motion.div>
                   )}
                   {activeTab === TABS.SETTINGS && (
@@ -274,6 +303,12 @@ const MainView = () => {
           </AnimatePresence>
         </motion.div>
       )}
+
+      {/* Interface d'appel */}
+      <CallInterface />
+      
+      {/* Notification des nouvelles fonctionnalités */}
+      <FeatureNotification theme={theme} />
     </>
   );
 };
@@ -283,13 +318,13 @@ const EmptyState = () => {
   const { activeTab, theme } = useApp();
   return (
     <motion.div 
-      className={`flex-1 flex items-center justify-center ${theme.emptyStateText}`}
+      className={`flex-1 flex items-center justify-center ${theme.bgColor}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       {activeTab === TABS.CHATS && <Entry />}
-      {[TABS.CALLS, TABS.STATUS, TABS.GROUPS, TABS.SETTINGS, TABS.NATIVE].includes(activeTab) && <Loading />}
+      {[TABS.CALLS, TABS.STATUS, TABS.SETTINGS, TABS.NATIVE].includes(activeTab) && <Loading />}
     </motion.div>
   );
 }

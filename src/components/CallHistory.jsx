@@ -3,6 +3,7 @@ import { FaPhone, FaVideo, FaSearch, FaTimes, FaChevronCircleDown } from 'react-
 import { IoMdCall } from 'react-icons/io';
 import { MdCallMade, MdCallReceived } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
+import TabHeader from './UI/TabHeader';
 import { useApp } from './Context/AppContext';
 
 const FILTERS = ['all', 'audio', 'video', 'missed'];
@@ -165,90 +166,18 @@ const CallHistory = () => {
       exit="exit"
       variants={containerVariants}
     >
-      {/* Header */}
-      <motion.div
-        className={`${theme.headerBg} px-4 py-3 ${theme.borderColor} flex justify-between items-center`}
-        variants={itemVariants}
-      >
-        <motion.h2 className={`text-lg font-semibold ${theme.textColor}`} variants={itemVariants}>
-          Appels
-        </motion.h2>
-        <div className="flex items-center space-x-2">
-          <motion.div className="relative flex gap-4" variants={itemVariants}>
-            <motion.button
-              className={`p-1 rounded-full ${theme.searchHover}`}
-              variants={buttonVariants}
-              initial="rest"
-              whileHover="hover"
-              whileTap="tap"
-              onClick={toggleSearch}
-              aria-label="Rechercher"
-            >
-              <FaSearch className={theme.textColor} />
-            </motion.button>
-            <motion.button
-              className={`p-1 rounded-full relative ${theme.searchHover}`}
-              variants={buttonVariants}
-              initial="rest"
-              whileHover="hover"
-              whileTap="tap"
-              aria-label="Filtres"
-            >
-              <FaChevronCircleDown className={`text-xs ${theme.textColor} w-4 h-4`} />
-            </motion.button>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Search Bar - Conditionally Rendered */}
-      <AnimatePresence>
-        {state.showSearch && (
-          <motion.div 
-            className={`px-4 py-2 ${theme.borderColor}`}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative">
-              <FaSearch 
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText}`} 
-                aria-hidden="true"
-              />
-              <motion.input
-                type="text"
-                placeholder="Search calls..."
-                className={`w-full pl-9 pr-4 py-2 rounded-full focus:outline-none ${theme.inputBg} ${theme.textColor}`}
-                value={state.searchTerm}
-                onChange={(e) => setState(prev => ({ ...prev, searchTerm: e.target.value }))}
-                whileFocus={{ 
-                  scale: 1.02,
-                  boxShadow: `0 0 0 2px ${theme.mode === 'dark' ? '#3b82f6' : '#93c5fd'}`
-                }}
-                autoFocus
-                aria-label="Search calls"
-                transition={{ type: 'spring', stiffness: 500 }}
-              />
-              <AnimatePresence>
-                {state.searchTerm && (
-                  <motion.button
-                    onClick={() => setState(prev => ({ ...prev, searchTerm: '' }))}
-                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${theme.secondaryText} ${theme.filterHover}`}
-                    variants={buttonVariants}
-                    initial="rest"
-                    whileHover="hover"
-                    whileTap="tap"
-                    aria-label="Clear search"
-                    exit={{ opacity: 0 }}
-                  >
-                    <FaTimes />
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Header avec TabHeader */}
+      <TabHeader
+        title="Appels"
+        theme={theme}
+        showSearch={true}
+        showMore={true}
+        onSearch={(isOpen) => setState(prev => ({ ...prev, showSearch: isOpen }))}
+        onMore={() => console.log('More options clicked')}
+        searchQuery={state.searchTerm}
+        onSearchChange={(value) => setState(prev => ({ ...prev, searchTerm: value }))}
+        searchPlaceholder="Rechercher un appel..."
+      />
 
       {/* Filter Tabs */}
       <motion.div className={`flex ${theme.borderColor} px-4`} variants={itemVariants}>

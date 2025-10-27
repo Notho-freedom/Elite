@@ -37,12 +37,21 @@ const light = {
   messageBg: 'bg-white',
   buttonPrimary: 'bg-gray-900 text-white hover:bg-gray-800',
   buttonSecondary: 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50',
-  buttonGold: 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600'
+  buttonGold: 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600',
+  
+  // Propriétés pour les composants Status et autres
+  itemHover: 'hover:bg-gray-50',
+  buttonHover: 'hover:bg-gray-100',
+  iconColor: 'text-gray-600',
+  buttonBg: 'bg-blue-500',
+  menuItemHover: 'hover:bg-gray-50',
+  scrollbar: 'scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800',
+
 };
 
 const dark = {
   w: 'w-full',
-  divw: ' w-2/5 lg:w-1/4',
+  divw: ' w-4/7 lg:w-1/4',
   bgColor: 'bg-gray-900',
   textColor: 'text-gray-100',
   secondaryText: 'text-gray-400',
@@ -79,7 +88,16 @@ const dark = {
   messageBg: 'bg-gray-800',
   buttonPrimary: 'bg-amber-600 text-white hover:bg-amber-700',
   buttonSecondary: 'bg-gray-800 text-white border border-gray-700 hover:bg-gray-700',
-  buttonGold: 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white hover:from-amber-700 hover:to-yellow-700'
+  buttonGold: 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white hover:from-amber-700 hover:to-yellow-700',
+  
+  // Propriétés pour les composants Status et autres
+  itemHover: 'hover:bg-gray-800',
+  buttonHover: 'hover:bg-gray-700',
+  iconColor: 'text-gray-400',
+  buttonBg: 'bg-blue-500',
+  menuItemHover: 'hover:bg-gray-800',
+  // Propriétés pour les composants de discussion
+  scrollbar: 'scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800',
 };
 
 export const theme = { light, dark };

@@ -36,7 +36,7 @@ const Entry = () => {
                     )}>
                         Télécharger l'application pour Windows
                     </h3>
-                    <p className={clsx("text-[1.5vh] mb-6", theme.accentText)}>
+                    <p className={clsx("text-[1.5vh] mb-6", theme.secondaryText)}>
                         Passez des appels, partagez votre écran et profitez d'une expérience plus fluide.
                     </p>
                     <motion.button
