@@ -118,7 +118,7 @@ const Sidebar = () => {
         className={`fixed -bottom-1 left-0 right-0 ${activeChat?.name ? 'hidden' : 'flex'} justify-center items-stretch h-[80px] sm:h-[14vh] p-0 gap-2
           ${theme.headerBg} ${theme.textColor} border-t ${theme.borderColor} z-50`}
       >
-        {topTabs.slice(1, 5).map(tab => (
+        {topTabs.slice(1, 6).map(tab => (
           <motion.button
             key={tab.id}
             whileTap={{ scale: 0.95 }}

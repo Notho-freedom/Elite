@@ -5,7 +5,7 @@ import userService from '../services/userService';
 /**
  * Hook pour récupérer les utilisateurs disponibles (excluant l'utilisateur courant)
  */
-const useAvailableUsers = (filters = {}) => {
+const useAvailableUsers = (filters = {}, includeCurrent = false) => {
   const { user, isAuthenticated } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,9 +22,11 @@ const useAvailableUsers = (filters = {}) => {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Chargement des utilisateurs disponibles, excluant:', user.id);
+      console.log('🔄 Chargement des utilisateurs', includeCurrent ? '(tous les utilisateurs)' : `(excluant: ${user.id})`);
 
-      const result = await userService.getUsersExceptCurrent(user.id, filters);
+      const result = includeCurrent
+        ? await userService.getAllUsers(filters)
+        : await userService.getUsersExceptCurrent(user.id, filters);
 
       if (result.success) {
         console.log('✅ Utilisateurs chargés:', result.data?.length || 0);
@@ -41,7 +43,7 @@ const useAvailableUsers = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user?.id, filters]);
+  }, [isAuthenticated, user?.id, filters, includeCurrent]);
 
   // Charger au montage et quand les dépendances changent
   useEffect(() => {
@@ -61,7 +63,9 @@ const useAvailableUsers = (filters = {}) => {
         search: searchTerm
       };
 
-      const result = await userService.getUsersExceptCurrent(user.id, searchFilters);
+      const result = includeCurrent
+        ? await userService.getAllUsers(searchFilters)
+        : await userService.getUsersExceptCurrent(user.id, searchFilters);
 
       if (result.success) {
         setUsers(result.data || []);
@@ -75,7 +79,7 @@ const useAvailableUsers = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user?.id, filters]);
+  }, [isAuthenticated, user?.id, filters, includeCurrent]);
 
   // Fonction pour créer une nouvelle conversation
   const createConversationWithUser = useCallback(async (otherUserId) => {

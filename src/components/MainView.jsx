@@ -15,6 +15,7 @@ import FeatureNotification from './Enhanced/FeatureNotification';
 import { useState, useEffect } from 'react';
 import Profile from './chat/Profile';
 import AvailableUsersList from './UserDiscovery/AvailableUsersList';
+import WorldGlobe from './World/WorldGlobe';
 
 const MainView = () => {
   const {
@@ -174,7 +175,7 @@ const MainView = () => {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <AvailableUsersList />
+                  <AvailableUsersList includeCurrent />
                 </motion.div>
               )}
 
@@ -200,14 +201,14 @@ const MainView = () => {
                 </motion.div>
               ) : (
                 <motion.div
-                  key="empty"
+                  key={activeTab === TABS.WORLD ? 'world' : 'empty'}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="h-full"
                 >
-                  <EmptyState />
+                  {activeTab === TABS.WORLD ? <WorldGlobe /> : <EmptyState />}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -306,6 +307,18 @@ const MainView = () => {
                       transition={{ duration: 0.2 }}
                     >
                       <NativeFeatures />
+                    </motion.div>
+                  )}
+                  {activeTab === TABS.WORLD && (
+                    <motion.div
+                      key="world-mobile"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="h-full"
+                    >
+                      <WorldGlobe />
                     </motion.div>
                   )}
                 </AnimatePresence>
