@@ -13,7 +13,7 @@
     "ios": "npm run sync-mobile && npx cap open ios"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.3",
+    "@capacitor/android": "^7.6.9",
     "@capacitor/browser": "^7.0.2",
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
